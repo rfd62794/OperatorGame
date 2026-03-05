@@ -6,6 +6,7 @@ use clap::Parser;
 use operator::cli::{Cli, Commands};
 use operator::models::{AarOutcome, Deployment, Job, Operator, OperatorState};
 use operator::persistence::{load, save, save_path};
+use operator::ui::run_gui;
 
 #[tokio::main]
 async fn main() {
