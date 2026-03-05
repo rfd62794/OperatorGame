@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use chrono::{Duration, Utc};
 use eframe::egui;
-use rand::Rng as _;
+
 use uuid::Uuid;
 
 use crate::models::{AarOutcome, Deployment, Mission, Operator, OperatorState};
@@ -46,14 +46,6 @@ impl OperatorApp {
     // Helpers
     // -----------------------------------------------------------------------
 
-    /// Staged operators as references — used for the live success% preview.
-    fn staged_squad<'a>(&'a self) -> Vec<&'a Operator> {
-        self.state
-            .roster
-            .iter()
-            .filter(|o| self.staged_operators.contains(&o.id))
-            .collect()
-    }
 
     /// Derive `started_at` from `completes_at - mission.duration_secs`.
     /// Avoids storing a redundant field on `Deployment`.
