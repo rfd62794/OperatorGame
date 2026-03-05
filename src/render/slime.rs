@@ -18,7 +18,7 @@
 /// 6. Status badges — dispatched arrow · exhaustion timer · elder crown (level≥10)
 /// 7. Selection ring — white outline + culture-colored outer ring
 
-use egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2};
+use eframe::egui::{self, Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2};
 use std::f32::consts::TAU;
 
 use crate::genetics::{Culture, GeneticTier, LifeStage, SlimeGenome};
@@ -226,12 +226,12 @@ impl SlimeVisual {
 
         // --- Size from LifeStage ---
         let base_radius = match genome.life_stage() {
-            LifeStage::Egg      =>  8.0,
-            LifeStage::Juvenile => 15.0,
-            LifeStage::Young    => 22.0,
-            LifeStage::Prime    => 30.0,
-            LifeStage::Elder    => 38.0,
-            LifeStage::Ancient  => 48.0,
+            LifeStage::Hatchling =>  9.0,
+            LifeStage::Juvenile  => 15.0,
+            LifeStage::Young     => 22.0,
+            LifeStage::Prime     => 30.0,
+            LifeStage::Veteran   => 38.0,
+            LifeStage::Elder     => 48.0,
         };
 
         // --- Breathing pulse (ported from slime_renderer.py line 28-30) ---
