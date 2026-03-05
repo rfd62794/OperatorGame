@@ -285,6 +285,7 @@ async fn main() {
                     eprintln!("Splice failed: {reason}");
                     std::process::exit(1);
                 }
+            }
         }
 
         Commands::Incubate => {
