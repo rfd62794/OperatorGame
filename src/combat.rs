@@ -355,8 +355,10 @@ mod tests {
 
     #[test]
     fn culture_zone_adjacent_gives_normal() {
-        assert_eq!(culture_zone_mode(Culture::Ember, Culture::Gale),  RollMode::Normal);
-        assert_eq!(culture_zone_mode(Culture::Tide,  Culture::Marsh), RollMode::Normal);
+        // Adjacent but NOT opposite pairs → no advantage/disadvantage, just Normal
+        // Hex-wheel: Ember adj to Gale, Marsh | Crystal adj to Gale, Tide
+        assert_eq!(culture_zone_mode(Culture::Ember, Culture::Marsh),   RollMode::Normal);
+        assert_eq!(culture_zone_mode(Culture::Crystal, Culture::Gale),  RollMode::Normal);
     }
 
     #[test]
