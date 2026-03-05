@@ -163,7 +163,7 @@ impl OperatorApp {
                             ui.colored_label(color, status);
                             ui.label(egui::RichText::new(&genome.name).strong());
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                let label = format!("{:?} / {:?}", genome.dominant_culture(), vis.tier);
+                                let label = format!("{:?} / {:?}", genome.dominant_culture(), genome.genetic_tier());
                                 ui.small(egui::RichText::new(label.to_uppercase()).color(egui::Color32::GRAY));
                             });
                         });
