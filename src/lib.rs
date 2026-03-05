@@ -1,7 +1,9 @@
 pub mod cli;
 pub mod combat;
+pub mod dungeon;
 pub mod genetics;
 pub mod log_engine;
 pub mod models;
 pub mod persistence;
+pub mod racing;
 pub mod ui;

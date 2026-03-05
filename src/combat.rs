@@ -298,8 +298,86 @@ impl std::fmt::Display for CombatStance {
 }
 
 // ---------------------------------------------------------------------------
-// Tests
+// TurnOrderManager — SPD-sorted initiative queue
 // ---------------------------------------------------------------------------
+// Port of rpgCore `shared/combat/turn_order.py::TurnOrderManager`.
+// Serializable so an active combat node can be saved mid-encounter.
+
+/// A single combatant entry in the initiative queue.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Combatant {
+    /// Unique identifier (SlimeGenome.id.to_string() or enemy id).
+    pub id:         String,
+    /// Base speed stat — determines initiative order.
+    pub speed:      f32,
+    /// Rolled initiative (speed + small random offset to break ties).
+    pub initiative: f32,
+}
+
+/// Manages turn order for encounters using SPD-sorted initiative.
+///
+/// Usage:
+/// 1. `add_combatant()` for each participant before the encounter starts.
+/// 2. `next_turn()` to get the id of whoever acts next.
+/// 3. `remove_combatant()` when a participant is eliminated.
+/// 4. `reset()` to clear all combatants between encounters.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TurnOrderManager {
+    /// Ordered queue: index 0 = current actor. Sorted descending by initiative.
+    pub queue:         Vec<Combatant>,
+    /// Index of the combatant whose turn it currently is.
+    pub current_index: usize,
+}
+
+impl TurnOrderManager {
+    pub fn new() -> Self { Self::default() }
+
+    /// Add a combatant. Initiative = speed + [0, 5] jitter to break SPD ties.
+    /// Re-sorts the queue after insertion.
+    pub fn add_combatant<R: Rng>(&mut self, id: impl Into<String>, speed: f32, rng: &mut R) {
+        let jitter    = rng.gen_range(0.0f32..5.0);
+        let combatant = Combatant { id: id.into(), speed, initiative: speed + jitter };
+        self.queue.push(combatant);
+        // Maintain descending initiative order
+        self.queue.sort_by(|a, b| b.initiative.partial_cmp(&a.initiative).unwrap());
+    }
+
+    /// Remove a combatant by id (e.g. when they are eliminated).
+    pub fn remove_combatant(&mut self, id: &str) {
+        if let Some(pos) = self.queue.iter().position(|c| c.id == id) {
+            self.queue.remove(pos);
+            // Adjust index if necessary
+            if self.current_index >= self.queue.len() && !self.queue.is_empty() {
+                self.current_index = 0;
+            }
+        }
+    }
+
+    /// Advance to the next combatant and return their id.
+    /// Returns `None` if the queue is empty.
+    pub fn next_turn(&mut self) -> Option<&str> {
+        if self.queue.is_empty() { return None; }
+        let actor = &self.queue[self.current_index];
+        let id    = actor.id.as_str();
+        self.current_index = (self.current_index + 1) % self.queue.len();
+        Some(id)
+    }
+
+    /// Peek at the current actor without advancing.
+    pub fn current_actor(&self) -> Option<&str> {
+        self.queue.get(self.current_index).map(|c| c.id.as_str())
+    }
+
+    /// Clear all combatants (call between encounters).
+    pub fn reset(&mut self) {
+        self.queue.clear();
+        self.current_index = 0;
+    }
+
+    pub fn is_empty(&self) -> bool { self.queue.is_empty() }
+    pub fn len(&self)       -> usize { self.queue.len() }
+}
+
 
 #[cfg(test)]
 mod tests {
