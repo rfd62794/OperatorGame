@@ -290,7 +290,7 @@ impl SlimeVisual {
 ///
 /// **Call once per frame per visible slime.** Pass `ctx.input(|i| i.time as f32)` as `t`.
 ///
-/// ```no_run
+/// ```ignore
 /// let vis = SlimeVisual::from_genome(&genome, t, level, dispatched);
 /// draw_slime(&painter, center, &vis, selected);
 /// ```
@@ -617,7 +617,7 @@ fn with_alpha(c: Color32, alpha: u8) -> Color32 {
 /// Used in the Command Deck's Bio-Manifest roster column.
 ///
 /// Layout:
-/// ```no_run
+/// ```text
 /// [slime_blob ∅28]  SlimeName           EMBER / PRIME
 ///                   HP:112 ATK:89 SPD:94
 ///                   ✅ IDLE   [Shepherd: ⚡ FAST SCOUT]
