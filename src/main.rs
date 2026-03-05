@@ -285,9 +285,33 @@ async fn main() {
                     eprintln!("Splice failed: {reason}");
                     std::process::exit(1);
                 }
+        }
+
+        Commands::Incubate => {
+            let mut ready = Vec::new();
+            
+            // Retain incubating slimes that are NOT ready, collect the ready ones
+            state.incubating.retain(|inc| {
+                if inc.is_ready() {
+                    ready.push(inc.genome.clone());
+                    false
+                } else {
+                    true
+                }
+            });
+
+            if ready.is_empty() {
+                println!("No slimes are ready for harvest in the Bio-Incubator.");
+            } else {
+                println!("Harvested {} slime(s) from the Bio-Incubator:", ready.len());
+                for g in &ready {
+                    println!("  - {} ({:?} / {:?})", g.name, g.dominant_culture(), g.genetic_tier());
+                }
+                state.slimes.extend(ready);
             }
         }
     }
+
 
     // CLI path: persist state after every command.
     if let Err(e) = save(&state, &path) {
