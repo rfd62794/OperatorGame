@@ -229,8 +229,6 @@ async fn main() {
 
         // -----------------------------------------------------------------------
         Commands::Gui => {
-            // Save current runtime state, then hand control to the GUI.
-            // The GUI calls persist() on every action from here.
             if let Err(e) = save(&state, &path) {
                 eprintln!("WARNING: Could not save before launching GUI: {e}");
             }
@@ -238,6 +236,56 @@ async fn main() {
                 eprintln!("GUI error: {e}");
             }
             return;
+        }
+
+        // ── Genetics ─────────────────────────────────────────────────────────
+
+        Commands::Slimes => {
+            if state.slimes.is_empty() {
+                println!("No slimes hatched yet. Use `operator hatch <name> <culture>` to start.");
+            } else {
+                println!("=== SLIME STABLE ({}) ===", state.slimes.len());
+                for slime in &state.slimes {
+                    println!("  {slime}");
+                }
+            }
+        }
+
+        Commands::Hatch { name, culture } => {
+            let slime = generate_random(culture, &name, &mut rng);
+            println!("Hatched: {slime}");
+            state.slimes.push(slime);
+        }
+
+        Commands::Splice { parent_a_prefix, parent_b_prefix, offspring_name } => {
+            let a_idx = state.slimes.iter().position(|s| s.id.to_string().starts_with(&parent_a_prefix));
+            let b_idx = state.slimes.iter().position(|s| s.id.to_string().starts_with(&parent_b_prefix));
+
+            let (Some(ai), Some(bi)) = (a_idx, b_idx) else {
+                eprintln!("One or both parent IDs not found. Use `operator slimes` to list IDs.");
+                std::process::exit(1);
+            };
+            if ai == bi {
+                eprintln!("A slime cannot splice with itself.");
+                std::process::exit(1);
+            }
+
+            let a = state.slimes[ai].clone();
+            let b = state.slimes[bi].clone();
+
+            match BreedingResolver::breed(&a, &b, &offspring_name, &mut rng) {
+                Ok(child) => {
+                    println!("=== SPLICE RESULT ===");
+                    println!("  Parent A: {a}");
+                    println!("  Parent B: {b}");
+                    println!("  Offspring: {child}");
+                    state.slimes.push(child);
+                }
+                Err(reason) => {
+                    eprintln!("Splice failed: {reason}");
+                    std::process::exit(1);
+                }
+            }
         }
     }
 
