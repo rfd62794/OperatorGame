@@ -92,119 +92,170 @@ impl OperatorApp {
     // -----------------------------------------------------------------------
 
     fn render_roster(&mut self, ui: &mut egui::Ui) {
-        ui.label(egui::RichText::new("── UNIT ROSTER ──").strong().size(14.0));
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.left_tab, LeftTab::Manifest, "BIO-MANIFEST");
+            if self.state.tech_tier < 1 {
+                ui.add_enabled(false, egui::SelectableLabel::new(false, "INCUBATOR (Req. Tier 1)"));
+            } else {
+                ui.selectable_value(&mut self.left_tab, LeftTab::Incubator, "INCUBATOR");
+            }
+        });
+        ui.add_space(4.0);
+        ui.separator();
         ui.add_space(4.0);
 
-        if self.state.roster.is_empty() {
-            ui.label("No operators. Use the CLI to hire: `operator hire <name> <job>`");
+        match self.left_tab {
+            LeftTab::Manifest => self.render_manifest(ui),
+            LeftTab::Incubator => self.render_incubator(ui),
+        }
+    }
+
+    fn render_manifest(&mut self, ui: &mut egui::Ui) {
+        if self.state.slimes.is_empty() {
+            ui.label("No slimes in the Bio-Manifest. Go to the Incubator or use `operator hatch`.");
             return;
         }
 
         let staged = self.staged_operators.clone();
         let selected_mission_id = self.selected_mission;
+        let selected_garden = self.selected_slime_id;
 
         // Lookup the selected mission for live success preview
         let selected_mission = selected_mission_id
             .and_then(|id| self.state.missions.iter().find(|m| m.id == id).cloned());
 
-        for op in self.state.roster.iter_mut() {
-            // Tick recovery passively
-            op.tick_recovery();
+        let t = ui.ctx().input(|i| i.time as f32);
 
-            let is_staged = staged.contains(&op.id);
-            let can_stage = op.is_available() && selected_mission_id.is_some();
+        for genome in &self.state.slimes {
+            let is_staged = staged.contains(&genome.id);
+            let is_garden_selected = selected_garden == Some(genome.id);
+            let is_dispatched = false; // TODO: Check if deployed
+            let can_stage = !is_dispatched && selected_mission_id.is_some();
 
-            let (state_color, state_label) = match &op.state {
-                OperatorState::Idle => (egui::Color32::from_rgb(80, 200, 120), "IDLE"),
-                OperatorState::Deployed(_) => (egui::Color32::from_rgb(255, 200, 0), "DEPLOYED"),
-                OperatorState::Injured(until) => {
-                    let secs = (*until - Utc::now()).num_seconds().max(0);
-                    let _ = secs; // used in label below
-                    (egui::Color32::from_rgb(220, 80, 80), "INJURED")
-                }
-            };
+            // Background tint
+            let [cr, cg, cb, _] = crate::world_map::culture_accent(genome.dominant_culture());
+            let mut frame_color = egui::Color32::from_rgba_unmultiplied(cr, cg, cb, 18);
+            if is_staged {
+                frame_color = egui::Color32::from_rgba_unmultiplied(cr, cg, cb, 60);
+            }
 
-            let frame_color = if is_staged {
-                egui::Color32::from_rgb(40, 80, 60)
-            } else {
-                egui::Color32::from_rgb(30, 30, 40)
-            };
-
-            egui::Frame::none()
+            let mut frame = egui::Frame::none()
                 .fill(frame_color)
                 .inner_margin(egui::Margin::same(6.0))
-                .rounding(egui::Rounding::same(4.0))
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.colored_label(state_color, "●");
-                        ui.label(egui::RichText::new(&op.name).strong());
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.small(egui::RichText::new(state_label).color(state_color));
+                .rounding(egui::Rounding::same(4.0));
+            
+            if is_garden_selected {
+                frame = frame.stroke(egui::Stroke::new(1.5, egui::Color32::from_rgba_unmultiplied(cr, cg, cb, 180)));
+            }
+
+            frame.show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    // Blob drawing space - fixed 50x50 block
+                    let (blob_rect, _resp) = ui.allocate_exact_size(egui::vec2(50.0, 50.0), egui::Sense::hover());
+                    let vis = crate::render::slime::SlimeVisual::from_genome(genome, t, genome.level as u32, is_dispatched);
+                    crate::render::slime::draw_slime(ui.painter(), blob_rect.center(), &vis, is_staged || is_garden_selected);
+
+                    // Text Details
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            let status = if is_dispatched { "DEPLOYED" } else { "IDLE" };
+                            let color = if is_dispatched { egui::Color32::from_rgb(255, 200, 0) } else { egui::Color32::from_rgb(80, 200, 120) };
+                            ui.colored_label(color, status);
+                            ui.label(egui::RichText::new(&genome.name).strong());
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                let label = format!("{:?} / {:?}", genome.dominant_culture(), vis.tier);
+                                ui.small(egui::RichText::new(label.to_uppercase()).color(egui::Color32::GRAY));
+                            });
                         });
-                    });
-
-                    let (s, a, i) = op.effective_stats();
-                    ui.label(
-                        egui::RichText::new(format!(
-                            "{} | STR:{} AGI:{} INT:{}",
-                            op.job, s, a, i
-                        ))
-                        .small()
-                        .color(egui::Color32::GRAY),
-                    );
-
-                    // Injury countdown
-                    if let OperatorState::Injured(until) = op.state {
-                        let secs = (until - Utc::now()).num_seconds().max(0);
+                        
+                        let s = genome.base_atk as u32;
+                        let a = genome.base_spd as u32;
+                        let i = genome.base_hp as u32;
+                        
                         ui.label(
-                            egui::RichText::new(format!("  Recovery in: {}s", secs))
-                                .small()
-                                .color(egui::Color32::from_rgb(220, 80, 80)),
+                            egui::RichText::new(format!(
+                                "HP:{} ATK:{} SPD:{}",
+                                i, s, a
+                            ))
+                            .small()
+                            .color(egui::Color32::WHITE),
                         );
-                    }
 
-                    if can_stage {
-                        let label = if is_staged { "✓ STAGED" } else { "+ STAGE" };
-                        if ui.small_button(label).clicked() {
-                            if is_staged {
-                                self.staged_operators.remove(&op.id);
-                            } else if self.staged_operators.len() < 3 {
-                                self.staged_operators.insert(op.id);
-                            } else {
-                                self.status_msg =
-                                    "Max squad size is 3 operators.".to_string();
+                        // Cooldown logic
+                        if let Some(cooldown) = genome.synthesis_cooldown_until {
+                            let secs = (cooldown - Utc::now()).num_seconds().max(0);
+                            if secs > 0 {
+                                ui.label(
+                                    egui::RichText::new(format!("  Exhausted: {}s", secs))
+                                        .small()
+                                        .color(egui::Color32::from_rgb(220, 80, 80)),
+                                );
+                            }
+                        } else if can_stage {
+                            let label = if is_staged { "✓ STAGED" } else { "+ STAGE" };
+                            if ui.small_button(label).clicked() {
+                                if is_staged {
+                                    self.staged_operators.remove(&genome.id);
+                                } else if self.staged_operators.len() < 3 {
+                                    self.staged_operators.insert(genome.id);
+                                } else {
+                                    self.status_msg = "Max squad size is 3 slimes.".to_string();
+                                }
                             }
                         }
-                    }
+                    });
                 });
+            });
             ui.add_space(4.0);
         }
 
         // Live success% preview
+        /*
         if let Some(mission) = &selected_mission {
-            let squad: Vec<&Operator> = self
-                .state
-                .roster
-                .iter()
-                .filter(|o| staged.contains(&o.id))
-                .collect();
-            if !squad.is_empty() {
-                let rate = mission.calculate_success_rate(&squad);
-                ui.separator();
-                let color = if rate >= 0.7 {
-                    egui::Color32::from_rgb(80, 200, 120)
-                } else if rate >= 0.4 {
-                    egui::Color32::YELLOW
-                } else {
-                    egui::Color32::from_rgb(220, 80, 80)
-                };
-                ui.colored_label(
-                    color,
-                    format!("Success if deployed: {:.0}%", rate * 100.0),
-                );
-            }
+            // Need a way to calculate mission success from SlimeGenomes.
+            // Currently mission expects `Operator`.
+            // We'll address this in the deployment logic.
+        }
+        */
+    }
+
+    fn render_incubator(&mut self, ui: &mut egui::Ui) {
+        if self.state.incubating.is_empty() {
+            ui.label(egui::RichText::new("Incubator is empty.").italics().color(egui::Color32::GRAY));
+            ui.add_space(8.0);
+            ui.label("Use the command line to splice slimes:");
+            ui.code("operator splice <parent_a> <parent_b> <offspring_name>");
+            return;
+        }
+
+        // Draw multiple test tubes
+        for inc in &self.state.incubating {
+            let ready = inc.is_ready();
+            let rem = inc.remaining_secs();
+            
+            egui::Frame::none()
+                .fill(egui::Color32::from_rgba_unmultiplied(20, 30, 40, 150))
+                .inner_margin(egui::Margin::same(8.0))
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("🧪").size(24.0));
+                        ui.vertical(|ui| {
+                            ui.label(egui::RichText::new(format!("Synthesizing: {}", inc.genome.name)).strong());
+                            if ready {
+                                ui.colored_label(egui::Color32::from_rgb(100, 255, 100), "READY FOR HARVEST");
+                                // We simulate the CLI command by pushing a command
+                                // but we haven't implemented harvest in ui.rs natively yet.
+                                ui.label(egui::RichText::new("Run `operator incubate` in CLI to collect").small().color(egui::Color32::YELLOW));
+                            } else {
+                                ui.label(format!("Time remaining: {}s", rem));
+                            }
+                        });
+                    });
+                });
+            ui.add_space(6.0);
         }
     }
+
 
     fn render_active_ops(&mut self, ui: &mut egui::Ui) {
         ui.label(egui::RichText::new("── ACTIVE OPERATIONS ──").strong().size(14.0));
