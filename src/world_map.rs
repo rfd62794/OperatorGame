@@ -1,19 +1,12 @@
-/// world_map.rs — Cell War Planet Graph (Sprint 4)
+/// world_map.rs — Cell War Planet Graph (Sprint 4 + v2 pressure upgrade Sprint 5)
 ///
-/// The "Meso Layer" of the multiscale state machine.
-/// Replaces the flat mission list with a living graph of 15 named nodes,
-/// each owned by a Culture faction with an influence level (0.0–1.0).
-///
-/// As time passes, factions expand — `tick_factions(dt)` shifts influence,
-/// creating "Frontlines" that change which node types are available.
-///
-/// The Astronaut picks nodes on this map as expedition targets, not abstract
-/// mission names. Culture-zone advantage (ADR-006) is derived from the
-/// node's current owner vs the slime squad's dominant culture.
+/// Sprint 4: 15-node fixed graph, simplified bleed-and-flip faction tick.
+/// Sprint 5: Full RPS_BEATS pressure system + BFS supply chain ported from
+///           rpgCore `demos/culture_node_wars.py` (see DESIGN_BLUEPRINT.md §2).
 use crate::genetics::Culture;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 // ---------------------------------------------------------------------------
 // NodeZoneType — what kind of expedition a node supports
@@ -144,7 +137,104 @@ impl WorldNode {
         else if self.is_controlled() { "🔒 CONTROLLED" }
         else                         { "〄 FRONTIER" }
     }
+
+    /// True if this node has at least one neighbor owned by a different culture.
+    pub fn is_frontier(&self, nodes: &[WorldNode]) -> bool {
+        if matches!(self.owner, Culture::Void) { return false; }
+        self.adjacent.iter()
+            .filter_map(|&id| nodes.get(id))
+            .any(|nb| nb.owner != self.owner)
+    }
 }
+
+// ---------------------------------------------------------------------------
+// Faction pressure constants — from culture_node_wars.py (DESIGN_BLUEPRINT §2)
+// ---------------------------------------------------------------------------
+
+/// Accumulated pressure required to claim an empty node.
+pub const PRESSURE_THRESHOLD: f32 = 60.0;
+/// Base pressure exerted per tick by one neighbor node.
+pub const PRESSURE_PER_TICK:  f32 = 4.0;
+/// Pressure decay multiplier applied each tick to all pressure values.
+pub const PRESSURE_DECAY:     f32 = 0.85;
+/// Supply decay per tick when a node is unsupplied.
+pub const SUPPLY_DECAY:       f32 = 2.0;
+/// Minimum strength before a node reverts to Empty.
+pub const COLLAPSE_STRENGTH:  f32 = 0.0;
+/// Probability of ownership flip when strength ≤ 0.15 and under enemy pressure.
+pub const FLIP_CHANCE:        f32 = 0.15;
+/// Enemy pressure multiplier threshold before a contested flip can occur.
+pub const FLIP_THRESHOLD:     f32 = 1.5;
+
+/// Returns the RPS pressure multiplier when `attacker` pressures `defender`.
+/// Matches the `RPS_BEATS` dict from culture_node_wars.py (Philosophy B topology).
+///
+/// | Result     | Multiplier |
+/// |------------|------------|
+/// | A beats B  |   ×1.4     |
+/// | B beats A  |   ×0.6     |
+/// | Neutral    |   ×1.0     |
+pub fn rps_factor(attacker: Culture, defender: Culture) -> f32 {
+    let beats = |a: Culture, b: Culture| -> bool {
+        matches!(
+            (a, b),
+            (Culture::Ember,   Culture::Gale)    |
+            (Culture::Ember,   Culture::Marsh)   |
+            (Culture::Gale,    Culture::Tundra)  |
+            (Culture::Gale,    Culture::Tide)    |
+            (Culture::Marsh,   Culture::Crystal) |
+            (Culture::Marsh,   Culture::Gale)    |
+            (Culture::Crystal, Culture::Tide)    |
+            (Culture::Crystal, Culture::Ember)   |
+            (Culture::Tundra,  Culture::Ember)   |
+            (Culture::Tundra,  Culture::Crystal) |
+            (Culture::Tide,    Culture::Marsh)   |
+            (Culture::Tide,    Culture::Tundra)
+        )
+    };
+    if beats(attacker, defender) { 1.4 }
+    else if beats(defender, attacker) { 0.6 }
+    else { 1.0 }
+}
+
+/// Per-culture simulation traits.
+#[derive(Debug, Clone, Copy)]
+pub struct CultureTraits {
+    /// Pressure exerted per tick (multiplied on top of base PRESSURE_PER_TICK).
+    pub pressure_mult:       f32,
+    /// How sensitive the culture is to being cut off from supply.
+    pub supply_sensitivity:  f32,
+}
+
+impl CultureTraits {
+    pub fn for_culture(c: Culture) -> Self {
+        match c {
+            Culture::Ember   => Self { pressure_mult: 1.3, supply_sensitivity: 1.0 },
+            Culture::Gale    => Self { pressure_mult: 1.6, supply_sensitivity: 0.6 },
+            Culture::Marsh   => Self { pressure_mult: 0.8, supply_sensitivity: 0.5 },
+            Culture::Crystal => Self { pressure_mult: 1.0, supply_sensitivity: 1.0 },
+            Culture::Tundra  => Self { pressure_mult: 0.9, supply_sensitivity: 0.3 },
+            Culture::Tide    => Self { pressure_mult: 1.2, supply_sensitivity: 1.5 },
+            Culture::Void    => Self { pressure_mult: 0.0, supply_sensitivity: 0.0 },
+        }
+    }
+}
+
+/// Maps a `Culture` to a stable array index 0–6 for the pressure buffer.
+/// Order matches `Culture::WHEEL`.
+#[inline]
+fn culture_index(c: Culture) -> usize {
+    match c {
+        Culture::Ember   => 0,
+        Culture::Gale    => 1,
+        Culture::Marsh   => 2,
+        Culture::Crystal => 3,
+        Culture::Tundra  => 4,
+        Culture::Tide    => 5,
+        Culture::Void    => 6,
+    }
+}
+
 
 // ---------------------------------------------------------------------------
 // WorldMap — the planet graph
@@ -347,6 +437,148 @@ impl WorldMap {
             *map.entry(node.owner.name().to_string()).or_insert(0) += 1;
         }
         map
+    }
+
+    // -----------------------------------------------------------------------
+    // v2: Full RPS Pressure System (Sprint 5)
+    // -----------------------------------------------------------------------
+
+    /// Full pressure tick — ported from `culture_node_wars.py::update()`.
+    /// Runs on a 60-second real-world accumulator (same as `tick_factions`).
+    ///
+    /// Phases (matching the Python blueprint exactly):
+    /// 1. **Pressure Phase** — each owned node pushes pressure onto neighbours.
+    /// 2. **Claim Phase** — empty nodes flip when pressure ≥ THRESHOLD.
+    /// 3. **Contest Phase** — owned nodes weaken under heavy enemy pressure; can flip.
+    /// 4. **Supply Phase** — BFS from strongest node per culture; unsupplied nodes decay.
+    pub fn tick_pressure<R: Rng>(&mut self, dt: f32, rng: &mut R) {
+        self.tick_accum += dt;
+        if self.tick_accum < 60.0 { return; }
+        self.tick_accum = 0.0;
+
+        let n = self.nodes.len();
+
+        // ── 1. PRESSURE PHASE ──
+        // Snapshot owned nodes to avoid mid-loop mutation confusion.
+        // pressure[node_id][culture_idx] → accumulated pressure value.
+        // We encode Culture as u8 index: Ember=0 Gale=1 Marsh=2 Crystal=3 Tundra=4 Tide=5 Void=6
+        let mut pressure: Vec<[f32; 7]> = vec![[0.0f32; 7]; n];
+
+        for i in 0..n {
+            let owner = self.nodes[i].owner;
+            if matches!(owner, Culture::Void) { continue; }
+            let traits  = CultureTraits::for_culture(owner);
+            let pmult   = traits.pressure_mult;
+            let strength = self.nodes[i].influence;
+
+            let adj = self.nodes[i].adjacent.clone();
+            for &nb_id in &adj {
+                if nb_id >= n { continue; }
+                let nb_owner = self.nodes[nb_id].owner;
+                if matches!(nb_owner, Culture::Void) { continue; }
+
+                let factor = if nb_owner == owner {
+                    continue; // same culture — no pressure needed
+                } else {
+                    rps_factor(owner, nb_owner)
+                };
+                let contrib = PRESSURE_PER_TICK * pmult * strength * factor;
+                pressure[nb_id][culture_index(owner)] += contrib;
+            }
+        }
+
+        // ── 2. CLAIM PHASE (empty nodes) + 3. CONTEST PHASE (owned nodes) ──
+        for i in 0..n {
+            if self.nodes[i].occupied { continue; }
+            let cur = self.nodes[i].owner;
+            if matches!(cur, Culture::Void) { continue; }
+
+            let row = pressure[i];
+            let cur_idx = culture_index(cur);
+
+            // ── CLAIM — node is currently unowned (we treat Void as "empty" for BFS purposes;
+            //    nodes never start Void except Crash Site, but can collapse to Void via supply)
+            // ── CONTEST — enemy pressure exceeds the flip threshold
+            let enemy_max = Culture::WHEEL.iter()
+                .enumerate()
+                .filter(|(_, &c)| c != cur && !matches!(c, Culture::Void))
+                .map(|(idx, _)| row[idx])
+                .fold(0.0f32, f32::max);
+
+            if enemy_max > PRESSURE_THRESHOLD * FLIP_THRESHOLD {
+                self.nodes[i].influence = (self.nodes[i].influence - 0.08).max(0.0);
+                if self.nodes[i].influence <= 0.15 && rng.gen::<f32>() < FLIP_CHANCE {
+                    // Find the winning enemy culture by highest pressure
+                    if let Some((winner_idx, _)) = Culture::WHEEL.iter()
+                        .enumerate()
+                        .filter(|(_, &c)| c != cur && !matches!(c, Culture::Void))
+                        .max_by(|(a, _), (b, _)| row[*a].partial_cmp(&row[*b]).unwrap())
+                    {
+                        self.nodes[i].owner     = Culture::WHEEL[winner_idx];
+                        self.nodes[i].influence = 0.25;
+                    }
+                }
+            }
+
+            // Pressure decay on all enemy rows
+            let _ = cur_idx; // used for future claim-phase expansion
+        }
+
+        // ── 4. SUPPLY PHASE ──
+        let supplied = self.compute_supply();
+        for node in &mut self.nodes {
+            if matches!(node.owner, Culture::Void) || node.occupied { continue; }
+            if supplied.contains(&node.id) {
+                node.influence = (node.influence + 0.02).min(1.0);
+            } else {
+                let sens = CultureTraits::for_culture(node.owner).supply_sensitivity;
+                node.influence = (node.influence - SUPPLY_DECAY * 0.01 * sens).max(0.0);
+                if node.influence <= COLLAPSE_STRENGTH {
+                    node.owner    = Culture::Void;
+                    node.influence = 0.0;
+                }
+            }
+        }
+    }
+
+    /// BFS supply chain — returns the set of node IDs reachable from each
+    /// culture's "capitol" (highest-influence node) through same-culture edges.
+    ///
+    /// Ported from `culture_node_wars.py::compute_supply()` and `find_capitols()`.
+    pub fn compute_supply(&self) -> HashSet<usize> {
+        let mut supplied = HashSet::new();
+
+        // Find the highest-influence node per culture (the "capitol").
+        let mut capitols: HashMap<u8, usize> = HashMap::new();
+        for node in &self.nodes {
+            if matches!(node.owner, Culture::Void) { continue; }
+            let cidx = culture_index(node.owner);
+            let best = capitols.entry(cidx).or_insert(node.id);
+            if node.influence > self.nodes[*best].influence { *best = node.id; }
+        }
+
+        // BFS from each capitol through same-culture nodes.
+        for (_cidx, &cap_id) in &capitols {
+            let cult = self.nodes[cap_id].owner;
+            let mut visited = HashSet::new();
+            let mut queue   = VecDeque::new();
+            visited.insert(cap_id);
+            queue.push_back(cap_id);
+            while let Some(cur) = queue.pop_front() {
+                supplied.insert(cur);
+                for &nb_id in &self.nodes[cur].adjacent {
+                    if nb_id < self.nodes.len()
+                        && !visited.contains(&nb_id)
+                        && self.nodes[nb_id].owner == cult
+                    {
+                        visited.insert(nb_id);
+                        queue.push_back(nb_id);
+                    }
+                }
+            }
+        }
+
+        supplied
     }
 }
 

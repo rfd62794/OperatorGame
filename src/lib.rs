@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod combat;
+pub mod dice;
 pub mod dungeon;
 pub mod genetics;
 pub mod log_engine;
