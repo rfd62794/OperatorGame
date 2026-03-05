@@ -2,6 +2,7 @@ pub mod cli;
 pub mod combat;
 pub mod dice;
 pub mod dungeon;
+pub mod garden;
 pub mod genetics;
 pub mod log_engine;
 pub mod models;
