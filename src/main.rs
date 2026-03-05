@@ -225,10 +225,24 @@ async fn main() {
                 );
             }
         }
+
+        // -----------------------------------------------------------------------
+        Commands::Gui => {
+            // Save current runtime state, then hand control to the GUI.
+            // The GUI calls persist() on every action from here.
+            if let Err(e) = save(&state, &path) {
+                eprintln!("WARNING: Could not save before launching GUI: {e}");
+            }
+            if let Err(e) = run_gui(state, path) {
+                eprintln!("GUI error: {e}");
+            }
+            return;
+        }
     }
 
-    // Persist state after every command — simple and safe at Tier 1.
+    // CLI path: persist state after every command.
     if let Err(e) = save(&state, &path) {
         eprintln!("WARNING: Could not save state: {e}");
     }
 }
+
