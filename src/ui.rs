@@ -13,6 +13,7 @@ use eframe::egui;
 
 use uuid::Uuid;
 
+use crate::log_engine::{format_log_entry, generate_narrative};
 use crate::models::{AarOutcome, Deployment, Mission, Operator, OperatorState};
 use crate::persistence::{save, GameState};
 
@@ -29,6 +30,8 @@ pub struct OperatorApp {
     staged_operators: HashSet<Uuid>,
     /// One-line feedback shown at the bottom of the screen.
     status_msg: String,
+    /// Scrollable narrative log. New entries prepended (newest first).
+    combat_log: Vec<String>,
 }
 
 impl OperatorApp {
@@ -39,6 +42,7 @@ impl OperatorApp {
             selected_mission: None,
             staged_operators: HashSet::new(),
             status_msg: String::from("Welcome to OPERATOR. Select a contract, then stage your squad."),
+            combat_log: Vec::new(),
         }
     }
 
@@ -423,6 +427,12 @@ impl OperatorApp {
         let mut rng = rand::thread_rng();
         let outcome = dep.resolve(&mission, &squad, &mut rng);
 
+        // Generate narrative BEFORE mutating squad state
+        let narrative = generate_narrative(&outcome, &mission, &squad, &mut rng);
+        let log_entry = format_log_entry(&mission.name, &outcome, &narrative);
+        self.combat_log.insert(0, log_entry); // newest first
+        if self.combat_log.len() > 50 { self.combat_log.truncate(50); }
+
         self.state.deployments[dep_idx].resolved = true;
 
         match outcome {
@@ -493,6 +503,45 @@ impl eframe::App for OperatorApp {
                 ));
             });
         });
+
+        // Combat log panel — sits above the launch bar
+        egui::TopBottomPanel::bottom("combat_log_panel")
+            .resizable(true)
+            .min_height(80.0)
+            .max_height(200.0)
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("── COMBAT LOG ──").strong());
+                    if !self.combat_log.is_empty() {
+                        if ui.small_button("Clear").clicked() {
+                            self.combat_log.clear();
+                        }
+                    }
+                });
+                egui::ScrollArea::vertical()
+                    .id_source("combat_log_scroll")
+                    .stick_to_bottom(false)
+                    .show(ui, |ui| {
+                        if self.combat_log.is_empty() {
+                            ui.label(
+                                egui::RichText::new("No actions yet. Deploy a squad to begin.")
+                                    .color(egui::Color32::GRAY)
+                                    .italics(),
+                            );
+                        } else {
+                            for entry in &self.combat_log {
+                                let color = if entry.contains("VICTORY") {
+                                    egui::Color32::from_rgb(80, 200, 120)
+                                } else if entry.contains("CRITICAL") {
+                                    egui::Color32::from_rgb(220, 80, 80)
+                                } else {
+                                    egui::Color32::YELLOW
+                                };
+                                ui.colored_label(color, entry);
+                            }
+                        }
+                    });
+            });
 
         // Bottom launch / status bar
         egui::TopBottomPanel::bottom("bottom_bar").show(ctx, |ui| {

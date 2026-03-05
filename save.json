@@ -7,11 +7,23 @@
       "base_strength": 47,
       "base_agility": 55,
       "base_intelligence": 28,
-      "state": "Idle"
+      "state": {
+        "Deployed": "28ec4a8a-333b-475c-90b8-1c8b330b9ef0"
+      }
     }
   ],
-  "bank": 0,
-  "deployments": [],
+  "bank": 500,
+  "deployments": [
+    {
+      "id": "eff84a6c-a545-4d9b-afe4-ca62af02c565",
+      "mission_id": "28ec4a8a-333b-475c-90b8-1c8b330b9ef0",
+      "operator_ids": [
+        "2d23aa2b-91dd-4dd4-ac6b-d80a63145b36"
+      ],
+      "completes_at": "2026-03-05T00:53:20.764789300Z",
+      "resolved": false
+    }
+  ],
   "missions": [
     {
       "id": "28ec4a8a-333b-475c-90b8-1c8b330b9ef0",
