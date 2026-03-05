@@ -13,6 +13,7 @@ use eframe::egui;
 
 use uuid::Uuid;
 
+use crate::garden::{draw_garden, Garden};
 use crate::log_engine::{format_log_entry, generate_narrative};
 use crate::models::{AarOutcome, Deployment, Mission, Operator, OperatorState};
 use crate::persistence::{save, GameState};
@@ -32,10 +33,23 @@ pub struct OperatorApp {
     status_msg: String,
     /// Scrollable narrative log. New entries prepended (newest first).
     combat_log: Vec<String>,
+    /// The living Shepherd's Garden background simulation.
+    garden: Garden,
+    /// Slime selected via clicking the garden.
+    pub selected_slime_id: Option<Uuid>,
+    /// Which panel is active on the left: Roster (Manifest) or Incubator.
+    pub left_tab: LeftTab,
+}
+
+#[derive(PartialEq)]
+pub enum LeftTab {
+    Manifest,
+    Incubator,
 }
 
 impl OperatorApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, state: GameState, save_path: PathBuf) -> Self {
+        let garden = Garden::from_genomes(&state.slimes, egui::Rect::EVERYTHING);
         Self {
             state,
             save_path,
@@ -43,6 +57,9 @@ impl OperatorApp {
             staged_operators: HashSet::new(),
             status_msg: String::from("Welcome to OPERATOR. Select a contract, then stage your squad."),
             combat_log: Vec::new(),
+            garden,
+            selected_slime_id: None,
+            left_tab: LeftTab::Manifest,
         }
     }
 
@@ -483,6 +500,40 @@ impl eframe::App for OperatorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Redraw every 100ms — animates progress bars without a background thread.
         ctx.request_repaint_after(std::time::Duration::from_millis(100));
+
+        // Make panels translucent
+        let mut style = (*ctx.style()).clone();
+        style.visuals.panel_fill = egui::Color32::from_rgba_unmultiplied(20, 20, 25, 230);
+        ctx.set_style(style);
+
+        // Background Garden
+        let t = ctx.input(|i| i.time as f32);
+        let cursor = ctx.input(|i| i.pointer.hover_pos());
+        let screen_rect = ctx.screen_rect();
+
+        // Advance garden simulation
+        self.garden.tick(0.1, cursor, screen_rect);
+
+        // Intercept clicks in empty space for selecting garden slimes
+        if ctx.input(|i| i.pointer.primary_clicked()) && !ctx.wants_pointer_input() {
+            if let Some(pos) = ctx.input(|i| i.pointer.interact_pos()) {
+                if let Some(id) = self.garden.handle_click(pos) {
+                    self.selected_slime_id = Some(id);
+                    // Switch to Manifest to show the card
+                    self.left_tab = LeftTab::Manifest;
+                } else {
+                    self.selected_slime_id = None;
+                }
+            }
+        }
+
+        // Draw garden layer beneath UI
+        egui::Area::new("garden_bg")
+            .order(egui::Order::Background)
+            .show(ctx, |ui| {
+                let genome_map = self.state.slimes.iter().map(|g| (g.id, g)).collect();
+                draw_garden(ui.painter(), screen_rect, &genome_map, &self.garden, t);
+            });
 
         // Top status bar
         egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
