@@ -7,3 +7,4 @@ pub mod models;
 pub mod persistence;
 pub mod racing;
 pub mod ui;
+pub mod world_map;

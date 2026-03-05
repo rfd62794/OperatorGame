@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::genetics::{GeneticTier, SlimeGenome};
 use crate::models::{Deployment, Mission, Operator};
+use crate::world_map::WorldMap;
 
 // ---------------------------------------------------------------------------
 // Error type
@@ -107,6 +108,10 @@ pub struct GameState {
     /// 0 = emergency power only; 8 = ship fully restored (endgame).
     #[serde(default)]
     pub tech_tier: u8,
+    /// The living planet map — 15 nodes, faction influence, expedition sites.
+    /// Populated with a fresh fixed-seed map when absent from save (ADR-014).
+    #[serde(default)]
+    pub world_map: WorldMap,
 }
 
 impl GameState {
