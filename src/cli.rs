@@ -74,12 +74,22 @@ pub enum Commands {
 
 fn parse_job(s: &str) -> Result<crate::models::Job, String> {
     match s.to_lowercase().as_str() {
-        "breacher" | "b" => Ok(crate::models::Job::Breacher),
+        "breacher" | "b"    => Ok(crate::models::Job::Breacher),
         "infiltrator" | "i" => Ok(crate::models::Job::Infiltrator),
-        "analyst" | "a" => Ok(crate::models::Job::Analyst),
-        _ => Err(format!(
-            "Unknown job '{}'. Choose: breacher, infiltrator, analyst",
-            s
-        )),
+        "analyst" | "a"     => Ok(crate::models::Job::Analyst),
+        _ => Err(format!("Unknown job '{}'. Choose: breacher, infiltrator, analyst", s)),
+    }
+}
+
+fn parse_culture(s: &str) -> Result<crate::genetics::Culture, String> {
+    match s.to_lowercase().as_str() {
+        "ember"   | "e" => Ok(crate::genetics::Culture::Ember),
+        "gale"    | "g" => Ok(crate::genetics::Culture::Gale),
+        "marsh"   | "m" => Ok(crate::genetics::Culture::Marsh),
+        "crystal" | "c" => Ok(crate::genetics::Culture::Crystal),
+        "tundra"  | "t" => Ok(crate::genetics::Culture::Tundra),
+        "tide"    | "d" => Ok(crate::genetics::Culture::Tide),
+        "void"    | "v" => Ok(crate::genetics::Culture::Void),
+        _ => Err(format!("Unknown culture '{}'. Choose: ember, gale, marsh, crystal, tundra, tide, void", s)),
     }
 }
