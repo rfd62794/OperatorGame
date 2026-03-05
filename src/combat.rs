@@ -488,4 +488,58 @@ mod tests {
         assert_eq!(D20::modifier_from_coverage(0.5), -5);
         assert_eq!(D20::modifier_from_coverage(0.0), -10);
     }
+
+    // --- TurnOrderManager ---
+    #[test]
+    fn turn_order_sorts_by_speed_descending() {
+        let mut manager = TurnOrderManager::new();
+        let mut r = rng();
+        manager.add_combatant("slow",   20.0, &mut r);
+        manager.add_combatant("fast",   80.0, &mut r);
+        manager.add_combatant("medium", 50.0, &mut r);
+        // First actor should be fastest
+        assert_eq!(manager.queue[0].speed, 80.0);
+    }
+
+    #[test]
+    fn next_turn_cycles_through_queue() {
+        let mut manager = TurnOrderManager::new();
+        let mut r = rng();
+        manager.add_combatant("a", 10.0, &mut r);
+        manager.add_combatant("b", 10.0, &mut r);
+        let first  = manager.next_turn().unwrap().to_string();
+        let second = manager.next_turn().unwrap().to_string();
+        let third  = manager.next_turn().unwrap().to_string();
+        // After two unique actors, should cycle back
+        assert_ne!(first, second);
+        assert_eq!(first, third);
+    }
+
+    #[test]
+    fn remove_combatant_shrinks_queue() {
+        let mut manager = TurnOrderManager::new();
+        let mut r = rng();
+        manager.add_combatant("a", 50.0, &mut r);
+        manager.add_combatant("b", 30.0, &mut r);
+        assert_eq!(manager.len(), 2);
+        manager.remove_combatant("a");
+        assert_eq!(manager.len(), 1);
+        assert_eq!(manager.queue[0].id, "b");
+    }
+
+    #[test]
+    fn reset_clears_queue() {
+        let mut manager = TurnOrderManager::new();
+        let mut r = rng();
+        manager.add_combatant("a", 50.0, &mut r);
+        manager.reset();
+        assert!(manager.is_empty());
+        assert_eq!(manager.current_index, 0);
+    }
+
+    #[test]
+    fn next_turn_returns_none_on_empty() {
+        let mut manager = TurnOrderManager::new();
+        assert_eq!(manager.next_turn(), None);
+    }
 }

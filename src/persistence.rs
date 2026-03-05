@@ -103,6 +103,10 @@ pub struct GameState {
     /// Genomes currently incubating in the Bio-Incubator (ADR-010).
     #[serde(default)]
     pub incubating: Vec<IncubatingGenome>,
+    /// Crashed Ship repair tier (0–8). Gates demo unlock (ADR-013).
+    /// 0 = emergency power only; 8 = ship fully restored (endgame).
+    #[serde(default)]
+    pub tech_tier: u8,
 }
 
 impl GameState {
