@@ -1,0 +1,7 @@
+[build]
+# The entry HTML template that trunk injects the WASM bundle into.
+target = "index.html"
+# Output directory for the built web bundle.
+dist   = "dist"
+# Set to "/" for local dev; override with CDN path for production deploys.
+public_url = "/"
