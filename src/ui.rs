@@ -528,7 +528,7 @@ impl eframe::App for OperatorApp {
         }
 
         // Draw garden layer beneath UI
-        egui::Area::new("garden_bg")
+        egui::Area::new(egui::Id::new("garden_bg"))
             .order(egui::Order::Background)
             .show(ctx, |ui| {
                 let genome_map = self.state.slimes.iter().map(|g| (g.id, g)).collect();
