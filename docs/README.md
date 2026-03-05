@@ -8,7 +8,7 @@
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [GDD.md](GDD.md) | Game feel, systems, tone, player experience | ✅ Current (v2.0) |
+| [GDD.md](GDD.md) | Game feel, systems, tone, conquest vision | ✅ Current (v2.0) |
 
 ---
 
@@ -16,8 +16,8 @@
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [CONSTITUTION.md](CONSTITUTION.md) | Non-negotiable governing principles | ✅ Locked v1.0 |
-| [SPEC.md](SPEC.md) | Domain entity contracts + formulas | ✅ Current (v2.0) |
+| [../CONSTITUTION.md](../CONSTITUTION.md) | Non-negotiable governing principles | ✅ Locked v1.0 |
+| [../SPEC.md](../SPEC.md) | Domain entity contracts + formulas | ✅ Current (v2.0) |
 | [sdd/PLAN.md](sdd/PLAN.md) | Module map, dependencies, test coverage | ✅ Current (v2.0) |
 
 ---
@@ -30,15 +30,25 @@
 | [ADR-002](adr/ADR-002-timestamp-over-countdown.md) | Timestamp-based offline timers | ✅ Accepted |
 | [ADR-003](adr/ADR-003-atomic-save.md) | Atomic `.tmp` → rename save strategy | ✅ Accepted |
 | [ADR-004](adr/ADR-004-success-formula.md) | Per-attribute scoring formula | ✅ Accepted |
-| [ADR-005 *(pending)*](adr/) | Genetics hex-wheel culture system | 🔄 Sprint 1 |
+| [ADR-005](adr/ADR-005-culture-hex-wheel.md) | Culture hex-wheel genetics system | ✅ Accepted (Sprint 1) |
 
 ---
 
-## 🔬 Functional Blueprints
+## 🗺️ Sprint Roadmap
+
+| Sprint | Document | Status |
+|--------|---------|--------|
+| S1: Genetics Engine | [roadmap/SPRINT-1-GENETICS.md](roadmap/SPRINT-1-GENETICS.md) | ✅ Shipped |
+| S2: D20 Combat Core | [roadmap/SPRINT-2-COMBAT.md](roadmap/SPRINT-2-COMBAT.md) | 🔄 Next |
+| S3: Island Expedition | [roadmap/SPRINT-3-EXPEDITION.md](roadmap/SPRINT-3-EXPEDITION.md) | ⬜ Planned |
+
+---
+
+## 🔬 Reference
 
 | Document | Purpose |
 |----------|---------|
-| [SLIME_RUST_BLUEPRINT.md](SLIME_RUST_BLUEPRINT.md) | rpgCore systemic audit → Rust transplant spec |
+| [SLIME_BLUEPRINT.md](SLIME_BLUEPRINT.md) | rpgCore v1 systemic audit → Rust transplant spec |
 
 ---
 
@@ -46,7 +56,9 @@
 
 ```
 Is it about how a player FEELS?  →  GDD.md
-Is it about how a system WORKS?  →  SPEC.md
+Is it about how a system WORKS?  →  SPEC.md (root)
 Is it about WHY we chose X?      →  ADR-00N
 Is it about where code LIVES?    →  sdd/PLAN.md
+Is it about what's next?         →  roadmap/SPRINT-N
 ```
+
