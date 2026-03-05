@@ -7,5 +7,6 @@ pub mod log_engine;
 pub mod models;
 pub mod persistence;
 pub mod racing;
+pub mod render;
 pub mod ui;
 pub mod world_map;
