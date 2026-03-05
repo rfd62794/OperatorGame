@@ -89,11 +89,11 @@ impl GardenAgent {
     /// Build a new garden agent from a genome. `spawn` is the initial
     /// position in garden-local coordinates.
     pub fn new(genome: &SlimeGenome, spawn: Pos2, level: u32, dispatched: bool) -> Self {
-        // Derive personality axes from genome stats (same formula as SlimeVisual)
-        let energy    = (genome.base_spd / 200.0).clamp(0.0, 1.0);
-        let shyness   = 1.0 - (genome.base_atk / 200.0).clamp(0.0, 1.0);
-        let affection = (genome.base_hp / 250.0).clamp(0.0, 1.0);
-        let curiosity = (genome.base_spd / (genome.base_hp + 1.0)).clamp(0.0, 2.0) / 2.0;
+        // Use the real personality axes from the genome (they're stored there directly)
+        let energy    = genome.energy.clamp(0.0, 1.0);
+        let shyness   = genome.shyness.clamp(0.0, 1.0);
+        let affection = genome.affection.clamp(0.0, 1.0);
+        let curiosity = genome.curiosity.clamp(0.0, 1.0);
 
         let mood = derive_mood(energy, shyness, affection, curiosity);
 
@@ -379,15 +379,20 @@ pub fn draw_garden(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::genetics::{Culture, SlimeGenome};
+    use crate::genetics::{Culture, generate_random};
+    use rand::SeedableRng;
+    use rand::rngs::SmallRng;
 
-    fn test_genome(hp: f32, atk: f32, spd: f32) -> SlimeGenome {
-        SlimeGenome {
-            base_hp:  hp,
-            base_atk: atk,
-            base_spd: spd,
-            ..SlimeGenome::default()
-        }
+    fn rng() -> SmallRng { SmallRng::seed_from_u64(42) }
+
+    fn test_genome_with_personality(energy: f32, shyness: f32, affection: f32, curiosity: f32) -> SlimeGenome {
+        let mut r = rng();
+        let mut g = generate_random(Culture::Ember, "Test", &mut r);
+        g.energy    = energy;
+        g.shyness   = shyness;
+        g.affection = affection;
+        g.curiosity = curiosity;
+        g
     }
 
     fn test_rect() -> Rect {
@@ -396,7 +401,8 @@ mod tests {
 
     #[test]
     fn agent_spawns_within_rect() {
-        let g    = test_genome(100.0, 100.0, 100.0);
+        let mut r = rng();
+        let g    = generate_random(Culture::Ember, "Test", &mut r);
         let rect = test_rect();
         let agent = GardenAgent::new(&g, rect.center(), 1, false);
         assert!(rect.contains(agent.pos));
@@ -404,48 +410,42 @@ mod tests {
 
     #[test]
     fn mood_sleepy_when_low_energy() {
-        // SPD/200 → energy; HP=250, ATK=1 → energy = 20/200 = 0.10
-        let g    = test_genome(250.0, 1.0, 20.0);
-        let rect = test_rect();
-        let a    = GardenAgent::new(&g, rect.center(), 1, false);
-        assert_eq!(a.mood, SlimeMood::Sleepy);
-    }
-
-    #[test]
-    fn mood_shy_when_low_atk() {
-        // shyness = 1 - (atk/200); atk=5 → shyness=0.975 > 0.7  → Shy
-        // energy = spd/200 = 100/200 = 0.5 (not Sleepy)
-        let g = test_genome(100.0, 5.0, 100.0);
+        let g = test_genome_with_personality(0.1, 0.3, 0.3, 0.3);
         let a = GardenAgent::new(&g, test_rect().center(), 1, false);
-        assert_eq!(a.mood, SlimeMood::Shy);
+        assert_eq!(a.mood, SlimeMood::Sleepy, "energy=0.1 should be Sleepy");
     }
 
     #[test]
-    fn mood_playful_when_high_hp() {
-        // affection = hp/250 > 0.7 when hp > 175
-        // Need energy >= 0.3 (spd >= 60), shyness <= 0.7 (atk >= 60)
-        let g = test_genome(200.0, 100.0, 100.0);
+    fn mood_shy_when_high_shyness() {
+        let g = test_genome_with_personality(0.5, 0.9, 0.3, 0.3);
         let a = GardenAgent::new(&g, test_rect().center(), 1, false);
-        assert_eq!(a.mood, SlimeMood::Playful);
+        assert_eq!(a.mood, SlimeMood::Shy, "shyness=0.9 should be Shy");
     }
 
     #[test]
-    fn tick_moves_agent() {
-        let g    = test_genome(80.0, 150.0, 180.0); // high SPD → energetic Happy
+    fn mood_playful_when_high_affection() {
+        let g = test_genome_with_personality(0.5, 0.3, 0.9, 0.3);
+        let a = GardenAgent::new(&g, test_rect().center(), 1, false);
+        assert_eq!(a.mood, SlimeMood::Playful, "affection=0.9 should be Playful");
+    }
+
+    #[test]
+    fn tick_keeps_agent_in_bounds() {
+        let mut r = rng();
+        let g    = generate_random(Culture::Gale, "SpeedTest", &mut r);
         let rect = test_rect();
         let mut garden = Garden::from_genomes(&[g], rect);
-        let pos_before = garden.agents[0].pos;
-        // Tick several times to let wander timer fire + movement accumulate
-        for _ in 0..60 { garden.tick(0.016, None, rect); }
-        let pos_after = garden.agents[0].pos;
-        // Not necessarily moved (could have zero wander target) — just assert in bounds
-        assert!(rect.contains(pos_after), "Agent escaped bounds: {:?}", pos_after);
-        let _ = pos_before;
+        for _ in 0..120 { garden.tick(0.016, None, rect); }
+        assert!(rect.contains(garden.agents[0].pos),
+            "Agent escaped bounds: {:?}", garden.agents[0].pos);
     }
 
     #[test]
-    fn garden_from_genomes_places_all() {
-        let gs: Vec<SlimeGenome> = (0..6).map(|_| SlimeGenome::default()).collect();
+    fn garden_from_genomes_populates_all() {
+        let mut r  = rng();
+        let gs: Vec<SlimeGenome> = (0..6).map(|i| {
+            generate_random(Culture::Crystal, &format!("Slime{i}"), &mut r)
+        }).collect();
         let rect = test_rect();
         let g = Garden::from_genomes(&gs, rect);
         assert_eq!(g.agents.len(), 6);
@@ -453,23 +453,26 @@ mod tests {
     }
 
     #[test]
-    fn click_selects_agent() {
-        let g = test_genome(100.0, 100.0, 100.0);
+    fn click_hit_selects_agent() {
+        let mut r = rng();
+        let g = generate_random(Culture::Ember, "Clicky", &mut r);
         let rect = test_rect();
         let mut garden = Garden::from_genomes(&[g], rect);
         let pos = garden.agents[0].pos;
         let hit = garden.handle_click(pos);
-        assert!(hit.is_some());
+        assert!(hit.is_some(), "Click on slime centre should select it");
         assert_eq!(garden.selected, hit);
     }
 
     #[test]
     fn click_miss_deselects() {
-        let g = test_genome(100.0, 100.0, 100.0);
+        let mut r = rng();
+        let g = generate_random(Culture::Ember, "Miss", &mut r);
         let rect = test_rect();
         let mut garden = Garden::from_genomes(&[g], rect);
         garden.selected = Some(garden.agents[0].genome_id);
-        let hit = garden.handle_click(Pos2::new(390.0, 290.0)); // far corner
+        // Click far corner — should miss
+        let hit = garden.handle_click(Pos2::new(395.0, 295.0));
         assert!(hit.is_none());
         assert_eq!(garden.selected, None);
     }
