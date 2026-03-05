@@ -1,3 +1,236 @@
-fn main() {
-    println!("Hello, world!");
+/// main.rs — OPERATOR entry point.
+///
+/// Loads GameState → parses CLI → dispatches command → saves state.
+/// All missions tick passively via `Deployment::is_complete()`.
+use clap::Parser;
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
+
+use operator::cli::{Cli, Commands};
+use operator::models::{AarOutcome, Deployment, Job, Operator, OperatorState};
+use operator::persistence::{load, save, save_path};
+
+#[tokio::main]
+async fn main() {
+    let path = save_path();
+    let mut state = match load(&path) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("FATAL: Could not load save file: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    // Tick injury recovery on every launch — free state cleanup.
+    for op in &mut state.roster {
+        op.tick_recovery();
+    }
+
+    let cli = Cli::parse();
+    let mut rng = SmallRng::from_entropy();
+
+    match cli.command {
+        // -----------------------------------------------------------------------
+        Commands::Roster => {
+            if state.roster.is_empty() {
+                println!("No operators hired. Use `operator hire <name> <job>` to recruit.");
+            } else {
+                println!("=== OPERATOR ROSTER ({}) ===", state.roster.len());
+                for op in &state.roster {
+                    println!("  {op}");
+                }
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        Commands::Hire { name, job } => {
+            // Generate balanced random stats based on job archetype
+            use rand::Rng;
+            let (s, a, i): (u32, u32, u32) = match job {
+                Job::Breacher    => (rng.gen_range(50..80), rng.gen_range(20..50), rng.gen_range(10..30)),
+                Job::Infiltrator => (rng.gen_range(20..50), rng.gen_range(50..80), rng.gen_range(20..40)),
+                Job::Analyst     => (rng.gen_range(10..30), rng.gen_range(20..40), rng.gen_range(50..80)),
+            };
+            let op = Operator::new(&name, job, s, a, i);
+            println!("Hired: {op}");
+            state.roster.push(op);
+        }
+
+        // -----------------------------------------------------------------------
+        Commands::Missions => {
+            if state.missions.is_empty() {
+                println!("No missions available.");
+            } else {
+                println!("=== AVAILABLE MISSIONS ({}) ===", state.missions.len());
+                for m in &state.missions {
+                    println!("  {m}");
+                }
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        Commands::Deploy { mission_id_prefix, operator_id_prefixes } => {
+            // Resolve mission by short-ID prefix
+            let mission = state
+                .missions
+                .iter()
+                .find(|m| m.id.to_string().starts_with(&mission_id_prefix))
+                .cloned();
+
+            let Some(mission) = mission else {
+                eprintln!("Mission '{}' not found.", mission_id_prefix);
+                std::process::exit(1);
+            };
+
+            // Resolve operators by prefix, validate availability
+            let mut operator_ids = Vec::new();
+            let mut squad_display = Vec::new();
+
+            for prefix in &operator_id_prefixes {
+                let maybe = state
+                    .roster
+                    .iter_mut()
+                    .find(|o| o.id.to_string().starts_with(prefix.as_str()));
+
+                match maybe {
+                    None => {
+                        eprintln!("Operator '{}' not found.", prefix);
+                        std::process::exit(1);
+                    }
+                    Some(op) if !op.is_available() => {
+                        eprintln!("Operator '{}' is not available: {}", op.name, op.state);
+                        std::process::exit(1);
+                    }
+                    Some(op) => {
+                        op.state = OperatorState::Deployed(mission.id);
+                        operator_ids.push(op.id);
+                        squad_display.push(op.name.clone());
+                    }
+                }
+            }
+
+            // Preview success rate before locking in
+            let squad_refs: Vec<&Operator> = state
+                .roster
+                .iter()
+                .filter(|o| operator_ids.contains(&o.id))
+                .collect();
+            let rate = mission.calculate_success_rate(&squad_refs);
+
+            let deployment = Deployment::start(&mission, operator_ids);
+            let eta = mission.duration_secs;
+            println!(
+                "DEPLOYED: [{}] → Mission: '{}' | Squad: {} | Success: {:.0}% | ETA: {}s",
+                &deployment.id.to_string()[..8],
+                mission.name,
+                squad_display.join(", "),
+                rate * 100.0,
+                eta,
+            );
+
+            state.deployments.push(deployment);
+        }
+
+        // -----------------------------------------------------------------------
+        Commands::Aar => {
+            let completed: Vec<usize> = state
+                .deployments
+                .iter()
+                .enumerate()
+                .filter(|(_, d)| d.is_complete() && !d.resolved)
+                .map(|(i, _)| i)
+                .collect();
+
+            if completed.is_empty() {
+                println!("No deployments ready for AAR.");
+            } else {
+                for idx in completed {
+                    let deployment = &mut state.deployments[idx];
+                    let mission = state
+                        .missions
+                        .iter()
+                        .find(|m| m.id == deployment.mission_id)
+                        .cloned();
+
+                    let Some(mission) = mission else { continue; };
+
+                    let squad_ids = deployment.operator_ids.clone();
+                    let squad: Vec<&Operator> = state
+                        .roster
+                        .iter()
+                        .filter(|o| squad_ids.contains(&o.id))
+                        .collect();
+
+                    let outcome = deployment.resolve(&mission, &squad, &mut rng);
+                    deployment.resolved = true;
+
+                    println!("=== AAR: {} ===", mission.name);
+                    match &outcome {
+                        AarOutcome::Victory { reward } => {
+                            state.bank += reward;
+                            println!("  ✅ VICTORY! +${reward} | Bank: ${}", state.bank);
+                            // Return squad to Idle
+                            for op in state.roster.iter_mut() {
+                                if squad_ids.contains(&op.id) {
+                                    op.state = OperatorState::Idle;
+                                }
+                            }
+                        }
+                        AarOutcome::Failure { injured_ids } => {
+                            let recovery = mission.duration_secs * 2;
+                            let recover_at = chrono::Utc::now()
+                                + chrono::Duration::seconds(recovery as i64);
+                            println!("  ❌ FAILURE. Operators injured for {}s.", recovery);
+                            for op in state.roster.iter_mut() {
+                                if injured_ids.contains(&op.id) {
+                                    println!("     ↳ {} is injured.", op.name);
+                                    op.state = OperatorState::Injured(recover_at);
+                                }
+                            }
+                        }
+                        AarOutcome::CriticalFailure { killed_id } => {
+                            println!("  ☠ CRITICAL FAILURE! One operator did not make it out.");
+                            if let Some(pos) = state.roster.iter().position(|o| &o.id == killed_id) {
+                                println!("     ↳ {} is KIA.", state.roster[pos].name);
+                                state.roster.remove(pos);
+                            }
+                        }
+                    }
+                }
+                // Prune resolved deployments
+                state.deployments.retain(|d| !d.resolved);
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        Commands::Status => {
+            println!("=== STATUS ===");
+            println!("  Bank:        ${}", state.bank);
+            println!("  Roster:      {} operator(s)", state.roster.len());
+            println!("  Deployments: {} active", state.deployments.len());
+
+            for d in &state.deployments {
+                let remaining = (d.completes_at - chrono::Utc::now())
+                    .num_seconds()
+                    .max(0);
+                let mission_name = state
+                    .missions
+                    .iter()
+                    .find(|m| m.id == d.mission_id)
+                    .map(|m| m.name.as_str())
+                    .unwrap_or("Unknown");
+                println!(
+                    "    → [{}] '{}' — ETA: {}s",
+                    &d.id.to_string()[..8],
+                    mission_name,
+                    remaining,
+                );
+            }
+        }
+    }
+
+    // Persist state after every command — simple and safe at Tier 1.
+    if let Err(e) = save(&state, &path) {
+        eprintln!("WARNING: Could not save state: {e}");
+    }
 }
