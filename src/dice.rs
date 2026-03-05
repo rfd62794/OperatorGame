@@ -211,8 +211,13 @@ impl DieAnimState {
 
         // Shake decreases as we approach decel
         let intensity = (1.0 - t).max(0.0) * SHAKE_MAX;
-        self.shake_x = rng.gen_range(-intensity..intensity);
-        self.shake_y = rng.gen_range(-intensity..intensity);
+        if intensity > 0.0 {
+            self.shake_x = rng.gen_range(-intensity..intensity);
+            self.shake_y = rng.gen_range(-intensity..intensity);
+        } else {
+            self.shake_x = 0.0;
+            self.shake_y = 0.0;
+        }
 
         // Wobble squash
         self.squash  = 1.0 + (self.timer * 22.0).sin() * 0.07 * (1.0 - t);
@@ -410,8 +415,8 @@ mod tests {
         let mut die = DieAnimState::new(DieSides::D6);
         let mut r   = rng();
         die.roll(&mut r);
-        // Run for 10 seconds — should fully settle
-        for _ in 0..1000 { die.tick(0.01, &mut r); }
+        // Total cycle time: 0.55 + 0.30 + 0.28 + 1.4×1.6 = 3.37s → 500 steps at 0.01s = 5s
+        for _ in 0..500 { die.tick(0.01, &mut r); }
         assert_eq!(die.phase, DiePhase::Idle, "Die must return to Idle after full cycle");
     }
 
@@ -420,8 +425,12 @@ mod tests {
         let mut die = DieAnimState::new(DieSides::D12);
         let mut r   = rng();
         die.roll(&mut r);
-        // Fast-forward through landing
-        for _ in 0..200 { die.tick(0.01, &mut r); if die.phase == DiePhase::Settled { break; } }
+        // Fast-forward past Fast+Decel+Landing into Settled
+        // FAST=0.55 + DECEL=0.30 + LAND=0.28 = 1.13s → 120 steps at 0.01s
+        for _ in 0..200 {
+            die.tick(0.01, &mut r);
+            if die.phase == DiePhase::Settled { break; }
+        }
         assert_eq!(die.display, die.result, "Settled display must show actual result");
     }
 
