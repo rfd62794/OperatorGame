@@ -18,7 +18,7 @@
 /// 6. Status badges — dispatched arrow · exhaustion timer · elder crown (level≥10)
 /// 7. Selection ring — white outline + culture-colored outer ring
 
-use eframe::egui::{self, Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2};
+use eframe::egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2};
 use std::f32::consts::TAU;
 
 use crate::genetics::{Culture, GeneticTier, LifeStage, SlimeGenome};
