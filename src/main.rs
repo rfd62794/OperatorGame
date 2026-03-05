@@ -3,9 +3,6 @@
 /// Loads GameState → parses CLI → dispatches command → saves state.
 /// All missions tick passively via `Deployment::is_complete()`.
 use clap::Parser;
-use rand::rngs::SmallRng;
-use rand::SeedableRng;
-
 use operator::cli::{Cli, Commands};
 use operator::models::{AarOutcome, Deployment, Job, Operator, OperatorState};
 use operator::persistence::{load, save, save_path};
@@ -27,7 +24,7 @@ async fn main() {
     }
 
     let cli = Cli::parse();
-    let mut rng = SmallRng::from_entropy();
+    let mut rng = rand::thread_rng();
 
     match cli.command {
         // -----------------------------------------------------------------------

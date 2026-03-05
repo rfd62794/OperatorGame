@@ -1,0 +1,67 @@
+{
+  "roster": [
+    {
+      "id": "2d23aa2b-91dd-4dd4-ac6b-d80a63145b36",
+      "name": "Ghost",
+      "job": "Infiltrator",
+      "base_strength": 47,
+      "base_agility": 55,
+      "base_intelligence": 28,
+      "state": "Idle"
+    }
+  ],
+  "bank": 0,
+  "deployments": [],
+  "missions": [
+    {
+      "id": "28ec4a8a-333b-475c-90b8-1c8b330b9ef0",
+      "name": "Bank Heist Recon",
+      "req_strength": 20,
+      "req_agility": 30,
+      "req_intelligence": 10,
+      "difficulty": 0.1,
+      "duration_secs": 60,
+      "reward": 500
+    },
+    {
+      "id": "ecf92458-e9be-4eca-8781-07a55a1f5ace",
+      "name": "Corporate Espionage",
+      "req_strength": 10,
+      "req_agility": 20,
+      "req_intelligence": 50,
+      "difficulty": 0.25,
+      "duration_secs": 120,
+      "reward": 1200
+    },
+    {
+      "id": "5b076a80-8aea-4c50-8158-7458f597647b",
+      "name": "Harbour Extraction",
+      "req_strength": 40,
+      "req_agility": 20,
+      "req_intelligence": 10,
+      "difficulty": 0.2,
+      "duration_secs": 90,
+      "reward": 800
+    },
+    {
+      "id": "f2e8c682-f310-4acb-b549-945448b71c8f",
+      "name": "Zero-Day Exploit",
+      "req_strength": 10,
+      "req_agility": 10,
+      "req_intelligence": 70,
+      "difficulty": 0.4,
+      "duration_secs": 180,
+      "reward": 2500
+    },
+    {
+      "id": "9c227643-d8ad-4798-9c72-909a2ee1f6de",
+      "name": "Black Site Breach",
+      "req_strength": 60,
+      "req_agility": 40,
+      "req_intelligence": 20,
+      "difficulty": 0.5,
+      "duration_secs": 300,
+      "reward": 5000
+    }
+  ]
+}
