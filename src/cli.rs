@@ -43,6 +43,9 @@ pub enum Commands {
 
     /// Show bank balance and active deployments.
     Status,
+
+    /// Launch the graphical War Room dashboard.
+    Gui,
 }
 
 fn parse_job(s: &str) -> Result<crate::models::Job, String> {
