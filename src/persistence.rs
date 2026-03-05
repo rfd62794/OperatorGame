@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::genetics::SlimeGenome;
 use crate::models::{Deployment, Mission, Operator};
 
 // ---------------------------------------------------------------------------
@@ -25,22 +26,17 @@ pub enum PersistenceError {
 impl std::fmt::Display for PersistenceError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PersistenceError::Io(e) => write!(f, "I/O error: {e}"),
+            PersistenceError::Io(e)   => write!(f, "I/O error: {e}"),
             PersistenceError::Json(e) => write!(f, "JSON error: {e}"),
         }
     }
 }
 
 impl From<std::io::Error> for PersistenceError {
-    fn from(e: std::io::Error) -> Self {
-        PersistenceError::Io(e)
-    }
+    fn from(e: std::io::Error) -> Self { PersistenceError::Io(e) }
 }
-
 impl From<serde_json::Error> for PersistenceError {
-    fn from(e: serde_json::Error) -> Self {
-        PersistenceError::Json(e)
-    }
+    fn from(e: serde_json::Error) -> Self { PersistenceError::Json(e) }
 }
 
 // ---------------------------------------------------------------------------
@@ -57,6 +53,9 @@ pub struct GameState {
     pub deployments: Vec<Deployment>,
     /// Static mission pool. Populated from seed data if absent.
     pub missions: Vec<Mission>,
+    /// Slime stable — persists across sessions (fixes the Python persistence gap).
+    #[serde(default)]
+    pub slimes: Vec<SlimeGenome>,
 }
 
 impl GameState {

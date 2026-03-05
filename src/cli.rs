@@ -46,6 +46,30 @@ pub enum Commands {
 
     /// Launch the graphical War Room dashboard.
     Gui,
+
+    // ── Genetics ─────────────────────────────────────────────────────────────
+
+    /// List the slime stable (all genomes in your collection).
+    Slimes,
+
+    /// Hatch a new slime from a cultural archetype.
+    Hatch {
+        /// Name for the new slime.
+        name: String,
+        /// Culture: ember | gale | marsh | crystal | tundra | tide | void
+        #[arg(value_parser = parse_culture)]
+        culture: crate::genetics::Culture,
+    },
+
+    /// Splice two slimes to produce an offspring.
+    Splice {
+        /// Short ID prefix of the first parent (≥4 chars).
+        parent_a_prefix: String,
+        /// Short ID prefix of the second parent (≥4 chars).
+        parent_b_prefix: String,
+        /// Name for the offspring.
+        offspring_name: String,
+    },
 }
 
 fn parse_job(s: &str) -> Result<crate::models::Job, String> {
