@@ -19,6 +19,7 @@
 /// 7. Selection ring — white outline + culture-colored outer ring
 
 use eframe::egui::{self, Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2};
+use eframe::epaint::PathShape;
 use std::f32::consts::TAU;
 
 use crate::genetics::{Culture, GeneticTier, LifeStage, SlimeGenome};
@@ -368,20 +369,18 @@ fn draw_body(painter: &Painter, center: Pos2, r: f32, vis: &SlimeVisual) {
             painter.rect_filled(rect, 4.0, col);
         }
         SlimeShape::Elongated => {
-            // Wide ellipse: approximate with scaled shape
             let w = r * 1.55;
             let h = r * 0.85;
-            painter.add(Shape::convex_hull(ellipse_points(center, w, h, 18), col));
+            let pts = ellipse_points(center, w, h, 18);
+            painter.add(Shape::Path(PathShape::closed(pts, (1.0, col), (0.0, col))));
         }
         SlimeShape::Crystalline => {
-            // Regular hexagon
             let pts = regular_polygon(center, r, 6, 0.0);
-            painter.add(Shape::convex_hull(pts, col));
+            painter.add(Shape::Path(PathShape::closed(pts, (1.0, col), (0.0, col))));
         }
         SlimeShape::Amorphous => {
-            // 12-point boundary warped by sine — the "living blob"
             let pts = amorphous_points(center, r, vis.wobble_phase, vis.wobble_amp);
-            painter.add(Shape::convex_hull(pts, col));
+            painter.add(Shape::Path(PathShape::closed(pts, (1.0, col), (0.0, col))));
         }
     }
 
@@ -490,7 +489,7 @@ fn draw_accessory(painter: &Painter, center: Pos2, r: f32, vis: &SlimeVisual) {
                     Pos2::new(cx,       cy + 5.0),
                     Pos2::new(cx - 5.0, cy),
                 ];
-                painter.add(Shape::convex_hull(diamond, crystal_col));
+                painter.add(Shape::Path(PathShape::closed(diamond, (1.0, crystal_col), (0.0, crystal_col))));
             }
         }
         SlimeAccessory::Scar => {
@@ -521,12 +520,9 @@ fn draw_elder_crown(painter: &Painter, center: Pos2, r: f32, alpha: u8) {
     ];
     let fill_col  = Color32::from_rgba_unmultiplied(255, 215, 0, alpha);
     let rim_col   = Color32::from_rgba_unmultiplied(200, 160, 0, alpha);
-    // Fill base
-    painter.add(egui::Shape::convex_hull(
-        vec![pts[0], pts[1], pts[2], pts[3], pts[4]],
-        fill_col,
-    ));
-    // Rim
+    // Fill base as open path (not a closed convex hull — jagged crown)
+    painter.add(Shape::Path(PathShape::closed(pts.clone(), (1.5, rim_col), (0.0, fill_col))));
+    // Rim lines
     for w in pts.windows(2) {
         painter.line_segment([w[0], w[1]], Stroke::new(1.5, rim_col));
     }
