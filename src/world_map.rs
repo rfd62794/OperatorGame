@@ -549,7 +549,7 @@ impl WorldMap {
         let mut supplied = HashSet::new();
 
         // Find the highest-influence node per culture (the "capitol").
-        let mut capitols: HashMap<u8, usize> = HashMap::new();
+        let mut capitols: HashMap<usize, usize> = HashMap::new();
         for node in &self.nodes {
             if matches!(node.owner, Culture::Void) { continue; }
             let cidx = culture_index(node.owner);
@@ -624,8 +624,6 @@ pub enum SlimeCardStatus {
 impl SlimeProfileCard {
     /// Build a profile card from a SlimeGenome reference.
     pub fn from_genome(genome: &crate::genetics::SlimeGenome) -> Self {
-        use crate::genetics::{GeneticTier, LifeStage};
-
         let dominant = genome.dominant_culture();
         let accent   = culture_accent(dominant);
         let cooldown = genome.exhaustion_remaining()
