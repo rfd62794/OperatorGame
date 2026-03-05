@@ -8,9 +8,10 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::genetics::SlimeGenome;
+use crate::genetics::{GeneticTier, SlimeGenome};
 use crate::models::{Deployment, Mission, Operator};
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,49 @@ impl From<serde_json::Error> for PersistenceError {
     fn from(e: serde_json::Error) -> Self { PersistenceError::Json(e) }
 }
 
+/// A genome currently being synthesised in the Bio-Incubator (ADR-010).
+/// Collected by `operator incubate` once `completes_at` has passed.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IncubatingGenome {
+    /// The genome-in-progress.
+    pub genome:       SlimeGenome,
+    /// UTC timestamp when synthesis completes and the slime can be collected.
+    pub completes_at: DateTime<Utc>,
+}
+
+impl IncubatingGenome {
+    /// Create a new incubation entry. Duration follows ADR-010 tier table:
+    /// Blooded/Bordered: 900s | Sundered/Drifted: 1200s | Threaded: 1500s
+    /// Convergent: 1800s | Liminal: 2100s | Void: 2400s
+    pub fn new(genome: SlimeGenome) -> Self {
+        let base_secs = 900i64;
+        let tier_bonus = match genome.genetic_tier() {
+            GeneticTier::Blooded | GeneticTier::Bordered => 0,
+            GeneticTier::Sundered | GeneticTier::Drifted => 300,
+            GeneticTier::Threaded                        => 600,
+            GeneticTier::Convergent                      => 900,
+            GeneticTier::Liminal                         => 1200,
+            GeneticTier::Void                            => 1500,
+        };
+        let duration_secs = base_secs + tier_bonus;
+        Self {
+            genome,
+            completes_at: Utc::now() + chrono::Duration::seconds(duration_secs),
+        }
+    }
+
+    /// True if incubation has finished and the slime is ready to collect.
+    pub fn is_ready(&self) -> bool {
+        Utc::now() >= self.completes_at
+    }
+
+    /// Remaining seconds of incubation, or 0 if complete.
+    pub fn remaining_secs(&self) -> i64 {
+        let rem = (self.completes_at - Utc::now()).num_seconds();
+        rem.max(0)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // GameState — the single source of truth serialised to disk
 // ---------------------------------------------------------------------------
@@ -56,6 +100,9 @@ pub struct GameState {
     /// Slime stable — persists across sessions (fixes the Python persistence gap).
     #[serde(default)]
     pub slimes: Vec<SlimeGenome>,
+    /// Genomes currently incubating in the Bio-Incubator (ADR-010).
+    #[serde(default)]
+    pub incubating: Vec<IncubatingGenome>,
 }
 
 impl GameState {

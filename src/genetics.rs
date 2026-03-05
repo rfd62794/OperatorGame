@@ -756,6 +756,7 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
         base_color:    [rng.gen_range(50..=255), rng.gen_range(50..=255), rng.gen_range(50..=255)],
         pattern_color: [rng.gen_range(50..=255), rng.gen_range(50..=255), rng.gen_range(50..=255)],
         name:          name.to_string(),
+        synthesis_cooldown_until: None,
     }
 }
 
