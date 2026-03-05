@@ -228,6 +228,8 @@ impl OperatorApp {
             return;
         }
 
+        let mut harvested = Vec::new();
+
         // Draw multiple test tubes
         for inc in &self.state.incubating {
             let ready = inc.is_ready();
@@ -243,9 +245,9 @@ impl OperatorApp {
                             ui.label(egui::RichText::new(format!("Synthesizing: {}", inc.genome.name)).strong());
                             if ready {
                                 ui.colored_label(egui::Color32::from_rgb(100, 255, 100), "READY FOR HARVEST");
-                                // We simulate the CLI command by pushing a command
-                                // but we haven't implemented harvest in ui.rs natively yet.
-                                ui.label(egui::RichText::new("Run `operator incubate` in CLI to collect").small().color(egui::Color32::YELLOW));
+                                if ui.button("Harvest").clicked() {
+                                    harvested.push(inc.genome.id);
+                                }
                             } else {
                                 ui.label(format!("Time remaining: {}s", rem));
                             }
@@ -253,6 +255,24 @@ impl OperatorApp {
                     });
                 });
             ui.add_space(6.0);
+        }
+
+        if !harvested.is_empty() {
+            // Move genomes from incubating to slimes
+            let mut new_slimes = Vec::new();
+            self.state.incubating.retain(|inc| {
+                if harvested.contains(&inc.genome.id) {
+                    new_slimes.push(inc.genome.clone());
+                    false
+                } else {
+                    true
+                }
+            });
+            self.state.slimes.extend(new_slimes);
+            
+            // Re-sync garden to ensure new slimes wander immediately
+            self.garden = crate::garden::Garden::from_genomes(&self.state.slimes, ui.max_rect());
+            self.persist();
         }
     }
 

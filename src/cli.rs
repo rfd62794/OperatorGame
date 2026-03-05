@@ -70,6 +70,9 @@ pub enum Commands {
         /// Name for the offspring.
         offspring_name: String,
     },
+
+    /// Collect finished genomes from the Bio-Incubator.
+    Incubate,
 }
 
 fn parse_job(s: &str) -> Result<crate::models::Job, String> {
