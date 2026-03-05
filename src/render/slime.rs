@@ -19,7 +19,6 @@
 /// 7. Selection ring — white outline + culture-colored outer ring
 
 use eframe::egui::{self, Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2};
-use eframe::epaint::PathShape;
 use std::f32::consts::TAU;
 
 use crate::genetics::{Culture, GeneticTier, LifeStage, SlimeGenome};
@@ -489,7 +488,7 @@ fn draw_accessory(painter: &Painter, center: Pos2, r: f32, vis: &SlimeVisual) {
                     Pos2::new(cx,       cy + 5.0),
                     Pos2::new(cx - 5.0, cy),
                 ];
-                painter.add(Shape::Path(PathShape::closed(diamond, (1.0, crystal_col), (0.0, crystal_col))));
+                painter.add(Shape::convex_polygon(diamond, crystal_col, Stroke::NONE));
             }
         }
         SlimeAccessory::Scar => {
@@ -520,8 +519,8 @@ fn draw_elder_crown(painter: &Painter, center: Pos2, r: f32, alpha: u8) {
     ];
     let fill_col  = Color32::from_rgba_unmultiplied(255, 215, 0, alpha);
     let rim_col   = Color32::from_rgba_unmultiplied(200, 160, 0, alpha);
-    // Fill base as open path (not a closed convex hull — jagged crown)
-    painter.add(Shape::Path(PathShape::closed(pts.clone(), (1.5, rim_col), (0.0, fill_col))));
+    // Fill base as filled polygon
+    painter.add(Shape::convex_polygon(pts.clone(), fill_col, Stroke::new(1.5, rim_col)));
     // Rim lines
     for w in pts.windows(2) {
         painter.line_segment([w[0], w[1]], Stroke::new(1.5, rim_col));
