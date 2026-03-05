@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use chrono::{Duration, Utc};
 use eframe::egui;
-use rand::Rng;
+use rand::Rng as _;
 use uuid::Uuid;
 
 use crate::models::{AarOutcome, Deployment, Mission, Operator, OperatorState};
@@ -571,6 +571,6 @@ pub fn run_gui(state: GameState, save_path: std::path::PathBuf) -> eframe::Resul
     eframe::run_native(
         "OPERATOR: War Room",
         options,
-        Box::new(move |cc| Ok(Box::new(OperatorApp::new(cc, state, save_path)))),
+        Box::new(move |cc| Box::new(OperatorApp::new(cc, state, save_path))),
     )
 }
