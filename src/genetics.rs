@@ -7,6 +7,7 @@
 ///  - BreedingResolver: 3-rule stat inheritance + culture blending + mutation
 ///  - GeneticTier derived from hexagon adjacency
 ///  - LifeStage gate (Hatchling → Elder)
+use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -376,6 +377,10 @@ pub struct SlimeGenome {
     pub pattern_color: [u8; 3],
     // Name (cosmetic)
     pub name:          String,
+    /// Cellular Exhaustion — set after Genetic Synthesis (ADR-010).
+    /// None = available. Some(t) = exhausted until t.
+    #[serde(default)]
+    pub synthesis_cooldown_until: Option<DateTime<Utc>>,
 }
 
 impl SlimeGenome {
@@ -389,6 +394,34 @@ impl SlimeGenome {
 
     pub fn dominant_culture(&self) -> Culture {
         self.culture_expr.dominant()
+    }
+
+    /// Returns true if this slime is available as a synthesis donor.
+    /// False while in Cellular Exhaustion cooldown (ADR-010).
+    pub fn can_synthesize(&self) -> bool {
+        match self.synthesis_cooldown_until {
+            None    => self.life_stage().can_breed(),
+            Some(t) => Utc::now() >= t && self.life_stage().can_breed(),
+        }
+    }
+
+    /// Remaining Cellular Exhaustion duration, or None if available.
+    pub fn exhaustion_remaining(&self) -> Option<Duration> {
+        self.synthesis_cooldown_until.and_then(|t| {
+            let remaining = t - Utc::now();
+            if remaining > Duration::zero() { Some(remaining) } else { None }
+        })
+    }
+
+    /// Mark this slime as exhausted for `seconds` seconds. Idempotent — only
+    /// extends cooldown if a longer one isn't already running.
+    pub fn apply_exhaustion(&mut self, seconds: i64) {
+        let new_end = Utc::now() + Duration::seconds(seconds);
+        self.synthesis_cooldown_until = Some(
+            self.synthesis_cooldown_until
+                .map(|existing| existing.max(new_end))
+                .unwrap_or(new_end)
+        );
     }
 
     /// Race stats from the exact rpgCore formula.
@@ -476,22 +509,35 @@ impl BreedingResolver {
     // Public API
     // -----------------------------------------------------------------------
 
-    /// Full breeding resolution. Returns `Err` if either parent can't breed.
+    /// Full genetic synthesis. Returns `Err` if either parent can't synthesize.
+    ///
+    /// Caller MUST call `apply_exhaustion(600)` on both parent `&mut SlimeGenome` after
+    /// calling this — the breed function takes immutable refs to avoid borrow conflicts
+    /// (parents must be found by ID in the `Vec<SlimeGenome>` and mutated separately).
     pub fn breed<R: Rng>(
         a: &SlimeGenome,
         b: &SlimeGenome,
         name: &str,
         rng: &mut R,
     ) -> Result<SlimeGenome, &'static str> {
-        if !a.life_stage().can_breed() {
-            return Err("Parent A cannot breed yet");
+        if !a.can_synthesize() {
+            return Err("Donor A is in Cellular Exhaustion — synthesis unavailable");
         }
-        if !b.life_stage().can_breed() {
-            return Err("Parent B cannot breed yet");
+        if !b.can_synthesize() {
+            return Err("Donor B is in Cellular Exhaustion — synthesis unavailable");
         }
 
         let mutation_chance = Self::mutation_chance(a, b);
-        let culture_expr    = Self::resolve_culture(&a.culture_expr, &b.culture_expr, rng);
+        let mut culture_expr = Self::resolve_culture(&a.culture_expr, &b.culture_expr, rng);
+
+        // ADR-010 §3: Void Glitch — 1% chance when two Sundered parents are used.
+        let void_glitch = a.genetic_tier() == GeneticTier::Sundered
+            && b.genetic_tier() == GeneticTier::Sundered
+            && rng.gen::<f32>() < 0.01;
+        if void_glitch {
+            culture_expr = CultureExpression::void();
+        }
+
         let (hp, atk, spd)  = Self::resolve_stats(a, b, culture_expr.dominant(), mutation_chance, rng);
         let (shape, size, pattern, accessory, base_color, pattern_color) =
             Self::resolve_visuals(a, b, &a.culture_expr, &b.culture_expr, a.life_stage(), rng);
@@ -518,6 +564,7 @@ impl BreedingResolver {
             base_color,
             pattern_color,
             name:         name.to_string(),
+            synthesis_cooldown_until: None, // offspring starts fresh
         })
     }
 
