@@ -372,15 +372,15 @@ fn draw_body(painter: &Painter, center: Pos2, r: f32, vis: &SlimeVisual) {
             let w = r * 1.55;
             let h = r * 0.85;
             let pts = ellipse_points(center, w, h, 18);
-            painter.add(Shape::Path(PathShape::closed(pts, (1.0, col), (0.0, col))));
+            painter.add(Shape::convex_polygon(pts, col, Stroke::NONE));
         }
         SlimeShape::Crystalline => {
             let pts = regular_polygon(center, r, 6, 0.0);
-            painter.add(Shape::Path(PathShape::closed(pts, (1.0, col), (0.0, col))));
+            painter.add(Shape::convex_polygon(pts, col, Stroke::NONE));
         }
         SlimeShape::Amorphous => {
             let pts = amorphous_points(center, r, vis.wobble_phase, vis.wobble_amp);
-            painter.add(Shape::Path(PathShape::closed(pts, (1.0, col), (0.0, col))));
+            painter.add(Shape::convex_polygon(pts, col, Stroke::NONE));
         }
     }
 
