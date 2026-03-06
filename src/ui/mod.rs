@@ -10,6 +10,7 @@ use std::path::PathBuf;
 
 use chrono::{Duration, Utc};
 use eframe::egui;
+use uuid::Uuid;
 
 use crate::garden::Garden;
 use crate::log_engine::{format_log_entry, generate_narrative};
