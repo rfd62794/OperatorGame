@@ -106,8 +106,12 @@ impl OperatorApp {
             }
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let (total_ops, total_missions, total_deployments) = self.total_stats();
                 ui.label(
-                    egui::RichText::new(&self.status_msg.clone())
+                    egui::RichText::new(format!(
+                        "{} | Ops: {} | Missions: {} | Deployments: {}",
+                        &self.status_msg, total_ops, total_missions, total_deployments
+                    ))
                         .small()
                         .color(egui::Color32::GRAY),
                 );
@@ -115,3 +119,4 @@ impl OperatorApp {
         });
     }
 }
+```
