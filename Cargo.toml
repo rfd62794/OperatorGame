@@ -1,9 +1,3 @@
-[workspace]
-members = [
-    ".",
-    "operator-cli",
-]
-
 [package]
 name = "operator"
 version = "0.1.0"
