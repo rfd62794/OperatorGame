@@ -309,8 +309,8 @@ async fn main() {
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
-    use crate::persistence::{load, default_save_path_on_android};
-    use crate::ui::OperatorApp;
+    use operator::persistence::{load, default_save_path_on_android};
+    use operator::ui::OperatorApp;
 
     std::env::set_var("RUST_BACKTRACE", "full");
     
