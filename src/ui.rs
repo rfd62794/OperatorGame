@@ -47,6 +47,7 @@ pub struct OperatorApp {
 pub enum LeftTab {
     Manifest,
     Incubator,
+    Recruit,
 }
 
 #[derive(PartialEq)]
@@ -104,6 +105,8 @@ impl OperatorApp {
     fn render_roster(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut self.left_tab, LeftTab::Manifest, "BIO-MANIFEST");
+            ui.selectable_value(&mut self.left_tab, LeftTab::Recruit, "RECRUIT");
+            
             if self.state.tech_tier < 1 {
                 ui.add_enabled(false, egui::SelectableLabel::new(false, "INCUBATOR (Req. Tier 1)"));
             } else {
@@ -117,6 +120,7 @@ impl OperatorApp {
         match self.left_tab {
             LeftTab::Manifest => self.render_manifest(ui),
             LeftTab::Incubator => self.render_incubator(ui),
+            LeftTab::Recruit => self.render_recruit(ui),
         }
     }
 

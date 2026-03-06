@@ -122,6 +122,7 @@ impl GameState {
     pub fn new_with_seed_missions() -> Self {
         Self {
             missions: crate::models::seed_missions(),
+            bank: 100,
             ..Default::default()
         }
     }

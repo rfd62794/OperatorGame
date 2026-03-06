@@ -5,6 +5,7 @@ pub mod dungeon;
 pub mod garden;
 pub mod genetics;
 pub mod inventory;
+pub mod recruitment;
 pub mod log_engine;
 pub mod models;
 pub mod persistence;
