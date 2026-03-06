@@ -309,7 +309,7 @@ impl WorldMap {
                 let ring = rn.ring as u32;
                 let i = rn.id % 10;
                 
-                let current_base = ring * 10;
+                let _current_base = ring * 10;
                 let left = if i == 0 { 5 } else { i - 1 };
                 let right = if i == 5 { 0 } else { i + 1 };
                 // Remap pseudo-IDs to dense vector indices for faction tick

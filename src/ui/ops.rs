@@ -1,10 +1,8 @@
 // src/ui/ops.rs
-use chrono::{Duration, Utc};
-use eframe::egui;
 
+use eframe::egui;
 use uuid::Uuid;
 
-use crate::models::Operator;
 use crate::ui::OperatorApp;
 
 impl OperatorApp {

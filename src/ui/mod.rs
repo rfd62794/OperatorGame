@@ -13,7 +13,7 @@ use eframe::egui;
 
 use uuid::Uuid;
 
-use crate::garden::{draw_garden, Garden};
+use crate::garden::Garden;
 use crate::log_engine::{format_log_entry, generate_narrative};
 use crate::models::{AarOutcome, Deployment, Mission, Operator, OperatorState};
 use crate::persistence::{save, GameState};
@@ -240,6 +240,22 @@ impl OperatorApp {
 
         self.persist();
     }
+    fn render_right_column(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.right_tab, RightTab::Contracts, "CONTRACTS");
+            ui.selectable_value(&mut self.right_tab, RightTab::Radar, "RADAR");
+            ui.selectable_value(&mut self.right_tab, RightTab::Cargo, "CARGO BAY");
+        });
+        ui.add_space(4.0);
+        ui.separator();
+        ui.add_space(4.0);
+        
+        match self.right_tab {
+            RightTab::Contracts => self.render_contracts(ui),
+            RightTab::Radar => self.render_radar(ui),
+            RightTab::Cargo => self.render_cargo(ui),
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -260,9 +276,9 @@ impl eframe::App for OperatorApp {
         ctx.set_style(style);
 
         // Background Garden
-        let t = ctx.input(|i| i.time as f32);
-        let cursor = ctx.input(|i| i.pointer.hover_pos());
-        let screen_rect = ctx.screen_rect();
+        let _t = ctx.input(|i| i.time as f32);
+        let _cursor = ctx.input(|i| i.pointer.hover_pos());
+        let _screen_rect = ctx.screen_rect();
 
         /*
         // --- Garden temporarily disabled for "Industrial Pivot" UI Focus ---

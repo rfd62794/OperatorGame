@@ -2,7 +2,7 @@
 use chrono::Utc;
 use eframe::egui;
 
-use crate::ui::{LeftTab, OperatorApp};
+use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_manifest(&mut self, ui: &mut egui::Ui) {
