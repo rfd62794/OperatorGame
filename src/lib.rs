@@ -43,24 +43,3 @@ fn android_main(app: android_activity::AndroidApp) {
         Box::new(|cc| Box::new(OperatorApp::new(cc, state, path))),
     ).expect("Failed to run on Android");
 }
-
-#[cfg(target_os = "android")]
-pub mod android_stubs {
-    #[no_mangle] pub unsafe extern "C" fn __cxa_pure_virtual() { loop {} }
-    #[no_mangle] pub unsafe extern "C" fn __gxx_personality_v0() { loop {} }
-
-    // RTTI Vtables
-    #[no_mangle] pub static _ZTVN10__cxxabiv117__class_type_infoE: [usize; 2] = [0, 0];
-    #[no_mangle] pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0, 0];
-    #[no_mangle] pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0, 0];
-    #[no_mangle] pub static _ZTVSt12length_error: [usize; 2] = [0, 0];
-    #[no_mangle] pub static _ZTVSt9exception: [usize; 2] = [0, 0];
-
-    // RTTI Type Info
-    #[no_mangle] pub static _ZTISt9exception: [usize; 2] = [0, 0];
-    #[no_mangle] pub static _ZTISt12length_error: [usize; 2] = [0, 0];
-    
-    // Destructors
-    #[no_mangle] pub unsafe extern "C" fn _ZNSt12length_errorD1Ev() { loop {} }
-    #[no_mangle] pub unsafe extern "C" fn _ZNSt9exceptionD1Ev() { loop {} }
-}

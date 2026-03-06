@@ -37,6 +37,7 @@ panic = "abort"
 [package.metadata.android]
 package = "rust.operator"
 label = "OPERATOR"
+stl = "c++_shared"
 assets = "assets"
 build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
 target_sdk_version = 33
