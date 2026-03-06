@@ -53,6 +53,7 @@ pub enum LeftTab {
 pub enum RightTab {
     Contracts,
     Radar,
+    Cargo,
 }
 
 impl OperatorApp {
@@ -127,82 +128,51 @@ impl OperatorApp {
 
         let staged = self.staged_operators.clone();
         let selected_mission_id = self.selected_mission;
-        let selected_garden = self.selected_slime_id;
 
-        // Lookup the selected mission for live success preview
-        let selected_mission = selected_mission_id
-            .and_then(|id| self.state.missions.iter().find(|m| m.id == id).cloned());
+        egui::Grid::new("manifest_grid")
+            .num_columns(6)
+            .spacing([12.0, 8.0])
+            .striped(true)
+            .show(ui, |ui| {
+                // Header
+                ui.label(egui::RichText::new("ID").strong());
+                ui.label(egui::RichText::new("CULTURE").strong());
+                ui.label(egui::RichText::new("NAME").strong());
+                ui.label(egui::RichText::new("FREQ").strong());
+                ui.label(egui::RichText::new("EFFICIENCY").strong());
+                ui.label(egui::RichText::new("ACTIONS").strong());
+                ui.end_row();
 
-        let t = ui.ctx().input(|i| i.time as f32);
+                for genome in &self.state.slimes {
+                    let is_staged = staged.contains(&genome.id);
+                    let is_dispatched = false; // TODO Sync actual dispatch state
+                    let can_stage = !is_dispatched && selected_mission_id.is_some();
 
-        for genome in &self.state.slimes {
-            let is_staged = staged.contains(&genome.id);
-            let is_garden_selected = selected_garden == Some(genome.id);
-            let is_dispatched = false; // TODO: Check if deployed
-            let can_stage = !is_dispatched && selected_mission_id.is_some();
+                    let [cr, cg, cb, _] = crate::world_map::culture_accent(genome.dominant_culture());
+                    let color = egui::Color32::from_rgb(cr, cg, cb);
 
-            // Background tint
-            let [cr, cg, cb, _] = crate::world_map::culture_accent(genome.dominant_culture());
-            let mut frame_color = egui::Color32::from_rgba_unmultiplied(cr, cg, cb, 18);
-            if is_staged {
-                frame_color = egui::Color32::from_rgba_unmultiplied(cr, cg, cb, 60);
-            }
+                    ui.label(format!("#{}", &genome.id.to_string()[..5]));
+                    ui.colored_label(color, format!("{:?}", genome.dominant_culture()).to_uppercase());
+                    ui.label(egui::RichText::new(&genome.name).strong());
+                    ui.label(format!("{:.0} Hz", genome.frequency));
 
-            let mut frame = egui::Frame::none()
-                .fill(frame_color)
-                .inner_margin(egui::Margin::same(6.0))
-                .rounding(egui::Rounding::same(4.0));
-            
-            if is_garden_selected {
-                frame = frame.stroke(egui::Stroke::new(1.5, egui::Color32::from_rgba_unmultiplied(cr, cg, cb, 180)));
-            }
+                    let eff = (genome.base_hp / 100.0).clamp(0.0, 1.0) as f32;
+                    ui.add(egui::ProgressBar::new(eff).desired_width(80.0));
 
-            frame.show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    // Blob drawing space - fixed 50x50 block
-                    let (blob_rect, _resp) = ui.allocate_exact_size(egui::vec2(50.0, 50.0), egui::Sense::hover());
-                    let vis = crate::render::slime::SlimeVisual::from_genome(genome, t, genome.level as u32, is_dispatched);
-                    crate::render::slime::draw_slime(ui.painter(), blob_rect.center(), &vis, is_staged || is_garden_selected);
-
-                    // Text Details
-                    ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            let status = if is_dispatched { "DEPLOYED" } else { "IDLE" };
-                            let color = if is_dispatched { egui::Color32::from_rgb(255, 200, 0) } else { egui::Color32::from_rgb(80, 200, 120) };
-                            ui.colored_label(color, status);
-                            ui.label(egui::RichText::new(&genome.name).strong());
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                let label = format!("{:?} / {:?}", genome.dominant_culture(), genome.genetic_tier());
-                                ui.small(egui::RichText::new(label.to_uppercase()).color(egui::Color32::GRAY));
-                            });
-                        });
-                        
-                        let s = genome.base_atk as u32;
-                        let a = genome.base_spd as u32;
-                        let i = genome.base_hp as u32;
-                        
-                        ui.label(
-                            egui::RichText::new(format!(
-                                "HP:{} ATK:{} SPD:{}",
-                                i, s, a
-                            ))
-                            .small()
-                            .color(egui::Color32::WHITE),
-                        );
-
-                        // Cooldown logic
+                    // Actions
+                    ui.horizontal(|ui| {
+                        let mut on_cooldown = false;
                         if let Some(cooldown) = genome.synthesis_cooldown_until {
                             let secs = (cooldown - Utc::now()).num_seconds().max(0);
                             if secs > 0 {
-                                ui.label(
-                                    egui::RichText::new(format!("  Exhausted: {}s", secs))
-                                        .small()
-                                        .color(egui::Color32::from_rgb(220, 80, 80)),
-                                );
+                                ui.label(egui::RichText::new(format!("{}s", secs)).color(egui::Color32::RED));
+                                on_cooldown = true;
                             }
-                        } else if can_stage {
-                            let label = if is_staged { "✓ STAGED" } else { "+ STAGE" };
-                            if ui.small_button(label).clicked() {
+                        }
+                        
+                        if !on_cooldown && can_stage {
+                            let label = if is_staged { "✓ STAGED" } else { "DISPATCH" };
+                            if ui.button(label).clicked() {
                                 if is_staged {
                                     self.staged_operators.remove(&genome.id);
                                 } else if self.staged_operators.len() < 3 {
@@ -212,20 +182,12 @@ impl OperatorApp {
                                 }
                             }
                         }
-                    });
-                });
-            });
-            ui.add_space(4.0);
-        }
 
-        // Live success% preview
-        /*
-        if let Some(mission) = &selected_mission {
-            // Need a way to calculate mission success from SlimeGenomes.
-            // Currently mission expects `Operator`.
-            // We'll address this in the deployment logic.
-        }
-        */
+                        if ui.button("SAMPLE").clicked() { /* Force mutation placeholder */ }
+                    });
+                    ui.end_row();
+                }
+            });
     }
 
     fn render_incubator(&mut self, ui: &mut egui::Ui) {
@@ -358,6 +320,7 @@ impl OperatorApp {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut self.right_tab, RightTab::Contracts, "CONTRACTS");
             ui.selectable_value(&mut self.right_tab, RightTab::Radar, "RADAR");
+            ui.selectable_value(&mut self.right_tab, RightTab::Cargo, "CARGO BAY");
         });
         ui.add_space(4.0);
         ui.separator();
@@ -366,6 +329,7 @@ impl OperatorApp {
         match self.right_tab {
             RightTab::Contracts => self.render_contracts(ui),
             RightTab::Radar => self.render_radar(ui),
+            RightTab::Cargo => self.render_cargo(ui),
         }
     }
 
@@ -490,9 +454,34 @@ impl OperatorApp {
             }
         }
 
-        // Show global resonance/startled level
+        // Show empty string to avoid old status string rendering but keep space
+    }
+
+    fn render_cargo(&mut self, ui: &mut egui::Ui) {
+        ui.label(egui::RichText::new("── CARGO BAY ──").strong().size(14.0));
         ui.add_space(8.0);
-        ui.label(egui::RichText::new(format!("Startled Resonance: {:.2}", self.state.world_map.startled_level)).color(egui::Color32::YELLOW));
+        
+        egui::Grid::new("cargo_grid").num_columns(3).spacing([40.0, 16.0]).show(ui, |ui| {
+            ui.label(egui::RichText::new("RESOURCE").strong().color(egui::Color32::GRAY));
+            ui.label(egui::RichText::new("QUANTITY").strong().color(egui::Color32::GRAY));
+            ui.label(egui::RichText::new("UTILITY").strong().color(egui::Color32::GRAY));
+            ui.end_row();
+
+            ui.label(egui::RichText::new("Biomass [GEL]").color(egui::Color32::LIGHT_GREEN));
+            ui.label(format!("{} L", self.state.inventory.biomass));
+            if ui.button("Refine").clicked() {}
+            ui.end_row();
+
+            ui.label(egui::RichText::new("Scrap [MTL]").color(egui::Color32::LIGHT_BLUE));
+            ui.label(format!("{} kg", self.state.inventory.scrap));
+            if ui.button("Repair Ship").clicked() {}
+            ui.end_row();
+            
+            ui.label(egui::RichText::new("Reagents").color(egui::Color32::GOLD));
+            ui.label(format!("{} Units", self.state.inventory.reagents));
+            if ui.button("Force Mutate").clicked() {}
+            ui.end_row();
+        });
     }
 
     fn render_launch_bar(&mut self, ui: &mut egui::Ui) {
@@ -694,19 +683,29 @@ impl eframe::App for OperatorApp {
         egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label(
-                    egui::RichText::new("OPERATOR: WAR ROOM")
+                    egui::RichText::new("OPERATOR: COMMAND DECK")
                         .strong()
                         .size(16.0),
                 );
                 ui.separator();
                 ui.label(format!("Bank: ${}", self.state.bank));
                 ui.separator();
-                ui.label(format!("Roster: {}", self.state.roster.len()));
+                ui.label(format!("GEL: {}L", self.state.inventory.biomass));
                 ui.separator();
-                ui.label(format!(
-                    "Active Ops: {}",
-                    self.state.deployments.iter().filter(|d| !d.resolved).count()
-                ));
+                ui.label(format!("MTL: {}kg", self.state.inventory.scrap));
+                ui.separator();
+                ui.label(format!("Reagents: {}", self.state.inventory.reagents));
+                ui.separator();
+                
+                // Stress Bar
+                let stress_pct = (self.state.world_map.startled_level / 10.0).clamp(0.0, 1.0);
+                ui.add_space(16.0);
+                ui.label(egui::RichText::new("RESONANCE STRESS:").color(egui::Color32::YELLOW));
+                ui.add(egui::ProgressBar::new(stress_pct)
+                    .fill(egui::Color32::from_rgb(200, 50, 50))
+                    .desired_width(120.0)
+                    .show_percentage()
+                );
             });
         });
 
