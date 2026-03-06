@@ -1,6 +1,6 @@
 # setup_local_forge.ps1
 # Automates the detection and validation of the local Android Build environment.
-# Version: 2.0 (Smart Forge / Linker Sovereignty)
+# Version: 2.1 (Smart Forge / Linker & Java Sovereignty)
 
 $PREFERRED_NDK = "25.2.9519653" # r25c
 Write-Host "--- OPERATOR: SMART FORGE AUDIT ---" -ForegroundColor Cyan
@@ -79,6 +79,18 @@ if ($ndkPath) {
     }
     else {
         Write-Host "  WARNING: Could not find toolchain/llvm bin in NDK. Linker may fail." -ForegroundColor Red
+    }
+    
+    # 4b. Java Sovereignty: Inject keytool into PATH
+    $studioPath = "C:\Program Files\Android\Android Studio"
+    if (Test-Path $studioPath) {
+        $jbrBin = Join-Path $studioPath "jbr\bin"
+        if (Test-Path $jbrBin) {
+            if ($env:PATH -notlike "*$jbrBin*") {
+                $env:PATH = "$jbrBin;$env:PATH"
+                Write-Host "  ACTION: Injected Java JBR into session PATH (keytool)." -ForegroundColor Green
+            }
+        }
     }
 }
 else {
