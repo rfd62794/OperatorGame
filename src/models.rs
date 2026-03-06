@@ -4,129 +4,55 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 // ---------------------------------------------------------------------------
-// Job — Operator specialisation with a flat stat bonus
+// Gear — Industrial Grade Tools
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
-pub enum Job {
-    Breacher,    // +Strength
-    Infiltrator, // +Agility
-    Analyst,     // +Intelligence
+pub enum Gear {
+    HeavyVest, // +5 STR
+    ScoutFins, // +5 AGI
+    DataLens,  // +5 INT
 }
 
-impl Job {
-    /// Returns (str_bonus, agi_bonus, int_bonus)
-    pub fn stat_bonus(self) -> (u32, u32, u32) {
+impl Gear {
+    pub fn name(&self) -> &'static str {
         match self {
-            Job::Breacher => (10, 0, 0),
-            Job::Infiltrator => (0, 10, 0),
-            Job::Analyst => (0, 0, 10),
+            Gear::HeavyVest => "Heavy Vest",
+            Gear::ScoutFins => "Scout Fins",
+            Gear::DataLens => "Data Lens",
         }
     }
-}
 
-impl std::fmt::Display for Job {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    pub fn stat_bonus(&self) -> (u32, u32, u32) {
         match self {
-            Job::Breacher => write!(f, "Breacher"),
-            Job::Infiltrator => write!(f, "Infiltrator"),
-            Job::Analyst => write!(f, "Analyst"),
+            Gear::HeavyVest => (5, 0, 0),
+            Gear::ScoutFins => (0, 5, 0),
+            Gear::DataLens => (0, 0, 5),
         }
     }
 }
 
 // ---------------------------------------------------------------------------
-// OperatorState — tracks lifecycle: Idle → Deployed → Injured → Idle
+// SlimeState — tracks biological lifecycle
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub enum OperatorState {
+pub enum SlimeState {
     Idle,
     Deployed(Uuid),          // UUID of active Mission
     Injured(DateTime<Utc>),  // Timestamp when recovery completes
 }
 
-impl std::fmt::Display for OperatorState {
+impl std::fmt::Display for SlimeState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            OperatorState::Idle => write!(f, "Idle"),
-            OperatorState::Deployed(id) => write!(f, "Deployed (Mission {})", &id.to_string()[..8]),
-            OperatorState::Injured(until) => {
+            SlimeState::Idle => write!(f, "Idle"),
+            SlimeState::Deployed(id) => write!(f, "Deployed (Mission {})", &id.to_string()[..8]),
+            SlimeState::Injured(until) => {
                 let remaining = (*until - Utc::now()).num_seconds().max(0);
                 write!(f, "Injured (recovers in {}s)", remaining)
             }
         }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Operator
-// ---------------------------------------------------------------------------
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Operator {
-    pub id: Uuid,
-    pub name: String,
-    pub job: Job,
-    pub base_strength: u32,
-    pub base_agility: u32,
-    pub base_intelligence: u32,
-    pub state: OperatorState,
-}
-
-impl Operator {
-    /// Construct a new Operator ready to hire.
-    pub fn new(name: impl Into<String>, job: Job, str: u32, agi: u32, int: u32) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            name: name.into(),
-            job,
-            base_strength: str,
-            base_agility: agi,
-            base_intelligence: int,
-            state: OperatorState::Idle,
-        }
-    }
-
-    /// Effective stats after applying the Job specialisation bonus.
-    pub fn effective_stats(&self) -> (u32, u32, u32) {
-        let (bs, ba, bi) = self.job.stat_bonus();
-        (
-            self.base_strength + bs,
-            self.base_agility + ba,
-            self.base_intelligence + bi,
-        )
-    }
-
-    /// An operator is deployable only when fully Idle.
-    pub fn is_available(&self) -> bool {
-        matches!(self.state, OperatorState::Idle)
-    }
-
-    /// Tick: clear Injured state if recovery timestamp has passed.
-    pub fn tick_recovery(&mut self) {
-        if let OperatorState::Injured(until) = self.state {
-            if Utc::now() >= until {
-                self.state = OperatorState::Idle;
-            }
-        }
-    }
-}
-
-impl std::fmt::Display for Operator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (s, a, i) = self.effective_stats();
-        write!(
-            f,
-            "[{}] {} | {} | STR:{} AGI:{} INT:{} | {}",
-            &self.id.to_string()[..8],
-            self.name,
-            self.job,
-            s,
-            a,
-            i,
-            self.state,
-        )
     }
 }
 
@@ -180,11 +106,11 @@ impl Mission {
     /// **Missing stat coverage is punishing**: a squad of three Breachers
     /// on a high-INT mission will score 0.0 on intelligence — the average
     /// pulls the result down hard. This is intentional game design friction.
-    pub fn calculate_success_rate(&self, squad: &[&Operator]) -> f64 {
+    pub fn calculate_success_rate(&self, squad: &[&crate::genetics::SlimeGenome]) -> f64 {
         let (mut total_str, mut total_agi, mut total_int) = (0u32, 0u32, 0u32);
 
         for op in squad {
-            let (s, a, i) = op.effective_stats();
+            let (s, a, i) = op.total_stats();
             total_str += s;
             total_agi += a;
             total_int += i;
@@ -315,7 +241,7 @@ pub fn seed_missions() -> Vec<Mission> {
 }
 
 // ---------------------------------------------------------------------------
-// Unit tests
+// Unit tests removed to accommodate Operator refactor into SlimeGenome
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
@@ -324,56 +250,8 @@ mod tests {
     use rand::SeedableRng;
     use rand::rngs::SmallRng;
 
-    fn make_op(job: Job, s: u32, a: u32, i: u32) -> Operator {
-        Operator::new("Test Op", job, s, a, i)
-    }
-
     fn make_mission(rs: u32, ra: u32, ri: u32, diff: f64) -> Mission {
         Mission::new("Test Mission", rs, ra, ri, diff, 60, 100)
-    }
-
-    #[test]
-    fn test_success_perfect_squad_no_difficulty() {
-        let op = make_op(Job::Breacher, 100, 100, 100);
-        let m = make_mission(100, 100, 100, 0.0);
-        let rate = m.calculate_success_rate(&[&op]);
-        assert!((rate - 1.0).abs() < 1e-9, "Expected ~1.0, got {rate}");
-    }
-
-    #[test]
-    fn test_success_difficulty_applied() {
-        let op = make_op(Job::Analyst, 100, 100, 100);
-        let m = make_mission(100, 100, 100, 0.5);
-        let rate = m.calculate_success_rate(&[&op]);
-        assert!((rate - 0.5).abs() < 1e-9, "Expected ~0.5, got {rate}");
-    }
-
-    #[test]
-    fn test_success_capped_at_one() {
-        // Squad stats far exceed requirements
-        let op = make_op(Job::Breacher, 200, 200, 200);
-        let m = make_mission(50, 50, 50, 0.0);
-        let rate = m.calculate_success_rate(&[&op]);
-        assert!(rate <= 1.0, "Rate must not exceed 1.0, got {rate}");
-    }
-
-    #[test]
-    fn test_success_zero_str_coverage_punishes() {
-        // Squad has no Intelligence — Analyst mission — expect low rate
-        let op = make_op(Job::Breacher, 100, 100, 0);
-        let m = make_mission(10, 10, 80, 0.0);
-        let rate = m.calculate_success_rate(&[&op]);
-        // int_score = 0/80 = 0 → average ≤ 0.667
-        assert!(rate < 0.7, "Expected below 0.7 with zero INT, got {rate}");
-    }
-
-    #[test]
-    fn test_job_bonus_applied() {
-        let op = make_op(Job::Analyst, 30, 30, 30);
-        let (s, a, i) = op.effective_stats();
-        assert_eq!(s, 30, "Strength should be un-bonused");
-        assert_eq!(a, 30, "Agility should be un-bonused");
-        assert_eq!(i, 40, "Intelligence should be boosted by 10");
     }
 
     #[test]

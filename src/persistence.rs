@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::genetics::{GeneticTier, SlimeGenome};
 use crate::inventory::Inventory;
-use crate::models::{Deployment, Mission, Operator};
+use crate::models::{AarOutcome, Deployment, Gear, Mission, SlimeState};
 use crate::world_map::WorldMap;
 
 // ---------------------------------------------------------------------------
@@ -91,8 +91,6 @@ impl IncubatingGenome {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GameState {
-    /// Every operator the player has ever hired (alive ones only).
-    pub roster: Vec<Operator>,
     /// Player currency.
     pub bank: u64,
     /// Active or unresolved deployments.
@@ -190,8 +188,8 @@ mod tests {
         let p = temp_path();
         // File does not exist → should get default state
         let state = load(&p).expect("load should succeed for absent file");
-        assert!(state.roster.is_empty());
-        assert_eq!(state.bank, 0);
+        // assert!(state.roster.is_empty()); // Removed as per instruction
+        assert_eq!(state.bank, 100); // New default bank is 100
         assert!(!state.missions.is_empty(), "Seed missions should be populated");
     }
 

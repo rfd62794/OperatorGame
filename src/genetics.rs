@@ -397,6 +397,21 @@ pub struct SlimeGenome {
     /// None = available. Some(t) = exhausted until t.
     #[serde(default)]
     pub synthesis_cooldown_until: Option<DateTime<Utc>>,
+    // Stats for Missions (ADR-037)
+    #[serde(default)]
+    pub base_strength: u32,
+    #[serde(default)]
+    pub base_agility: u32,
+    #[serde(default)]
+    pub base_intelligence: u32,
+    #[serde(default)]
+    pub equipped_gear: Vec<crate::models::Gear>,
+    #[serde(default = "default_slime_state")]
+    pub state: crate::models::SlimeState,
+}
+
+fn default_slime_state() -> crate::models::SlimeState {
+    crate::models::SlimeState::Idle
 }
 
 impl SlimeGenome {
@@ -438,6 +453,35 @@ impl SlimeGenome {
                 .map(|existing| existing.max(new_end))
                 .unwrap_or(new_end)
         );
+    }
+
+    /// Total stats including base and equipped gear (ADR-036).
+    pub fn total_stats(&self) -> (u32, u32, u32) {
+        let mut s = self.base_strength;
+        let mut a = self.base_agility;
+        let mut i = self.base_intelligence;
+
+        for gear in &self.equipped_gear {
+            let (gs, ga, gi) = gear.stat_bonus();
+            s += gs;
+            a += ga;
+            i += gi;
+        }
+        (s, a, i)
+    }
+
+    /// A slime is deployable only when fully Idle.
+    pub fn is_available(&self) -> bool {
+        matches!(self.state, crate::models::SlimeState::Idle)
+    }
+
+    /// Tick: clear Injured state if recovery timestamp has passed.
+    pub fn tick_recovery(&mut self) {
+        if let crate::models::SlimeState::Injured(until) = self.state {
+            if Utc::now() >= until {
+                self.state = crate::models::SlimeState::Idle;
+            }
+        }
     }
 
     /// Race stats from the exact rpgCore formula.
@@ -775,6 +819,11 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
         frequency:     culture.frequency(),
         name:          name.to_string(),
         synthesis_cooldown_until: None,
+        base_strength: rng.gen_range(5..=8),
+        base_agility:  rng.gen_range(5..=8),
+        base_intelligence: rng.gen_range(5..=8),
+        equipped_gear: Vec::new(),
+        state: crate::models::SlimeState::Idle,
     }
 }
 

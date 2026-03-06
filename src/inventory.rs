@@ -12,6 +12,8 @@ pub enum Resource {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Inventory {
+    #[serde(default)]
+    pub gear_pool: Vec<crate::models::Gear>,
     pub biomass: u64,
     pub scrap: u64,
     pub reagents: u32,
