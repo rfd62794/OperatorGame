@@ -23,7 +23,7 @@ The long-term infrastructure currency. Represents salvaged technological compone
 *   **Acquisition:** Awarded through high-risk "Dungeon" or "Excavation" missions. Scrap often requires bringing specialized engineering Slimes (Orange/Amber cultures).
 
 ## 4. The Mission Paradox (The Shepherd's Dilemma)
-The core gameplay loop forces a choice with every mission completion:
-1.  **Reinvest in the Organism (Spend Gel):** Buy more Slimes, expand the roster, buy Gear. This increases mission success rate but leaves the ship vulnerable as its integrity decays.
-2.  **Repair the Ship (Spend Scrap):** Fix the actual win-condition parameters (Life Support, Tech Tier). This advances the overarching goal but might mean passing on crucial biological upgrades for the Slimes.
-3.  **The Squeeze:** Hull integrity constantly decays. The Astronaut must execute the "Double-Tap": dispatching a team for Scrap to fix the ship, while sending a second team for Gel to replace KIA Slimes.
+The core gameplay loop forces a choice with every mission completion. This paradox is driven by the **3+3 Stat Split**:
+1.  **Reinvest in the Organism (Spend Gel):** Buy more Slimes, expand the roster, buy Gear. This leverages **Hard Stats (STR/AGI/INT)** which drive the ROI of your Scavenging and mission success rate, but leaves the ship vulnerable as its integrity decays.
+2.  **Repair the Ship (Spend Scrap):** Fix the actual win-condition parameters (Life Support, Tech Tier). The ROI of these repairs is driven by the **Soft Stats (MND/TEN)** of the slimes assigned to the repair process. This advances the overarching goal but passes on crucial biological upgrades.
+3.  **The Squeeze:** Hull integrity constantly decays. The Astronaut must execute the "Double-Tap": dispatching a team of Hard-Stat specialists for Scrap, while keeping Soft-Stat specialists safe in the Garden to execute the high-efficiency repairs.
