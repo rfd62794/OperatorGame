@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 /// main.rs — OPERATOR entry point.
 ///
 /// Loads GameState → parses CLI → dispatches command → saves state.
@@ -8,6 +10,9 @@ use operator::genetics::{generate_random, BreedingResolver};
 use operator::models::{AarOutcome, Deployment, Job, Operator, OperatorState};
 use operator::persistence::{load, save, save_path};
 use operator::ui::run_gui;
+use include_dir::{include_dir, Dir};
+
+static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
 
 #[tokio::main]
 async fn main() {

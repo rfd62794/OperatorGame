@@ -16,5 +16,6 @@ rand        = { version = "0.8", features = ["small_rng"] }
 clap        = { version = "4",   features = ["derive"] }
 tokio       = { version = "1",   features = ["full"] }
 eframe      = "0.27"
+include_dir = "0.7.4"
 
 [dev-dependencies]

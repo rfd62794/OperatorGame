@@ -645,9 +645,12 @@ impl eframe::App for OperatorApp {
         // Redraw every 100ms — animates progress bars without a background thread.
         ctx.request_repaint_after(std::time::Duration::from_millis(100));
 
-        // Make panels translucent
+        // Make panels completely opaque to prevent the "dim overlay" feel
         let mut style = (*ctx.style()).clone();
-        style.visuals.panel_fill = egui::Color32::from_rgba_unmultiplied(20, 20, 25, 230);
+        style.visuals = egui::Visuals::dark();
+        style.visuals.panel_fill = egui::Color32::from_rgb(15, 15, 20); // Solid dark blue/grey
+        style.visuals.window_fill = egui::Color32::from_rgb(15, 15, 20);
+        style.visuals.override_text_color = Some(egui::Color32::WHITE);
         ctx.set_style(style);
 
         // Background Garden
