@@ -52,8 +52,15 @@ pub mod android_stubs {
     #[no_mangle]
     pub unsafe extern "C" fn __gxx_personality_v0() { loop {} }
 
-    // This is the specific key to the Moto G's lock. 
-    // It provides the type-info vtable the loader is searching for.
+    // Base Class Info
     #[no_mangle]
     pub static _ZTVN10__cxxabiv117__class_type_infoE: [usize; 2] = [0, 0];
+
+    // Single Inheritance Info (The current Moto G blocker)
+    #[no_mangle]
+    pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0, 0];
+
+    // Multiple Inheritance Info (The likely next blocker)
+    #[no_mangle]
+    pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0, 0];
 }
