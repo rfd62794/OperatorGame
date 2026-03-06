@@ -27,4 +27,4 @@ crate-type = ["cdylib", "rlib"]
 android-activity = { version = "0.5", features = ["native-activity"] }
 ndk-context = "0.1"
 
-[dev_dependencies]
+[dev-dependencies]

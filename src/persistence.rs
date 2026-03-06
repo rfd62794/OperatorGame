@@ -134,10 +134,24 @@ const SAVE_FILE: &str = "save.json";
 
 /// Returns the canonical path to the save file.
 pub fn save_path() -> PathBuf {
-    let mut path = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("."));
-    path.pop(); // Remove the executable name from the path
-    path.push(SAVE_FILE);
-    path
+    #[cfg(target_os = "android")]
+    {
+        default_save_path_on_android()
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let mut path = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("."));
+        path.pop(); // Remove the executable name from the path
+        path.push(SAVE_FILE);
+        path
+    }
+}
+
+pub fn default_save_path_on_android() -> PathBuf {
+    // On Android, we should ideally use the internal data directory.
+    // However, for this scaffold, we'll use a relative path that eframe/ndk-glue
+    // often maps to the persistent data folder.
+    PathBuf::from("save.json")
 }
 
 /// Load GameState from disk.
