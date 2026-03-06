@@ -16,6 +16,12 @@ build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
 min_sdk_version = 23
 target_sdk_version = 33
 
+[package.metadata.android.signing.release]
+keystore = "/redacted/path"
+keystore_password = "REDACTED"
+key_alias = "androiddebugkey"
+key_password = "REDACTED"
+
 [dependencies]
 serde       = { version = "1",   features = ["derive"] }
 serde_json  = "1"
