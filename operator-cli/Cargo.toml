@@ -1,0 +1,16 @@
+[package]
+name = "operator-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+operator = { path = ".." }
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+rand = "0.8"
+include_dir = "0.7.4"
+# Re-use shared models/types via the operator crate
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
