@@ -7,7 +7,7 @@
 use clap::Parser;
 use operator::cli::{Cli, Commands};
 use operator::genetics::{generate_random, BreedingResolver};
-use operator::models::{AarOutcome, Deployment, Job, Operator, OperatorState};
+use operator::models::{AarOutcome, Deployment, SlimeState};
 use operator::persistence::{load, save, save_path};
 use operator::ui::run_gui;
 use include_dir::{include_dir, Dir};
@@ -26,7 +26,7 @@ async fn main() {
     };
 
     // Tick injury recovery on every launch — free state cleanup.
-    for op in &mut state.roster {
+    for op in &mut state.slimes {
         op.tick_recovery();
     }
 
@@ -36,17 +36,6 @@ async fn main() {
     let command = cli.command.unwrap_or(Commands::Gui);
 
     match command {
-        // -----------------------------------------------------------------------
-        Commands::Roster => {
-            if state.roster.is_empty() {
-                println!("No operators hired. Use `operator hire <name> <job>` to recruit.");
-            } else {
-                println!("=== OPERATOR ROSTER ({}) ===", state.roster.len());
-                for op in &state.roster {
-                    println!("  {op}");
-                }
-            }
-        }
 
         // Removed Commands::Hire and Commands::Roster
 
@@ -96,7 +85,7 @@ async fn main() {
                         std::process::exit(1);
                     }
                     Some(op) => {
-                        op.state = crate::models::SlimeState::Deployed(mission.id);
+                        op.state = SlimeState::Deployed(mission.id);
                         operator_ids.push(op.id);
                         squad_display.push(op.name.clone());
                     }
@@ -104,7 +93,7 @@ async fn main() {
             }
 
             // Preview success rate before locking in
-            let squad_refs: Vec<&crate::genetics::SlimeGenome> = state
+            let squad_refs: Vec<&operator::genetics::SlimeGenome> = state
                 .slimes
                 .iter()
                 .filter(|o| operator_ids.contains(&o.id))
@@ -150,7 +139,7 @@ async fn main() {
                     let Some(mission) = mission else { continue; };
 
                     let squad_ids = deployment.operator_ids.clone();
-                    let squad: Vec<&crate::genetics::SlimeGenome> = state
+                    let squad: Vec<&operator::genetics::SlimeGenome> = state
                         .slimes
                         .iter()
                         .filter(|o| squad_ids.contains(&o.id))
@@ -167,7 +156,7 @@ async fn main() {
                             // Return squad to Idle
                             for op in state.slimes.iter_mut() {
                                 if squad_ids.contains(&op.id) {
-                                    op.state = crate::models::SlimeState::Idle;
+                                    op.state = SlimeState::Idle;
                                 }
                             }
                         }
@@ -179,7 +168,7 @@ async fn main() {
                             for op in state.slimes.iter_mut() {
                                 if injured_ids.contains(&op.id) {
                                     println!("     ↳ {} is injured.", op.name);
-                                    op.state = crate::models::SlimeState::Injured(recover_at);
+                                    op.state = SlimeState::Injured(recover_at);
                                 }
                             }
                         }
