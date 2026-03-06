@@ -46,21 +46,17 @@ fn android_main(app: android_activity::AndroidApp) {
 
 #[cfg(target_os = "android")]
 pub mod android_stubs {
-    #[no_mangle]
-    pub unsafe extern "C" fn __cxa_pure_virtual() { loop {} }
-    
-    #[no_mangle]
-    pub unsafe extern "C" fn __gxx_personality_v0() { loop {} }
+    #[no_mangle] pub unsafe extern "C" fn __cxa_pure_virtual() { loop {} }
+    #[no_mangle] pub unsafe extern "C" fn __gxx_personality_v0() { loop {} }
 
-    // Base Class Info
-    #[no_mangle]
-    pub static _ZTVN10__cxxabiv117__class_type_infoE: [usize; 2] = [0, 0];
+    // RTTI Vtables (The 'ZTV' symbols)
+    #[no_mangle] pub static _ZTVN10__cxxabiv117__class_type_infoE: [usize; 2] = [0, 0];
+    #[no_mangle] pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0, 0];
+    #[no_mangle] pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0, 0];
 
-    // Single Inheritance Info (The current Moto G blocker)
-    #[no_mangle]
-    pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0, 0];
-
-    // Multiple Inheritance Info (The likely next blocker)
-    #[no_mangle]
-    pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0, 0];
+    // RTTI TypeInfo (The 'ZTI' symbols)
+    #[no_mangle] pub static _ZTISt9exception: [usize; 2] = [0, 0];
+    #[no_mangle] pub static _ZTISt12length_error: [usize; 2] = [0, 0];
+    #[no_mangle] pub static _ZTISt11logic_error: [usize; 2] = [0, 0];
+    #[no_mangle] pub static _ZTISt13runtime_error: [usize; 2] = [0, 0];
 }
