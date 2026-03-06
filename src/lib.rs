@@ -45,10 +45,17 @@ fn android_main(app: android_activity::AndroidApp) {
 }
 
 /// SOVEREIGN GUARD: Satisfies the C++ ABI for pure virtual function calls.
-/// This prevents UnsatisfiedLinkError on modern NDK/Android environments
-/// when using C++ dependencies like Oboe with static linking.
+/// This prevents UnsatisfiedLinkError on modern NDK/Android environments.
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub unsafe extern "C" fn __cxa_pure_virtual() {
-    std::process::abort();
+    loop {}
+}
+
+/// SOVEREIGN GUARD: Satisfies the C++ ABI personality requirement.
+/// Required for linking C++ libraries (Oboe) when panic=abort is used.
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "C" fn __gxx_personality_v0() {
+    loop {}
 }
