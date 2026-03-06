@@ -633,15 +633,6 @@ impl BreedingResolver {
             equipped_gear: Vec::new(),
             state: crate::models::SlimeState::Idle,
         })
-            body_size:    size,
-            pattern,
-            accessory,
-            base_color,
-            pattern_color,
-            frequency:    culture_expr.dominant().frequency(),
-            name:         name.to_string(),
-            synthesis_cooldown_until: None, // offspring starts fresh
-        })
     }
 
     // -----------------------------------------------------------------------
