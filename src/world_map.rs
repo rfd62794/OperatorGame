@@ -8,6 +8,8 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 
+pub mod radial;
+
 // ---------------------------------------------------------------------------
 // NodeZoneType — what kind of expedition a node supports
 // ---------------------------------------------------------------------------
@@ -124,6 +126,11 @@ pub struct WorldNode {
     pub adjacent:     Vec<usize>,
     /// Is an expedition currently running on this node?
     pub occupied:     bool,
+    // --- Radial Graph ---
+    pub ring:         u8,
+    pub position:     (f32, f32),
+    pub difficulty_dc: u32,
+    pub resonance_aura: i32,
 }
 
 impl WorldNode {
@@ -247,6 +254,7 @@ pub struct WorldMap {
     pub nodes: Vec<WorldNode>,
     /// Accumulated simulation time since last full faction tick.
     tick_accum: f32,
+    pub startled_level: f32, // ADR-015: Hoot & Holler resonance
 }
 
 impl WorldMap {
@@ -257,124 +265,88 @@ impl WorldMap {
     ///   Ring 1:   6 nodes — one per Culture, strongly held
     ///   Ring 2:   8 nodes — frontier/contested, mix of zone types
     pub fn generate<R: Rng>(rng: &mut R) -> Self {
-        let mut nodes = vec![
-            // ID 0: Crash Site — the Astronaut's base. Not a dispatchable node.
-            WorldNode {
-                id: 0, name: "Crash Site".into(),
-                zone_type: NodeZoneType::CrashSiteDefence,
-                owner: Culture::Void, influence: 1.0,
-                adjacent: vec![1, 2, 3, 4, 5, 6],
-                occupied: false,
-            },
-            // Ring 1: Cultural heartlands — each culture firmly holds one nearby node
-            WorldNode {
-                id: 1, name: "Ember Caldera".into(),
-                zone_type: NodeZoneType::TerritoryDispute,
-                owner: Culture::Ember, influence: 0.85,
-                adjacent: vec![0, 2, 6, 7, 8],
-                occupied: false,
-            },
-            WorldNode {
-                id: 2, name: "Gale Ridge".into(),
-                zone_type: NodeZoneType::ScoutingRun,
-                owner: Culture::Gale, influence: 0.80,
-                adjacent: vec![0, 1, 3, 8, 9],
-                occupied: false,
-            },
-            WorldNode {
-                id: 3, name: "Marsh Wetlands".into(),
-                zone_type: NodeZoneType::BioSurvey,
-                owner: Culture::Marsh, influence: 0.82,
-                adjacent: vec![0, 2, 4, 9, 10],
-                occupied: false,
-            },
-            WorldNode {
-                id: 4, name: "Crystal Spire".into(),
-                zone_type: NodeZoneType::MarketLiaison,
-                owner: Culture::Crystal, influence: 0.79,
-                adjacent: vec![0, 3, 5, 10, 11],
-                occupied: false,
-            },
-            WorldNode {
-                id: 5, name: "Tundra Shelf".into(),
-                zone_type: NodeZoneType::Excavation,
-                owner: Culture::Tundra, influence: 0.83,
-                adjacent: vec![0, 4, 6, 11, 12],
-                occupied: false,
-            },
-            WorldNode {
-                id: 6, name: "Tide Basin".into(),
-                zone_type: NodeZoneType::BioSurvey,
-                owner: Culture::Tide, influence: 0.81,
-                adjacent: vec![0, 1, 5, 12, 13],
-                occupied: false,
-            },
-            // Ring 2: Frontier nodes — mix of contested cultures and zone types
-            WorldNode {
-                id: 7, name: "Scorched Ruins".into(),
-                zone_type: NodeZoneType::Excavation,
-                owner: Culture::Ember, influence: rng.gen_range(0.2..0.6),
-                adjacent: vec![1, 8, 14],
-                occupied: false,
-            },
-            WorldNode {
-                id: 8, name: "Storm Pass".into(),
-                zone_type: NodeZoneType::ScoutingRun,
-                owner: Culture::Gale, influence: rng.gen_range(0.2..0.6),
-                adjacent: vec![1, 2, 7, 9],
-                occupied: false,
-            },
-            WorldNode {
-                id: 9, name: "Mire Delta".into(),
-                zone_type: NodeZoneType::BioSurvey,
-                owner: Culture::Marsh, influence: rng.gen_range(0.2..0.6),
-                adjacent: vec![2, 3, 8, 10],
-                occupied: false,
-            },
-            WorldNode {
-                id: 10, name: "Prism Market".into(),
-                zone_type: NodeZoneType::MarketLiaison,
-                owner: Culture::Crystal, influence: rng.gen_range(0.2..0.6),
-                adjacent: vec![3, 4, 9, 11],
-                occupied: false,
-            },
-            WorldNode {
-                id: 11, name: "Frost Caves".into(),
-                zone_type: NodeZoneType::Excavation,
-                owner: Culture::Tundra, influence: rng.gen_range(0.2..0.6),
-                adjacent: vec![4, 5, 10, 12],
-                occupied: false,
-            },
-            WorldNode {
-                id: 12, name: "Kelp Forest".into(),
-                zone_type: NodeZoneType::TerritoryDispute,
-                owner: Culture::Tide, influence: rng.gen_range(0.2..0.6),
-                adjacent: vec![5, 6, 11, 13],
-                occupied: false,
-            },
-            WorldNode {
-                id: 13, name: "Deep Seabed".into(),
-                zone_type: NodeZoneType::Excavation,
-                owner: Culture::Tide, influence: rng.gen_range(0.15..0.5),
-                adjacent: vec![6, 12, 14],
-                occupied: false,
-            },
-            WorldNode {
-                id: 14, name: "Ash Wastes".into(),
-                zone_type: NodeZoneType::TerritoryDispute,
-                owner: Culture::Ember, influence: rng.gen_range(0.15..0.5),
-                adjacent: vec![7, 13],
-                occupied: false,
-            },
-        ];
+        let radial_nodes = radial::generate_ripple_map();
+        let mut nodes = Vec::new();
 
-        // Randomise influence slightly so the map starts with some asymmetry
-        for node in nodes.iter_mut().skip(1) {
-            let jitter = rng.gen_range(-0.05f32..0.05);
-            node.influence = (node.influence + jitter).clamp(0.05, 1.0);
+        for rn in radial_nodes {
+            let name = match rn.ring {
+                0 => "Hidden Meadow",
+                1 => match rn.culture {
+                    Culture::Ember => "Ember Caldera",
+                    Culture::Gale => "Gale Ridge",
+                    Culture::Tide => "Tide Basin",
+                    _ => "Heartlands Node",
+                },
+                2 => match rn.culture {
+                    Culture::Marsh => "Mire Delta",
+                    Culture::Crystal => "Prism Market",
+                    Culture::Tundra => "Frost Caves",
+                    _ => "Wilds Node",
+                },
+                _ => "Forbidden Reaches",
+            };
+
+            let zone_type = match rn.ring {
+                0 => NodeZoneType::CrashSiteDefence,
+                1 => NodeZoneType::TerritoryDispute,
+                2 => NodeZoneType::BioSurvey,
+                _ => NodeZoneType::Excavation,
+            };
+
+            let influence = if rn.ring <= 1 {
+                0.85
+            } else {
+                rng.gen_range(0.2..0.6)
+            };
+
+            let resonance_aura = if rn.ring == 0 { 2 } else { 0 };
+
+            // Simplified ring-based adjacency mapping
+            let mut adj = Vec::new();
+            if rn.id == 0 {
+                adj = vec![1, 2, 3, 4, 5, 6];
+            } else {
+                let ring = rn.ring as u32;
+                let i = rn.id % 10;
+                
+                let current_base = ring * 10;
+                let left = if i == 0 { 5 } else { i - 1 };
+                let right = if i == 5 { 0 } else { i + 1 };
+                // Remap pseudo-IDs to dense vector indices for faction tick
+                // Since ring 1 is 1-6, ring 2 is 7-12, ring 3 is 13-18
+                let dense_id = |r: u32, idx: u32| -> usize {
+                    if r == 0 { 0 } else { ( (r - 1) * 6 + idx + 1 ) as usize }
+                };
+
+                adj.push(dense_id(ring, left));
+                adj.push(dense_id(ring, right));
+
+                if ring > 1 {
+                    adj.push(dense_id(ring - 1, i));
+                } else {
+                    adj.push(0);
+                }
+                if ring < 3 {
+                    adj.push(dense_id(ring + 1, i));
+                }
+            }
+
+            nodes.push(WorldNode {
+                id: nodes.len(), // Force dense ID sequence
+                name: name.to_string(),
+                zone_type,
+                owner: rn.culture,
+                influence,
+                adjacent: adj,
+                occupied: false,
+                ring: rn.ring,
+                position: rn.position,
+                difficulty_dc: rn.difficulty_dc,
+                resonance_aura,
+            });
         }
 
-        Self { nodes, tick_accum: 0.0 }
+        Self { nodes, tick_accum: 0.0, startled_level: 0.0 }
     }
 
     /// Advance the faction simulation by `dt` seconds.
