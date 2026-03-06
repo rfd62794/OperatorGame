@@ -23,7 +23,6 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 rand = "0.8"
 rodio = { version = "0.17", default-features = false, features = ["cpal"] }
 lazy_static = "1.4"
-cpal = "0.15"
 
 [dev-dependencies]
 criterion = "0.4"
