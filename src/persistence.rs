@@ -148,10 +148,10 @@ pub fn save_path() -> PathBuf {
 }
 
 pub fn default_save_path_on_android() -> PathBuf {
-    // On Android, we should ideally use the internal data directory.
-    // However, for this scaffold, we'll use a relative path that eframe/ndk-glue
-    // often maps to the persistent data folder.
-    PathBuf::from("save.json")
+    // ADR-042: Hard-path the Android internal data directory.
+    // In a production JNI environment, we would query Context.getFilesDir().
+    // For the Local Forge, we target the standard internal storage root.
+    PathBuf::from("/data/data/com.robertdugger.operator/files/save.json")
 }
 
 /// Load GameState from disk.

@@ -7,6 +7,12 @@ edition = "2021"
 name = "operator"
 path = "src/main.rs"
 
+[package.metadata.android]
+package_name = "com.robertdugger.operator"
+label = "OPERATOR"
+assets = "docs/src"
+build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
+
 [dependencies]
 serde       = { version = "1",   features = ["derive"] }
 serde_json  = "1"
