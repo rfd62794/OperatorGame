@@ -3,6 +3,9 @@ name = "operator"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = ["operator-cli"]
+
 [package.metadata.android]
 package_name = "com.robertdugger.operator"
 label = "OPERATOR"
@@ -24,7 +27,7 @@ tokio       = { version = "1",   features = ["full"] }
 eframe      = { version = "0.27", features = ["persistence"] }
 include_dir = "0.7.4"
 winit = { version = "0.29", features = ["android-native-activity"] }
-rodio = { version = "0.19", features = ["cpal"] }
+rodio = "0.19"
 lazy_static = "1.4"
 
 [lib]

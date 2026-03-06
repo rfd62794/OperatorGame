@@ -119,11 +119,19 @@ impl OperatorSynth {
     /// The "Tymoczko" Tetrahedron (Geometric Chord Families)
     fn generate_tetrahedral_chord(sink: &Sink, freqs: Vec<f32>) {
         if freqs.is_empty() { return; }
-        let mut source = SineWave::new(freqs[0]).take_duration(Duration::from_millis(500)).amplify(0.3).boxed();
+        
+        // Use type erasure to allow mixing sources in a loop
+        let mut source: Box<dyn Source<Item = f32> + Send> = Box::new(
+            SineWave::new(freqs[0])
+                .take_duration(Duration::from_millis(500))
+                .amplify(0.3)
+        );
         
         for &f in freqs.iter().skip(1).take(3) {
-            let next = SineWave::new(f).take_duration(Duration::from_millis(500)).amplify(0.2).boxed();
-            source = source.mix(next).boxed();
+            let next = SineWave::new(f)
+                .take_duration(Duration::from_millis(500))
+                .amplify(0.2);
+            source = Box::new(source.mix(next));
         }
         
         sink.append(source);
