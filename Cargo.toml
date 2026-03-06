@@ -34,6 +34,7 @@ name = "operator"
 crate-type = ["cdylib", "rlib"]
 
 [target.'cfg(target_os = "android")'.dependencies]
+winit = "0.29"
 android-activity = { version = "0.5", features = ["native-activity"] }
 ndk-context = "0.1"
 
