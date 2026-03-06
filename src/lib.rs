@@ -13,6 +13,7 @@ pub mod racing;
 pub mod render;
 pub mod ui;
 pub mod world_map;
+pub mod audio;
 
 #[cfg(target_os = "android")]
 #[no_mangle]
