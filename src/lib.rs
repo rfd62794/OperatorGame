@@ -13,3 +13,29 @@ pub mod racing;
 pub mod render;
 pub mod ui;
 pub mod world_map;
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+fn android_main(app: android_activity::AndroidApp) {
+    use crate::persistence::{load, default_save_path_on_android};
+    use crate::ui::OperatorApp;
+    use winit::platform::android::EventLoopBuilderExtAndroid;
+
+    std::env::set_var("RUST_BACKTRACE", "full");
+    
+    let path = default_save_path_on_android(); 
+    let state = load(&path).unwrap_or_default();
+
+    let mut options = eframe::NativeOptions::default();
+    
+    // The 0.27 way to pass the app handle:
+    options.event_loop_builder = Some(Box::new(move |builder| {
+        builder.with_android_app(app);
+    }));
+
+    eframe::run_native(
+        "OPERATOR",
+        options,
+        Box::new(|cc| Box::new(crate::ui::OperatorApp::new(cc, state, path))),
+    ).expect("Failed to run on Android");
+}
