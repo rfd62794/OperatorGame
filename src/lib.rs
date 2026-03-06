@@ -15,64 +15,6 @@ pub mod ui;
 pub mod world_map;
 pub mod audio;
 
-/// Sovereign Stub: Resolves the missing C++ ABI symbol caused by the Oboe/cpal dependency.
-/// This prevents the 'dlopen failed: cannot locate symbol "__cxa_pure_virtual"' crash on boot.
-#[no_mangle]
-pub extern "C" fn __cxa_pure_virtual() {
-    #[allow(clippy::empty_loop)]
-    loop {}
-}
-
-/// Personality Stub: Resolves missing C++ exception handling symbols.
-#[no_mangle]
-pub extern "C" fn __gxx_personality_v0() {
-    #[allow(clippy::empty_loop)]
-    loop {}
-}
-
-/// RTTI Sovereignty: Resolves vtable symbols for __cxxabiv1 classes.
-/// These are typically required by C++ code (Oboe) in the Android 15 environment.
-#[no_mangle]
-pub static _ZTVN10__cxxabiv117__class_type_infoE: [usize; 2] = [0; 2];
-#[no_mangle]
-pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0; 2];
-#[no_mangle]
-pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0; 2];
-
-/// Exceptional Sovereignty: TypeInfo stubs for C++ standard exceptions.
-/// These satisfy the RTTI (Run-Time Type Information) required by Oboe/C++.
-#[no_mangle]
-pub static _ZTISt9exception: [usize; 2] = [0; 2];
-#[no_mangle]
-pub static _ZTISt11logic_error: [usize; 2] = [0; 2];
-#[no_mangle]
-pub static _ZTISt12length_error: [usize; 2] = [0; 2];
-#[no_mangle]
-pub static _ZTISt12out_of_range: [usize; 2] = [0; 2];
-#[no_mangle]
-pub static _ZTISt13runtime_error: [usize; 2] = [0; 2];
-#[no_mangle]
-pub static _ZTISt9bad_alloc: [usize; 2] = [0; 2];
-
-/// Destroyer Sovereignty: Destructor stubs for C++ standard exceptions.
-/// These resolve 'cannot locate symbol' errors for destructors referenced by Oboe.
-#[no_mangle]
-pub extern "C" fn _ZNSt9exceptionD2Ev() {}
-#[no_mangle]
-pub extern "C" fn _ZNSt11logic_errorD2Ev() {}
-#[no_mangle]
-pub extern "C" fn _ZNSt12length_errorD1Ev() {}
-#[no_mangle]
-pub extern "C" fn _ZNSt12length_errorD2Ev() {}
-#[no_mangle]
-pub extern "C" fn _ZNSt12out_of_rangeD1Ev() {}
-#[no_mangle]
-pub extern "C" fn _ZNSt12out_of_rangeD2Ev() {}
-#[no_mangle]
-pub extern "C" fn _ZNSt13runtime_errorD2Ev() {}
-#[no_mangle]
-pub extern "C" fn _ZNSt9bad_allocD2Ev() {}
-
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
