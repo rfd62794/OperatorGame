@@ -2440,6 +2440,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "operator-cli"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "include_dir",
+ "operator",
+ "rand",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "orbclient"
 version = "0.3.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
