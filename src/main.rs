@@ -127,6 +127,7 @@ async fn main() {
                 eta,
             );
 
+            state.world_map.startled_level += 0.05; // ADR-015: Hoot & Holler resonance
             state.deployments.push(deployment);
         }
 
@@ -308,6 +309,7 @@ async fn main() {
                 for g in &ready {
                     println!("  - {} ({:?} / {:?})", g.name, g.dominant_culture(), g.genetic_tier());
                 }
+                state.world_map.startled_level += 0.10 * ready.len() as f32; // ADR-015: Hoot & Holler resonance
                 state.slimes.extend(ready);
             }
         }
