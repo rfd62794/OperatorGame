@@ -46,6 +46,8 @@ pub struct OperatorApp {
     pub left_tab: LeftTab,
     /// Which panel is active on the right: Contracts or Radar.
     pub right_tab: RightTab,
+    /// Which panel is active in mobile-view (single column).
+    pub mobile_tab: MobileTab,
 }
 
 #[derive(PartialEq)]
@@ -57,6 +59,15 @@ pub enum LeftTab {
 
 #[derive(PartialEq)]
 pub enum RightTab {
+    Contracts,
+    Radar,
+    Cargo,
+}
+
+#[derive(PartialEq, Clone, Copy)]
+pub enum MobileTab {
+    Manifest,
+    Ops,
     Contracts,
     Radar,
     Cargo,
@@ -76,6 +87,7 @@ impl OperatorApp {
             selected_slime_id: None,
             left_tab: LeftTab::Manifest,
             right_tab: RightTab::Contracts,
+            mobile_tab: MobileTab::Manifest,
         }
     }
 
@@ -274,6 +286,11 @@ impl eframe::App for OperatorApp {
         style.visuals.override_text_color = Some(egui::Color32::WHITE);
         ctx.set_style(style);
 
+        // Responsive DPI Scaling (ADR-041)
+        if cfg!(target_os = "android") {
+            ctx.set_pixels_per_point(2.0); // Mobile default density
+        }
+
         // Background Garden
         let _t = ctx.input(|i| i.time as f32);
         let _cursor = ctx.input(|i| i.pointer.hover_pos());
@@ -381,35 +398,71 @@ impl eframe::App for OperatorApp {
             self.render_launch_bar(ui);
         });
 
-        // Three-column central panel
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // Collect the three column contents; egui columns take a closure
-            // so we must render them inside the callback.
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.columns(3, |cols| {
-                    // We can't call &mut self methods twice in the same borrow,
-                    // so we forward rendering through standalone functions
-                    // that accept &mut OperatorApp.
-                    egui::ScrollArea::vertical()
-                        .id_source("roster_scroll")
-                        .show(&mut cols[0], |ui| {
-                            // Safety: columns are non-overlapping &mut [egui::Ui]
-                            // We render each column via a closure scope.
-                            render_roster_panel(ui, self);
-                        });
-                    egui::ScrollArea::vertical()
-                        .id_source("ops_scroll")
-                        .show(&mut cols[1], |ui| {
-                            render_ops_panel(ui, self);
-                        });
-                    egui::ScrollArea::vertical()
-                        .id_source("contracts_scroll")
-                        .show(&mut cols[2], |ui| {
-                            render_right_panel(ui, self);
-                        });
+        // Three-column central panel (Desktop) or Tab-view (Mobile)
+        let is_mobile = ctx.screen_rect().width() < 800.0 || cfg!(target_os = "android");
+
+        if is_mobile {
+            egui::TopBottomPanel::top("mobile_tabs").show(ctx, |ui| {
+                ui.horizontal_centered(|ui| {
+                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Manifest, "UNIT");
+                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Ops, "OPS");
+                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Contracts, "DOCS");
+                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Radar, "RADAR");
+                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Cargo, "GEAR");
                 });
             });
-        });
+
+            egui::CentralPanel::default().show(ctx, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    match self.mobile_tab {
+                        MobileTab::Manifest => {
+                            self.render_roster(ui);
+                        }
+                        MobileTab::Ops => {
+                            self.render_active_ops(ui);
+                        }
+                        MobileTab::Contracts => {
+                            self.render_contracts(ui);
+                        }
+                        MobileTab::Radar => {
+                            self.render_radar(ui);
+                        }
+                        MobileTab::Cargo => {
+                            self.render_cargo(ui);
+                        }
+                    }
+                });
+            });
+        } else {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                // Collect the three column contents; egui columns take a closure
+                // so we must render them inside the callback.
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.columns(3, |cols| {
+                        // We can't call &mut self methods twice in the same borrow,
+                        // so we forward rendering through standalone functions
+                        // that accept &mut OperatorApp.
+                        egui::ScrollArea::vertical()
+                            .id_source("roster_scroll")
+                            .show(&mut cols[0], |ui| {
+                                // Safety: columns are non-overlapping &mut [egui::Ui]
+                                // We render each column via a closure scope.
+                                render_roster_panel(ui, self);
+                            });
+                        egui::ScrollArea::vertical()
+                            .id_source("ops_scroll")
+                            .show(&mut cols[1], |ui| {
+                                render_ops_panel(ui, self);
+                            });
+                        egui::ScrollArea::vertical()
+                            .id_source("contracts_scroll")
+                            .show(&mut cols[2], |ui| {
+                                render_right_panel(ui, self);
+                            });
+                    });
+                });
+            });
+        }
     }
 }
 
