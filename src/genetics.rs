@@ -841,6 +841,9 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
         base_strength: rng.gen_range(5..=8),
         base_agility:  rng.gen_range(5..=8),
         base_intelligence: rng.gen_range(5..=8),
+        base_mind: rng.gen_range(5..=8),
+        base_sensory: rng.gen_range(5..=8),
+        base_tenacity: rng.gen_range(5..=8),
         equipped_gear: Vec::new(),
         state: crate::models::SlimeState::Idle,
     }
