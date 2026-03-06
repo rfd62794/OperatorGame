@@ -12,6 +12,8 @@ package_name = "com.robertdugger.operator"
 label = "OPERATOR"
 assets = "docs/src"
 build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
+
+[package.metadata.android.sdk]
 min_sdk_version = 23
 target_sdk_version = 33
 
