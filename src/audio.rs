@@ -9,9 +9,9 @@ pub const PHI: f32 = 1.618034;
 pub const BASE_RESONANCE: f32 = 432.0;
 
 lazy_static! {
-    /// Global Audio Context: Keeps the OutputStream alive and provides a shared Sink.
-    /// On Android, this handles the CPAL/AAudio backend interaction.
-    static ref AUDIO_CONTEXT: Mutex<Option<(OutputStream, Sink)>> = Mutex::new(None);
+    /// Global Audio Sink: Shared across threads for non-blocking procedural audio.
+    /// The OutputStream is leaked on initialization to keep the device active.
+    static ref SHARED_SINK: Mutex<Option<Sink>> = Mutex::new(None);
 }
 
 pub enum PlayEvent {
@@ -32,12 +32,15 @@ pub struct OperatorSynth;
 impl OperatorSynth {
     /// Lazy initialization of the audio hardware.
     pub fn init() {
-        let mut ctx = AUDIO_CONTEXT.lock().unwrap();
-        if ctx.is_none() {
+        let mut sink_lock = SHARED_SINK.lock().unwrap();
+        if sink_lock.is_none() {
             match OutputStream::try_default() {
                 Ok((stream, handle)) => {
+                    // Leak the stream to keep it alive for the app's lifetime.
+                    // This is required as OutputStream is !Send and cannot be stored in Mutex easily.
+                    std::mem::forget(stream);
                     if let Ok(sink) = Sink::try_new(&handle) {
-                        *ctx = Some((stream, sink));
+                        *sink_lock = Some(sink);
                     }
                 }
                 Err(e) => eprintln!("Audio Init Failed: {}", e),
@@ -48,8 +51,8 @@ impl OperatorSynth {
     /// Primary entry point for triggering procedural audio events.
     pub fn play(event: PlayEvent) {
         Self::init();
-        let ctx = AUDIO_CONTEXT.lock().unwrap();
-        if let Some((_, sink)) = ctx.as_ref() {
+        let sink_lock = SHARED_SINK.lock().unwrap();
+        if let Some(sink) = sink_lock.as_ref() {
             match event {
                 PlayEvent::Success { base_freq } => {
                     Self::generate_golden_tone(sink, base_freq);
