@@ -54,6 +54,25 @@ pub static _ZTISt13runtime_error: [usize; 2] = [0; 2];
 #[no_mangle]
 pub static _ZTISt9bad_alloc: [usize; 2] = [0; 2];
 
+/// Destroyer Sovereignty: Destructor stubs for C++ standard exceptions.
+/// These resolve 'cannot locate symbol' errors for destructors referenced by Oboe.
+#[no_mangle]
+pub extern "C" fn _ZNSt9exceptionD2Ev() {}
+#[no_mangle]
+pub extern "C" fn _ZNSt11logic_errorD2Ev() {}
+#[no_mangle]
+pub extern "C" fn _ZNSt12length_errorD1Ev() {}
+#[no_mangle]
+pub extern "C" fn _ZNSt12length_errorD2Ev() {}
+#[no_mangle]
+pub extern "C" fn _ZNSt12out_of_rangeD1Ev() {}
+#[no_mangle]
+pub extern "C" fn _ZNSt12out_of_rangeD2Ev() {}
+#[no_mangle]
+pub extern "C" fn _ZNSt13runtime_errorD2Ev() {}
+#[no_mangle]
+pub extern "C" fn _ZNSt9bad_allocD2Ev() {}
+
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
