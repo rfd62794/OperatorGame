@@ -135,7 +135,10 @@ const SAVE_FILE: &str = "save.json";
 
 /// Returns the canonical path to the save file.
 pub fn save_path() -> PathBuf {
-    PathBuf::from(SAVE_FILE)
+    let mut path = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("."));
+    path.pop(); // Remove the executable name from the path
+    path.push(SAVE_FILE);
+    path
 }
 
 /// Load GameState from disk.
