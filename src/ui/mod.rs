@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 use crate::garden::Garden;
 use crate::log_engine::{format_log_entry, generate_narrative};
-use crate::models::{AarOutcome, Deployment, Mission, Operator, OperatorState};
+use crate::models::{AarOutcome, Deployment, Mission, SlimeGenome, SlimeState};
 use crate::persistence::{save, GameState};
 
 pub mod cargo;

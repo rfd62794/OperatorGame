@@ -201,7 +201,7 @@ impl Deployment {
     pub fn resolve<R: Rng>(
         &self,
         mission: &Mission,
-        squad: &[&Operator],
+        squad: &[&crate::genetics::SlimeGenome],
         rng: &mut R,
     ) -> AarOutcome {
         let success_rate = mission.calculate_success_rate(squad);
