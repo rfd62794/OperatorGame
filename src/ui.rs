@@ -658,6 +658,9 @@ impl eframe::App for OperatorApp {
         let cursor = ctx.input(|i| i.pointer.hover_pos());
         let screen_rect = ctx.screen_rect();
 
+        /*
+        // --- Garden temporarily disabled for "Industrial Pivot" UI Focus ---
+
         // Advance garden simulation
         self.garden.tick(0.1, cursor, screen_rect);
 
@@ -681,6 +684,7 @@ impl eframe::App for OperatorApp {
                 let genome_map = self.state.slimes.iter().map(|g| (g.id, g)).collect();
                 draw_garden(ui.painter(), screen_rect, &genome_map, &self.garden, t);
             });
+        */
 
         // Top status bar
         egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
