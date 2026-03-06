@@ -15,6 +15,14 @@ pub mod ui;
 pub mod world_map;
 pub mod audio;
 
+/// Sovereign Stub: Resolves the missing C++ ABI symbol caused by the Oboe/cpal dependency.
+/// This prevents the 'dlopen failed: cannot locate symbol "__cxa_pure_virtual"' crash on boot.
+#[no_mangle]
+pub extern "C" fn __cxa_pure_virtual() {
+    #[allow(clippy::empty_loop)]
+    loop {}
+}
+
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
