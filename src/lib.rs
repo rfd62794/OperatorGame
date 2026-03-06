@@ -30,6 +30,15 @@ pub extern "C" fn __gxx_personality_v0() {
     loop {}
 }
 
+/// RTTI Sovereignty: Resolves vtable symbols for __cxxabiv1 classes.
+/// These are typically required by C++ code (Oboe) in the Android 15 environment.
+#[no_mangle]
+pub static _ZTVN10__cxxabiv117__class_type_infoE: [usize; 2] = [0; 2];
+#[no_mangle]
+pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0; 2];
+#[no_mangle]
+pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0; 2];
+
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
