@@ -28,5 +28,36 @@ impl OperatorApp {
             if ui.button("Force Mutate").clicked() {}
             ui.end_row();
         });
+
+        ui.add_space(16.0);
+        ui.label(egui::RichText::new("── UNION MARKET ──").strong().size(14.0));
+        ui.add_space(8.0);
+        
+        let buy_gear = |ui: &mut egui::Ui, state: &mut crate::persistence::GameState, gear: crate::models::Gear, cost: u64| {
+            ui.horizontal(|ui| {
+                ui.label(format!("{} (${})", gear.name(), cost));
+                let (s, a, i) = gear.stat_bonus();
+                let txt = if s > 0 { format!("+{} STR", s) } else if a > 0 { format!("+{} AGI", a) } else { format!("+{} INT", i) };
+                ui.small(txt);
+
+                if state.bank >= cost {
+                    if ui.button("BUY").clicked() {
+                        state.bank -= cost;
+                        state.inventory.gear_pool.push(gear);
+                    }
+                } else {
+                    ui.add_enabled(false, egui::Button::new("BUY"));
+                }
+            });
+        };
+
+        ui.group(|ui| {
+            buy_gear(ui, &mut self.state, crate::models::Gear::HeavyVest, 15);
+            buy_gear(ui, &mut self.state, crate::models::Gear::ScoutFins, 15);
+            buy_gear(ui, &mut self.state, crate::models::Gear::DataLens, 15);
+        });
+        
+        ui.add_space(8.0);
+        ui.label(format!("Owned Gear in Pool: {}", self.state.inventory.gear_pool.len()));
     }
 }
