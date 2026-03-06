@@ -6,7 +6,7 @@
 use rand::seq::SliceRandom;
 use rand::Rng;
 
-use crate::models::{AarOutcome, Mission, Operator};
+use crate::models::{AarOutcome, Mission};
 
 // ---------------------------------------------------------------------------
 // Mission flavour classification
@@ -98,7 +98,7 @@ const CRITICAL_LINES: &[&str] = &[
 pub fn generate_narrative<R: Rng>(
     outcome: &AarOutcome,
     mission: &Mission,
-    squad: &[&Operator],
+    squad: &[&crate::genetics::SlimeGenome],
     rng: &mut R,
 ) -> String {
     let mission_type = MissionType::from_mission(mission);
@@ -165,8 +165,8 @@ mod tests {
         crate::models::Mission::new("Test", rs, ra, ri, 0.1, 60, 100)
     }
 
-    fn dummy_op(name: &str) -> Operator {
-        crate::models::Operator::new(name, crate::models::Job::Breacher, 50, 30, 20)
+    fn dummy_op(name: &str, rng: &mut rand::rngs::SmallRng) -> crate::genetics::SlimeGenome {
+        crate::genetics::generate_random(crate::genetics::Culture::Ember, name, rng)
     }
 
     #[test]
@@ -181,7 +181,7 @@ mod tests {
     fn test_narrative_returns_non_empty() {
         let mut rng = SmallRng::seed_from_u64(7);
         let mission = dummy_mission(10, 10, 80);
-        let op = dummy_op("Ghost");
+        let op = dummy_op("Ghost", &mut rng);
         let outcome = AarOutcome::Victory { reward: 1000 };
         let result = generate_narrative(&outcome, &mission, &[&op], &mut rng);
         assert!(!result.is_empty());
