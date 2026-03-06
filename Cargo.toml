@@ -39,9 +39,8 @@ package = "rust.operator"
 label = "OPERATOR"
 assets = "assets"
 build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
-min_sdk_version = 24
 target_sdk_version = 33
-sdk_version = 33
+min_sdk_version = 24
 
 [package.metadata.android.signing.release]
 path = "/redacted/path"
