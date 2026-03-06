@@ -43,3 +43,12 @@ fn android_main(app: android_activity::AndroidApp) {
         Box::new(|cc| Box::new(OperatorApp::new(cc, state, path))),
     ).expect("Failed to run on Android");
 }
+
+/// SOVEREIGN GUARD: Satisfies the C++ ABI for pure virtual function calls.
+/// This prevents UnsatisfiedLinkError on modern NDK/Android environments
+/// when using C++ dependencies like Oboe with static linking.
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "C" fn __cxa_pure_virtual() {
+    std::process::abort();
+}
