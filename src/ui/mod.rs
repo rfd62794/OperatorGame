@@ -140,7 +140,7 @@ impl OperatorApp {
         // Validate all staged operators are still available
         let staged_ids: Vec<Uuid> = self.staged_operators.iter().cloned().collect();
         for id in &staged_ids {
-            let op = self.state.roster.iter().find(|o| o.id == *id);
+            let op = self.state.slimes.iter().find(|o| o.id == *id);
             if let Some(op) = op {
                 if !op.is_available() {
                     self.status_msg = format!("{} is no longer available.", op.name);
@@ -150,9 +150,9 @@ impl OperatorApp {
         }
 
         // Mark operators as deployed
-        for op in self.state.roster.iter_mut() {
+        for op in self.state.slimes.iter_mut() {
             if staged_ids.contains(&op.id) {
-                op.state = OperatorState::Deployed(mission.id);
+                op.state = SlimeState::Deployed(mission.id);
             }
         }
 
@@ -184,9 +184,9 @@ impl OperatorApp {
             .cloned();
         let Some(mission) = mission else { return; };
 
-        let squad: Vec<&Operator> = self
+        let squad: Vec<&crate::genetics::SlimeGenome> = self
             .state
-            .roster
+            .slimes
             .iter()
             .filter(|o| dep.operator_ids.contains(&o.id))
             .collect();
@@ -207,9 +207,9 @@ impl OperatorApp {
                 self.state.bank += reward;
                 self.status_msg =
                     format!("✅ '{}' — VICTORY! +${} | Bank: ${}", mission.name, reward, self.state.bank);
-                for op in self.state.roster.iter_mut() {
+                for op in self.state.slimes.iter_mut() {
                     if dep.operator_ids.contains(&op.id) {
-                        op.state = OperatorState::Idle;
+                        op.state = SlimeState::Idle;
                     }
                 }
             }
@@ -218,23 +218,23 @@ impl OperatorApp {
                 let recover_at = Utc::now() + Duration::seconds(recovery as i64);
                 self.status_msg =
                     format!("❌ '{}' — FAILURE. Operators injured for {}s.", mission.name, recovery);
-                for op in self.state.roster.iter_mut() {
+                for op in self.state.slimes.iter_mut() {
                     if injured_ids.contains(&op.id) {
-                        op.state = OperatorState::Injured(recover_at);
+                        op.state = SlimeState::Injured(recover_at);
                     }
                 }
             }
             AarOutcome::CriticalFailure { killed_id } => {
                 let name = self
                     .state
-                    .roster
+                    .slimes
                     .iter()
                     .find(|o| o.id == killed_id)
                     .map(|o| o.name.clone())
                     .unwrap_or_default();
                 self.status_msg =
                     format!("☠ '{}' — CRITICAL FAILURE! {} is KIA.", mission.name, name);
-                self.state.roster.retain(|o| o.id != killed_id);
+                self.state.slimes.retain(|o| o.id != killed_id);
             }
         }
 
