@@ -33,7 +33,9 @@ async fn main() {
     let cli = Cli::parse();
     let mut rng = rand::thread_rng();
 
-    match cli.command {
+    let command = cli.command.unwrap_or(Commands::Gui);
+
+    match command {
         // -----------------------------------------------------------------------
         Commands::Roster => {
             if state.roster.is_empty() {
