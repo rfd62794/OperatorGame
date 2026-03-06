@@ -311,6 +311,7 @@ async fn main() {
 fn android_main(app: android_activity::AndroidApp) {
     use operator::persistence::{load, default_save_path_on_android};
     use operator::ui::OperatorApp;
+    use winit::platform::android::EventLoopBuilderExtAndroid;
 
     std::env::set_var("RUST_BACKTRACE", "full");
     
@@ -321,7 +322,6 @@ fn android_main(app: android_activity::AndroidApp) {
     
     // The 0.27 way to pass the app handle:
     options.event_loop_builder = Some(Box::new(move |builder| {
-        use eframe::winit::platform::android::EventLoopBuilderExtAndroid;
         builder.with_android_app(app);
     }));
 

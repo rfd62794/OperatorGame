@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::genetics::{GeneticTier, SlimeGenome};
 use crate::inventory::Inventory;
-use crate::models::{AarOutcome, Deployment, Gear, Mission, SlimeState};
+use crate::models::{Deployment, Mission};
 use crate::world_map::WorldMap;
 
 // ---------------------------------------------------------------------------
