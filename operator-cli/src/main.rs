@@ -13,7 +13,7 @@ use operator::ui::run_gui;
 use include_dir::{include_dir, Dir};
 
 #[allow(dead_code)]
-static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
+static DOCS_DIR: Dir = include_dir!("../docs");
 
 #[tokio::main]
 async fn main() {
