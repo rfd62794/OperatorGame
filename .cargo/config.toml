@@ -1,20 +1,14 @@
 [target.aarch64-linux-android]
 linker = "aarch64-linux-android33-clang"
 rustflags = [
-    "-C", "link-arg=-lc++_static",
-    "-C", "link-arg=-lc++abi_static",
-    "-C", "link-arg=-Wl,--force-unwind",
-    "-C", "link-arg=-Wl,--export-dynamic",
+    "-C", "link-arg=-lc++_shared",
     "-C", "link-arg=-z", "link-arg=max-page-size=16384"
 ]
 
 [target.armv7-linux-androideabi]
 linker = "armv7-linux-androideabi33-clang"
 rustflags = [
-    "-C", "link-arg=-lc++_static",
-    "-C", "link-arg=-lc++abi_static",
-    "-C", "link-arg=-Wl,--force-unwind",
-    "-C", "link-arg=-Wl,--export-dynamic",
+    "-C", "link-arg=-lc++_shared",
     "-C", "link-arg=-z", "link-arg=max-page-size=16384"
 ]
 
