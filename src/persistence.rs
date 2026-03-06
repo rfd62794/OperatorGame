@@ -130,6 +130,7 @@ impl GameState {
 // I/O helpers
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 const SAVE_FILE: &str = "save.json";
 
 /// Returns the canonical path to the save file.

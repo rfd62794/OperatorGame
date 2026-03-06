@@ -36,6 +36,6 @@ fn android_main(app: android_activity::AndroidApp) {
     eframe::run_native(
         "OPERATOR",
         options,
-        Box::new(|cc| Box::new(crate::ui::OperatorApp::new(cc, state, path))),
+        Box::new(|cc| Box::new(OperatorApp::new(cc, state, path))),
     ).expect("Failed to run on Android");
 }

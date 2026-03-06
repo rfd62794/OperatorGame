@@ -12,6 +12,7 @@ use operator::persistence::{load, save, save_path};
 use operator::ui::run_gui;
 use include_dir::{include_dir, Dir};
 
+#[allow(dead_code)]
 static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
 
 #[tokio::main]
