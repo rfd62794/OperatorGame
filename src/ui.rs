@@ -268,6 +268,7 @@ impl OperatorApp {
                     true
                 }
             });
+            self.state.world_map.startled_level += 0.10 * new_slimes.len() as f32; // ADR-015: Hoot & Holler resonance
             self.state.slimes.extend(new_slimes);
             
             // Re-sync garden to ensure new slimes wander immediately
@@ -486,6 +487,7 @@ impl OperatorApp {
             mission.duration_secs,
         );
 
+        self.state.world_map.startled_level += 0.05; // ADR-015: Hoot & Holler resonance
         self.state.deployments.push(deployment);
         self.staged_operators.clear();
         self.selected_mission = None;
