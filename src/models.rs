@@ -110,7 +110,7 @@ impl Mission {
         let (mut total_str, mut total_agi, mut total_int) = (0u32, 0u32, 0u32);
 
         for op in squad {
-            let (s, a, i) = op.total_stats();
+            let (s, a, i, _, _, _) = op.total_stats();
             total_str += s;
             total_agi += a;
             total_int += i;

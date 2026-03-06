@@ -45,8 +45,9 @@ impl OperatorApp {
                     ui.label(format!("{:.0} Hz", genome.frequency));
 
                     ui.vertical(|ui| {
-                        let (s, a, i) = genome.total_stats();
+                        let (s, a, i, m, se, t) = genome.total_stats();
                         ui.label(format!("STR: {} | AGI: {} | INT: {}", s, a, i));
+                        ui.label(format!("MND: {} | SEN: {} | TEN: {}", m, se, t));
                         
                         ui.horizontal(|ui| {
                             if !genome.equipped_gear.is_empty() {
