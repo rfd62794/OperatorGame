@@ -24,13 +24,16 @@ impl OperatorApp {
                 ui.label(egui::RichText::new("CULTURE").strong());
                 ui.label(egui::RichText::new("NAME").strong());
                 ui.label(egui::RichText::new("FREQ").strong());
-                ui.label(egui::RichText::new("EFFICIENCY").strong());
+                ui.label(egui::RichText::new("STATS & GEAR").strong());
                 ui.label(egui::RichText::new("ACTIONS").strong());
                 ui.end_row();
 
+                let mut equip_action: Option<(uuid::Uuid, usize)> = None;
+                let mut unequip_action: Option<(uuid::Uuid, usize)> = None;
+
                 for genome in &self.state.slimes {
                     let is_staged = staged.contains(&genome.id);
-                    let is_dispatched = false; // TODO Sync actual dispatch state
+                    let is_dispatched = matches!(genome.state, crate::models::SlimeState::Deployed(_));
                     let can_stage = !is_dispatched && selected_mission_id.is_some();
 
                     let [cr, cg, cb, _] = crate::world_map::culture_accent(genome.dominant_culture());
@@ -41,8 +44,22 @@ impl OperatorApp {
                     ui.label(egui::RichText::new(&genome.name).strong());
                     ui.label(format!("{:.0} Hz", genome.frequency));
 
-                    let eff = (genome.base_hp / 100.0).clamp(0.0, 1.0) as f32;
-                    ui.add(egui::ProgressBar::new(eff).desired_width(80.0));
+                    ui.vertical(|ui| {
+                        let (s, a, i) = genome.total_stats();
+                        ui.label(format!("STR: {} | AGI: {} | INT: {}", s, a, i));
+                        
+                        ui.horizontal(|ui| {
+                            if !genome.equipped_gear.is_empty() {
+                                for (idx, gear) in genome.equipped_gear.iter().enumerate() {
+                                    if ui.button(format!("[-] {}", gear.name())).on_hover_text("Unequip to Cargo").clicked() {
+                                        unequip_action = Some((genome.id, idx));
+                                    }
+                                }
+                            } else {
+                                ui.label(egui::RichText::new("No Gear").small().color(egui::Color32::GRAY));
+                            }
+                        });
+                    });
 
                     // Actions
                     ui.horizontal(|ui| {
@@ -68,9 +85,33 @@ impl OperatorApp {
                             }
                         }
 
-                        if ui.button("SAMPLE").clicked() { /* Force mutation placeholder */ }
+                        ui.menu_button("EQUIP", |ui| {
+                            if self.state.inventory.gear_pool.is_empty() {
+                                ui.label("No gear in Cargo.");
+                            } else {
+                                for (idx, gear) in self.state.inventory.gear_pool.iter().enumerate() {
+                                    if ui.button(gear.name()).clicked() {
+                                        equip_action = Some((genome.id, idx));
+                                        ui.close_menu();
+                                    }
+                                }
+                            }
+                        });
                     });
                     ui.end_row();
+                }
+
+                if let Some((slime_id, eq_idx)) = unequip_action {
+                    if let Some(slime) = self.state.slimes.iter_mut().find(|s| s.id == slime_id) {
+                        let removed = slime.equipped_gear.remove(eq_idx);
+                        self.state.inventory.gear_pool.push(removed);
+                    }
+                }
+                if let Some((slime_id, inv_idx)) = equip_action {
+                    if let Some(slime) = self.state.slimes.iter_mut().find(|s| s.id == slime_id) {
+                        let gear = self.state.inventory.gear_pool.remove(inv_idx);
+                        slime.equipped_gear.push(gear);
+                    }
                 }
             });
     }
