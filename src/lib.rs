@@ -46,25 +46,21 @@ fn android_main(app: android_activity::AndroidApp) {
 
 #[cfg(target_os = "android")]
 pub mod android_stubs {
-    // 1. Core Runtime Symbols
     #[no_mangle] pub unsafe extern "C" fn __cxa_pure_virtual() { loop {} }
     #[no_mangle] pub unsafe extern "C" fn __gxx_personality_v0() { loop {} }
 
-    // 2. RTTI Vtables (The 'ZTV' symbols)
+    // RTTI Vtables
     #[no_mangle] pub static _ZTVN10__cxxabiv117__class_type_infoE: [usize; 2] = [0, 0];
     #[no_mangle] pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0, 0];
     #[no_mangle] pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0, 0];
+    #[no_mangle] pub static _ZTVSt12length_error: [usize; 2] = [0, 0];
+    #[no_mangle] pub static _ZTVSt9exception: [usize; 2] = [0, 0];
 
-    // 3. Type Info (The 'ZTI' symbols)
+    // RTTI Type Info
     #[no_mangle] pub static _ZTISt9exception: [usize; 2] = [0, 0];
     #[no_mangle] pub static _ZTISt12length_error: [usize; 2] = [0, 0];
-    #[no_mangle] pub static _ZTISt11logic_error: [usize; 2] = [0, 0];
-
-    // 4. Destructors (The 'D1Ev' / 'D2Ev' symbols - The current Moto G Blocker)
+    
+    // Destructors
     #[no_mangle] pub unsafe extern "C" fn _ZNSt12length_errorD1Ev() { loop {} }
-    #[no_mangle] pub unsafe extern "C" fn _ZNSt12length_errorD2Ev() { loop {} }
-    #[no_mangle] pub unsafe extern "C" fn _ZNSt11logic_errorD1Ev() { loop {} }
-    #[no_mangle] pub unsafe extern "C" fn _ZNSt11logic_errorD2Ev() { loop {} }
     #[no_mangle] pub unsafe extern "C" fn _ZNSt9exceptionD1Ev() { loop {} }
-    #[no_mangle] pub unsafe extern "C" fn _ZNSt9exceptionD2Ev() { loop {} }
 }
