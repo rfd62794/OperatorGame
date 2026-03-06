@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "operator"
+name = "operator-cli"
 path = "src/main.rs"
 
 [package.metadata.android]
