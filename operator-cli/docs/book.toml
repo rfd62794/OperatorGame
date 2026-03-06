@@ -1,0 +1,80 @@
+[book]
+title = "The Shepherd's Guide: OPERATOR rpgCore Documentation"
+authors = ["The Astronaut"]
+description = "A comprehensive guide to the OPERATOR rpgCore system, featuring the 9-Point Chromatic Wheel, Harmonic Resonance, and Cymatic Rendering"
+language = "en"
+multilingual = false
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output]
+html.site-url = "/operator-rpgcore/"
+html.default-theme = "ayu"
+html.preferred-dark-theme = "ayu"
+html.git-repository-url = "https://github.com/rfd62794/OperatorGame"
+html.edit-url-template = "https://github.com/rfd62794/OperatorGame/edit/main/{path}"
+
+[output.html]
+additional-css = ["theme/css/custom.css"]
+additional-js = ["theme/js/custom.js"]
+fold.enable = true
+fold.level = 2
+
+[output.html.search]
+enable = true
+limit-results = 30
+
+[output.html.print]
+enable = false
+
+[preprocessor.index]
+title = "The Shepherd's Guide"
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[[preprocessor.index.chapters]]
+path = "README.md"
+title = "Introduction"
+
+[[preprocessor.index.chapters]]
+path = "narrative/astronaut-and-elder.md"
+title = "The Astronaut & The Elder"
+
+[[preprocessor.index.chapters]]
+path = "cultures/chromatic-wheel.md"
+title = "The 9-Point Chromatic Wheel"
+
+[[preprocessor.index.chapters]]
+path = "soundscape/planetary-song.md"
+title = "The Planetary Song"
+
+[[preprocessor.index.chapters]]
+path = "technical/terminal-specs.md"
+title = "The Terminal Specs"
+
+[[preprocessor.index.chapters]]
+path = "rendering/cymatic-rendering.md"
+title = "Cymatic Rendering"
+
+[[preprocessor.index.chapters]]
+path = "combat/trinary-rps.md"
+title = "The Trinary RPS"
+
+[[preprocessor.index.chapters]]
+path = "genetics/genetic-synthesis.md"
+title = "Genetic Synthesis"
+
+[[preprocessor.index.chapters]]
+path = "adr/adr-ledger.md"
+title = "ADR Ledger"
+
+[[preprocessor.index.chapters]]
+path = "legacy/rpgcore-ancestry.md"
+title = "The rpgCore Ancestry"
+
+[preprocessor.index.chapters]]
+path = "historical/historical-archive.md"
+title = "Historical Archive"
