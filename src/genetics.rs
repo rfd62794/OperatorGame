@@ -404,6 +404,13 @@ pub struct SlimeGenome {
     pub base_agility: u32,
     #[serde(default)]
     pub base_intelligence: u32,
+    // Soft Stats (Garden/Repair)
+    #[serde(default)]
+    pub base_mind: u32,
+    #[serde(default)]
+    pub base_sensory: u32,
+    #[serde(default)]
+    pub base_tenacity: u32,
     #[serde(default)]
     pub equipped_gear: Vec<crate::models::Gear>,
     #[serde(default = "default_slime_state")]
@@ -456,10 +463,13 @@ impl SlimeGenome {
     }
 
     /// Total stats including base and equipped gear (ADR-036).
-    pub fn total_stats(&self) -> (u32, u32, u32) {
+    pub fn total_stats(&self) -> (u32, u32, u32, u32, u32, u32) {
         let mut s = self.base_strength;
         let mut a = self.base_agility;
         let mut i = self.base_intelligence;
+        let m = self.base_mind;
+        let se = self.base_sensory;
+        let t = self.base_tenacity;
 
         for gear in &self.equipped_gear {
             let (gs, ga, gi) = gear.stat_bonus();
@@ -467,7 +477,7 @@ impl SlimeGenome {
             a += ga;
             i += gi;
         }
-        (s, a, i)
+        (s, a, i, m, se, t)
     }
 
     /// A slime is deployable only when fully Idle.
@@ -630,6 +640,9 @@ impl BreedingResolver {
             base_strength: rng.gen_range(5..=8),
             base_agility:  rng.gen_range(5..=8),
             base_intelligence: rng.gen_range(5..=8),
+            base_mind: rng.gen_range(5..=8),
+            base_sensory: rng.gen_range(5..=8),
+            base_tenacity: rng.gen_range(5..=8),
             equipped_gear: Vec::new(),
             state: crate::models::SlimeState::Idle,
         })
