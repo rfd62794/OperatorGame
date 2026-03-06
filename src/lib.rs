@@ -23,6 +23,13 @@ pub extern "C" fn __cxa_pure_virtual() {
     loop {}
 }
 
+/// Personality Stub: Resolves missing C++ exception handling symbols.
+#[no_mangle]
+pub extern "C" fn __gxx_personality_v0() {
+    #[allow(clippy::empty_loop)]
+    loop {}
+}
+
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
