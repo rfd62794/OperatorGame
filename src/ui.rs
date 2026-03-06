@@ -252,6 +252,63 @@ impl OperatorApp {
         }
     }
 
+    fn render_recruit(&mut self, ui: &mut egui::Ui) {
+        ui.heading("RECRUITMENT AGENCY");
+        ui.add_space(8.0);
+        
+        // Anti-Softlock (ADR-034): Elder's Gift
+        if self.state.slimes.is_empty() && self.state.bank < crate::recruitment::STANDARD_RECRUIT_COST {
+            ui.group(|ui| {
+                ui.heading(egui::RichText::new("EMERGENCY DIRECTIVE").color(egui::Color32::RED));
+                ui.label("Roster empty. Insufficient funds. The Union cannot deploy.");
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new("The Meadow offers a seed of the Void to restart the cycle.").italics());
+                
+                ui.add_space(8.0);
+                if ui.button("RESONATE WITH MEADOW (FREE)").clicked() {
+                    match crate::recruitment::claim_elders_gift(&mut self.state) {
+                        Ok(id) => {
+                            self.status_msg = format!("Granted Elder's Gift: Void Slime #{}", &id.to_string()[..5]);
+                            self.persist();
+                            self.garden = crate::garden::Garden::from_genomes(&self.state.slimes, ui.max_rect());
+                        }
+                        Err(e) => self.status_msg = e.to_string(),
+                    }
+                }
+            });
+            return;
+        }
+
+        // Standard Draft
+        ui.group(|ui| {
+            ui.heading("Standard Draft");
+            ui.label("Requisition a new Tier 0 operator. Culture is randomized (Ember, Gale, or Marsh).");
+            ui.add_space(8.0);
+
+            ui.horizontal(|ui| {
+                let cost = crate::recruitment::STANDARD_RECRUIT_COST;
+                if self.state.bank >= cost {
+                    if ui.button(format!("DRAFT NEW RECRUIT (${})", cost)).clicked() {
+                        let name_pool = ["Rookie", "Spark", "Dusty", "Echo", "Jumper", "Mute"];
+                        let r_name = name_pool[rand::random::<usize>() % name_pool.len()];
+                        
+                        match crate::recruitment::purchase_recruit(&mut self.state, r_name) {
+                            Ok(id) => {
+                                self.status_msg = format!("Drafted new recruit: {} #{}", r_name, &id.to_string()[..5]);
+                                self.persist();
+                                self.garden = crate::garden::Garden::from_genomes(&self.state.slimes, ui.max_rect());
+                            }
+                            Err(e) => self.status_msg = e.to_string(),
+                        }
+                    }
+                } else {
+                    ui.add_enabled(false, egui::Button::new(format!("DRAFT NEW RECRUIT (${})", cost)));
+                    ui.label(egui::RichText::new("INSUFFICIENT FUNDS").color(egui::Color32::RED));
+                }
+            });
+        });
+    }
+
 
     fn render_active_ops(&mut self, ui: &mut egui::Ui) {
         ui.label(egui::RichText::new("── ACTIVE OPERATIONS ──").strong().size(14.0));
