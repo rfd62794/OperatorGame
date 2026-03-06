@@ -39,6 +39,21 @@ pub static _ZTVN10__cxxabiv120__si_class_type_infoE: [usize; 2] = [0; 2];
 #[no_mangle]
 pub static _ZTVN10__cxxabiv121__vmi_class_type_infoE: [usize; 2] = [0; 2];
 
+/// Exceptional Sovereignty: TypeInfo stubs for C++ standard exceptions.
+/// These satisfy the RTTI (Run-Time Type Information) required by Oboe/C++.
+#[no_mangle]
+pub static _ZTISt9exception: [usize; 2] = [0; 2];
+#[no_mangle]
+pub static _ZTISt11logic_error: [usize; 2] = [0; 2];
+#[no_mangle]
+pub static _ZTISt12length_error: [usize; 2] = [0; 2];
+#[no_mangle]
+pub static _ZTISt12out_of_range: [usize; 2] = [0; 2];
+#[no_mangle]
+pub static _ZTISt13runtime_error: [usize; 2] = [0; 2];
+#[no_mangle]
+pub static _ZTISt9bad_alloc: [usize; 2] = [0; 2];
+
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
