@@ -5,3 +5,8 @@ target = "index.html"
 dist   = "dist"
 # Set to "/" for local dev; override with CDN path for production deploys.
 public_url = "/"
+
+[[hooks]]
+stage = "pre_build"
+command = "mdbook"
+command_arguments = ["build", "docs"]

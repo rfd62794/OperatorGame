@@ -49,16 +49,29 @@ impl Culture {
         Culture::Tide,
     ];
 
-    /// Stat multipliers extracted from `cultural_base.py`.
+    /// Stat multipliers extracted from `cultural_base.py` and Faction-Core profiles.
     pub fn params(self) -> CulturalParams {
         match self {
-            Culture::Ember   => CulturalParams { hp: 0.8, atk: 1.4, spd: 1.1, rare: 0.05 },
-            Culture::Gale    => CulturalParams { hp: 0.9, atk: 0.9, spd: 1.4, rare: 0.06 },
-            Culture::Marsh   => CulturalParams { hp: 1.0, atk: 0.9, spd: 1.3, rare: 0.04 },
-            Culture::Crystal => CulturalParams { hp: 1.4, atk: 0.8, spd: 0.7, rare: 0.08 },
-            Culture::Tundra  => CulturalParams { hp: 1.1, atk: 0.9, spd: 0.8, rare: 0.05 },
-            Culture::Tide    => CulturalParams { hp: 1.0, atk: 1.0, spd: 1.2, rare: 0.07 },
-            Culture::Void    => CulturalParams { hp: 1.2, atk: 1.2, spd: 1.2, rare: 0.25 },
+            Culture::Ember   => CulturalParams { hp: 0.8, atk: 1.4, spd: 1.1, rare: 0.05, openness: 0.2 },
+            Culture::Gale    => CulturalParams { hp: 0.9, atk: 0.9, spd: 1.4, rare: 0.06, openness: 0.8 },
+            Culture::Marsh   => CulturalParams { hp: 1.0, atk: 0.9, spd: 1.3, rare: 0.04, openness: 0.7 },
+            Culture::Crystal => CulturalParams { hp: 1.4, atk: 0.8, spd: 0.7, rare: 0.08, openness: 0.1 },
+            Culture::Tundra  => CulturalParams { hp: 1.1, atk: 0.9, spd: 0.8, rare: 0.05, openness: 0.3 },
+            Culture::Tide    => CulturalParams { hp: 1.0, atk: 1.0, spd: 1.2, rare: 0.07, openness: 0.9 },
+            Culture::Void    => CulturalParams { hp: 1.2, atk: 1.2, spd: 1.2, rare: 0.25, openness: 1.0 },
+        }
+    }
+
+    /// Primary frequency for Cymatics audio/visual generation.
+    pub fn frequency(self) -> f32 {
+        match self {
+            Culture::Ember   => 256.0,
+            Culture::Gale    => 288.0,
+            Culture::Tide    => 320.0,
+            Culture::Marsh   => 384.0,
+            Culture::Crystal => 426.0,
+            Culture::Tundra  => 540.0,
+            Culture::Void    => 432.0, // Default to Meadow/Solfeggio harmony
         }
     }
 
@@ -121,6 +134,7 @@ pub struct CulturalParams {
     pub atk:  f32,   // multiplier on base_atk = 5.0
     pub spd:  f32,   // multiplier on base_spd = 5.0
     pub rare: f32,   // rare trait chance (0.0–1.0)
+    pub openness: f32, // fraction of personality permeability
 }
 
 impl CulturalParams {
@@ -375,6 +389,8 @@ pub struct SlimeGenome {
     pub accessory:     Accessory,
     pub base_color:    [u8; 3],
     pub pattern_color: [u8; 3],
+    // Frequency
+    pub frequency:     f32,
     // Name (cosmetic)
     pub name:          String,
     /// Cellular Exhaustion — set after Genetic Synthesis (ADR-010).
@@ -563,6 +579,7 @@ impl BreedingResolver {
             accessory,
             base_color,
             pattern_color,
+            frequency:    culture_expr.dominant().frequency(),
             name:         name.to_string(),
             synthesis_cooldown_until: None, // offspring starts fresh
         })
@@ -755,6 +772,7 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
         accessory:     accessories[rng.gen_range(0..accessories.len())],
         base_color:    [rng.gen_range(50..=255), rng.gen_range(50..=255), rng.gen_range(50..=255)],
         pattern_color: [rng.gen_range(50..=255), rng.gen_range(50..=255), rng.gen_range(50..=255)],
+        frequency:     culture.frequency(),
         name:          name.to_string(),
         synthesis_cooldown_until: None,
     }
