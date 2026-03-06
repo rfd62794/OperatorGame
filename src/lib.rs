@@ -33,7 +33,7 @@ pub extern "C" fn __gxx_personality_v0() {
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
-    use crate::persistence::{load, save_path};
+    use crate::persistence::load;
     use crate::ui::OperatorApp;
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
