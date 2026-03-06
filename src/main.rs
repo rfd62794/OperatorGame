@@ -317,15 +317,18 @@ fn android_main(app: android_activity::AndroidApp) {
     let path = default_save_path_on_android(); 
     let state = load(&path).unwrap_or_default();
 
-    let options = eframe::NativeOptions {
-        android_app: Some(app),
-        ..Default::default()
-    };
+    let mut options = eframe::NativeOptions::default();
     
+    // The 0.27 way to pass the app handle:
+    options.event_loop_builder = Some(Box::new(move |builder| {
+        use eframe::winit::platform::android::EventLoopBuilderExtAndroid;
+        builder.with_android_app(app);
+    }));
+
     eframe::run_native(
         "OPERATOR",
         options,
         Box::new(|cc| Box::new(OperatorApp::new(cc, state, path))),
-    ).unwrap();
+    ).expect("Failed to run on Android");
 }
 
