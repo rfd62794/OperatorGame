@@ -5,6 +5,7 @@
 - [Narrative](GDD/NARRATIVE.md)
 - [Cultures](GDD/CULTURES.md)
 - [Economy](GDD/ECONOMY.md)
+- [Command Glossary](GDD/COMMAND_GLOSSARY.md)
 
 ## SDD: THE SKELETON
 - [Genetics](SDD/GENETICS.md)
