@@ -43,3 +43,11 @@ fn android_main(app: android_activity::AndroidApp) {
         Box::new(|cc| Box::new(OperatorApp::new(cc, state, path))),
     ).expect("Failed to run on Android");
 }
+
+#[cfg(target_os = "android")]
+pub mod android_stubs {
+    // These core runtime symbols are still required by the Moto G loader 
+    // even when libc++_shared.so is bundled.
+    #[no_mangle] pub unsafe extern "C" fn __cxa_pure_virtual() { loop {} }
+    #[no_mangle] pub unsafe extern "C" fn __gxx_personality_v0() { loop {} }
+}
