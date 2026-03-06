@@ -48,19 +48,7 @@ async fn main() {
             }
         }
 
-        // -----------------------------------------------------------------------
-        Commands::Hire { name, job } => {
-            // Generate balanced random stats based on job archetype
-            use rand::Rng;
-            let (s, a, i): (u32, u32, u32) = match job {
-                Job::Breacher    => (rng.gen_range(50..80), rng.gen_range(20..50), rng.gen_range(10..30)),
-                Job::Infiltrator => (rng.gen_range(20..50), rng.gen_range(50..80), rng.gen_range(20..40)),
-                Job::Analyst     => (rng.gen_range(10..30), rng.gen_range(20..40), rng.gen_range(50..80)),
-            };
-            let op = Operator::new(&name, job, s, a, i);
-            println!("Hired: {op}");
-            state.roster.push(op);
-        }
+        // Removed Commands::Hire and Commands::Roster
 
         // -----------------------------------------------------------------------
         Commands::Missions => {
@@ -94,7 +82,7 @@ async fn main() {
 
             for prefix in &operator_id_prefixes {
                 let maybe = state
-                    .roster
+                    .slimes
                     .iter_mut()
                     .find(|o| o.id.to_string().starts_with(prefix.as_str()));
 
@@ -108,7 +96,7 @@ async fn main() {
                         std::process::exit(1);
                     }
                     Some(op) => {
-                        op.state = OperatorState::Deployed(mission.id);
+                        op.state = crate::models::SlimeState::Deployed(mission.id);
                         operator_ids.push(op.id);
                         squad_display.push(op.name.clone());
                     }
@@ -116,8 +104,8 @@ async fn main() {
             }
 
             // Preview success rate before locking in
-            let squad_refs: Vec<&Operator> = state
-                .roster
+            let squad_refs: Vec<&crate::genetics::SlimeGenome> = state
+                .slimes
                 .iter()
                 .filter(|o| operator_ids.contains(&o.id))
                 .collect();
@@ -162,8 +150,8 @@ async fn main() {
                     let Some(mission) = mission else { continue; };
 
                     let squad_ids = deployment.operator_ids.clone();
-                    let squad: Vec<&Operator> = state
-                        .roster
+                    let squad: Vec<&crate::genetics::SlimeGenome> = state
+                        .slimes
                         .iter()
                         .filter(|o| squad_ids.contains(&o.id))
                         .collect();
@@ -177,9 +165,9 @@ async fn main() {
                             state.bank += reward;
                             println!("  ✅ VICTORY! +${reward} | Bank: ${}", state.bank);
                             // Return squad to Idle
-                            for op in state.roster.iter_mut() {
+                            for op in state.slimes.iter_mut() {
                                 if squad_ids.contains(&op.id) {
-                                    op.state = OperatorState::Idle;
+                                    op.state = crate::models::SlimeState::Idle;
                                 }
                             }
                         }
@@ -188,18 +176,18 @@ async fn main() {
                             let recover_at = chrono::Utc::now()
                                 + chrono::Duration::seconds(recovery as i64);
                             println!("  ❌ FAILURE. Operators injured for {}s.", recovery);
-                            for op in state.roster.iter_mut() {
+                            for op in state.slimes.iter_mut() {
                                 if injured_ids.contains(&op.id) {
                                     println!("     ↳ {} is injured.", op.name);
-                                    op.state = OperatorState::Injured(recover_at);
+                                    op.state = crate::models::SlimeState::Injured(recover_at);
                                 }
                             }
                         }
                         AarOutcome::CriticalFailure { killed_id } => {
                             println!("  ☠ CRITICAL FAILURE! One operator did not make it out.");
-                            if let Some(pos) = state.roster.iter().position(|o| &o.id == killed_id) {
-                                println!("     ↳ {} is KIA.", state.roster[pos].name);
-                                state.roster.remove(pos);
+                            if let Some(pos) = state.slimes.iter().position(|o| &o.id == killed_id) {
+                                println!("     ↳ {} is KIA.", state.slimes[pos].name);
+                                state.slimes.remove(pos);
                             }
                         }
                     }
@@ -213,7 +201,7 @@ async fn main() {
         Commands::Status => {
             println!("=== STATUS ===");
             println!("  Bank:        ${}", state.bank);
-            println!("  Roster:      {} operator(s)", state.roster.len());
+            println!("  Roster:      {} operator(s)", state.slimes.len());
             println!("  Deployments: {} active", state.deployments.len());
 
             for d in &state.deployments {
