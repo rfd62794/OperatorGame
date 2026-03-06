@@ -18,13 +18,16 @@ pub mod audio;
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: android_activity::AndroidApp) {
-    use crate::persistence::{load, default_save_path_on_android};
+    use crate::persistence::{load, save_path};
     use crate::ui::OperatorApp;
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
     std::env::set_var("RUST_BACKTRACE", "full");
     
-    let path = default_save_path_on_android(); 
+    // ADR-042 Revision: Use the system-provided internal data path instead of hardcoding.
+    let mut path = app.internal_data_path().unwrap_or_else(|| std::path::PathBuf::from("/data/local/tmp"));
+    path.push("save.json");
+    
     let state = load(&path).unwrap_or_default();
 
     let mut options = eframe::NativeOptions::default();

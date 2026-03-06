@@ -137,7 +137,9 @@ const SAVE_FILE: &str = "save.json";
 pub fn save_path() -> PathBuf {
     #[cfg(target_os = "android")]
     {
-        default_save_path_on_android()
+        // On Android, the path must be provided by android_activity at runtime.
+        // This is now handled in android_main and passed to OperatorApp.
+        PathBuf::from("save.json") 
     }
     #[cfg(not(target_os = "android"))]
     {
@@ -146,13 +148,6 @@ pub fn save_path() -> PathBuf {
         path.push(SAVE_FILE);
         path
     }
-}
-
-pub fn default_save_path_on_android() -> PathBuf {
-    // ADR-042: Hard-path the Android internal data directory.
-    // In a production JNI environment, we would query Context.getFilesDir().
-    // For the Local Forge, we target the standard internal storage root.
-    PathBuf::from("/data/data/com.robertdugger.operator/files/save.json")
 }
 
 /// Load GameState from disk.
