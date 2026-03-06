@@ -176,6 +176,19 @@ impl OperatorApp {
         );
 
         self.state.world_map.startled_level += 0.05; // ADR-015: Hoot & Holler resonance
+        
+        // Trigger Ember Chord (Geometric frequency mapping)
+        let mut freqs = Vec::new();
+        for op_id in &deployment.operator_ids {
+            if let Some(op) = self.state.slimes.iter().find(|s| s.id == *op_id) {
+                let (s, a, i, _, _, _) = op.total_stats();
+                freqs.push(200.0 + (s as f32 * 2.0));
+                freqs.push(300.0 + (a as f32 * 2.0));
+                freqs.push(400.0 + (i as f32 * 2.0));
+            }
+        }
+        crate::audio::OperatorSynth::play(crate::audio::PlayEvent::EmberChord { frequencies: freqs });
+
         self.state.deployments.push(deployment);
         self.staged_operators.clear();
         self.selected_mission = None;
@@ -218,6 +231,15 @@ impl OperatorApp {
                 self.state.bank += reward;
                 self.status_msg =
                     format!("✅ '{}' — VICTORY! +${} | Bank: ${}", mission.name, reward, self.state.bank);
+                
+                // Play Tide Bowl (Plate Resonance) based on total Mind of squad
+                let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
+                let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
+                crate::audio::OperatorSynth::play(crate::audio::PlayEvent::TideBowl { 
+                    base_freq: crate::audio::BASE_RESONANCE, 
+                    stability 
+                });
+
                 for op in self.state.slimes.iter_mut() {
                     if dep.operator_ids.contains(&op.id) {
                         op.state = SlimeState::Idle;
@@ -229,6 +251,9 @@ impl OperatorApp {
                 let recover_at = Utc::now() + Duration::seconds(recovery as i64);
                 self.status_msg =
                     format!("❌ '{}' — FAILURE. Operators injured for {}s.", mission.name, recovery);
+                
+                crate::audio::OperatorSynth::play(crate::audio::PlayEvent::Failure { base_freq: 200.0 });
+                
                 for op in self.state.slimes.iter_mut() {
                     if injured_ids.contains(&op.id) {
                         op.state = SlimeState::Injured(recover_at);
@@ -245,6 +270,9 @@ impl OperatorApp {
                     .unwrap_or_default();
                 self.status_msg =
                     format!("☠ '{}' — CRITICAL FAILURE! {} is KIA.", mission.name, name);
+                
+                crate::audio::OperatorSynth::play(crate::audio::PlayEvent::Startled { base_freq: 100.0 });
+
                 self.state.slimes.retain(|o| o.id != killed_id);
             }
         }

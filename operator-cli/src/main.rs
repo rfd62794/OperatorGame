@@ -113,6 +113,19 @@ async fn main() {
             );
 
             state.world_map.startled_level += 0.05; // ADR-015: Hoot & Holler resonance
+
+            // Trigger Ember Chord (Geometric frequency mapping)
+            let mut freqs = Vec::new();
+            for op_id in &deployment.operator_ids {
+                if let Some(op) = state.slimes.iter().find(|s| s.id == *op_id) {
+                    let (s, a, i, _, _, _) = op.total_stats();
+                    freqs.push(200.0 + (s as f32 * 2.0));
+                    freqs.push(300.0 + (a as f32 * 2.0));
+                    freqs.push(400.0 + (i as f32 * 2.0));
+                }
+            }
+            operator::audio::OperatorSynth::play(operator::audio::PlayEvent::EmberChord { frequencies: freqs });
+
             state.deployments.push(deployment);
         }
 
@@ -154,6 +167,15 @@ async fn main() {
                         AarOutcome::Victory { reward } => {
                             state.bank += reward;
                             println!("  ✅ VICTORY! +${reward} | Bank: ${}", state.bank);
+                            
+                            // Play Tide Bowl (Plate Resonance) based on total Mind of squad
+                            let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
+                            let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
+                            operator::audio::OperatorSynth::play(operator::audio::PlayEvent::TideBowl { 
+                                base_freq: operator::audio::BASE_RESONANCE, 
+                                stability 
+                            });
+
                             // Return squad to Idle
                             for op in state.slimes.iter_mut() {
                                 if squad_ids.contains(&op.id) {
@@ -166,6 +188,9 @@ async fn main() {
                             let recover_at = chrono::Utc::now()
                                 + chrono::Duration::seconds(recovery as i64);
                             println!("  ❌ FAILURE. Operators injured for {}s.", recovery);
+                            
+                            operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Failure { base_freq: 200.0 });
+
                             for op in state.slimes.iter_mut() {
                                 if injured_ids.contains(&op.id) {
                                     println!("     ↳ {} is injured.", op.name);
@@ -175,6 +200,9 @@ async fn main() {
                         }
                         AarOutcome::CriticalFailure { killed_id } => {
                             println!("  ☠ CRITICAL FAILURE! One operator did not make it out.");
+                            
+                            operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Startled { base_freq: 100.0 });
+
                             if let Some(pos) = state.slimes.iter().position(|o| &o.id == killed_id) {
                                 println!("     ↳ {} is KIA.", state.slimes[pos].name);
                                 state.slimes.remove(pos);
