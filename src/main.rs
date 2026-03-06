@@ -306,3 +306,26 @@ async fn main() {
     }
 }
 
+#[cfg(target_os = "android")]
+#[no_mangle]
+fn android_main(app: android_activity::AndroidApp) {
+    use crate::persistence::{load, default_save_path_on_android};
+    use crate::ui::OperatorApp;
+
+    std::env::set_var("RUST_BACKTRACE", "full");
+    
+    let path = default_save_path_on_android(); 
+    let state = load(&path).unwrap_or_default();
+
+    let options = eframe::NativeOptions {
+        android_app: Some(app),
+        ..Default::default()
+    };
+    
+    eframe::run_native(
+        "OPERATOR",
+        options,
+        Box::new(|cc| Box::new(OperatorApp::new(cc, state, path))),
+    ).unwrap();
+}
+
