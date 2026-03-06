@@ -14,17 +14,7 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// List all operators on your roster and their current state.
-    Roster,
-
-    /// Hire a new operator and add them to the roster.
-    Hire {
-        /// Display name for the operator.
-        name: String,
-        /// Job specialisation: breacher | infiltrator | analyst
-        #[arg(value_parser = parse_job)]
-        job: crate::models::Job,
-    },
+    // Removed Roster and Hire commands (replaced by Slimes and Hatch)
 
     /// Show all available missions.
     Missions,
@@ -73,15 +63,6 @@ pub enum Commands {
 
     /// Collect finished genomes from the Bio-Incubator.
     Incubate,
-}
-
-fn parse_job(s: &str) -> Result<crate::models::Job, String> {
-    match s.to_lowercase().as_str() {
-        "breacher" | "b"    => Ok(crate::models::Job::Breacher),
-        "infiltrator" | "i" => Ok(crate::models::Job::Infiltrator),
-        "analyst" | "a"     => Ok(crate::models::Job::Analyst),
-        _ => Err(format!("Unknown job '{}'. Choose: breacher, infiltrator, analyst", s)),
-    }
 }
 
 fn parse_culture(s: &str) -> Result<crate::genetics::Culture, String> {
