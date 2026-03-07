@@ -1,5 +1,5 @@
 # Sprint 2 — D20 Combat Core
-> **Status:** 🔄 NEXT | Target: after Sprint 1 stable
+> **Status:** ✅ COMPLETE | Closed: 2026-03-06
 
 ---
 
