@@ -514,6 +514,7 @@ fn render_right_panel(ui: &mut egui::Ui, app: &mut OperatorApp) {
 // Entry point helper called from main.rs
 // ---------------------------------------------------------------------------
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run_gui(state: GameState, save_path: std::path::PathBuf) -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
