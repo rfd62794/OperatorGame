@@ -227,7 +227,7 @@ impl OperatorApp {
         self.state.deployments[dep_idx].resolved = true;
 
         match outcome {
-            AarOutcome::Victory { reward } => {
+            AarOutcome::Victory { reward, .. } => {
                 self.state.bank += reward;
                 self.status_msg =
                     format!("✅ '{}' — VICTORY! +${} | Bank: ${}", mission.name, reward, self.state.bank);
@@ -246,7 +246,7 @@ impl OperatorApp {
                     }
                 }
             }
-            AarOutcome::Failure { injured_ids } => {
+            AarOutcome::Failure { injured_ids, .. } => {
                 let recovery = mission.duration_secs * 2;
                 let recover_at = Utc::now() + Duration::seconds(recovery as i64);
                 self.status_msg =
@@ -260,7 +260,7 @@ impl OperatorApp {
                     }
                 }
             }
-            AarOutcome::CriticalFailure { killed_id } => {
+            AarOutcome::CriticalFailure { killed_id, .. } => {
                 let name = self
                     .state
                     .slimes

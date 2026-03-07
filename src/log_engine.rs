@@ -110,14 +110,14 @@ pub fn generate_narrative<R: Rng>(
     let template = match outcome {
         AarOutcome::Victory { .. } => {
             let pool = match mission_type {
-                MissionType::Assault => VICTORY_ASSAULT,
-                MissionType::Stealth => VICTORY_STEALTH,
-                MissionType::Cyber => VICTORY_CYBER,
+                MissionType::Assault  => VICTORY_ASSAULT,
+                MissionType::Stealth  => VICTORY_STEALTH,
+                MissionType::Cyber    => VICTORY_CYBER,
                 MissionType::Balanced => VICTORY_BALANCED,
             };
             pool.choose(rng).copied().unwrap_or("Mission complete.")
         }
-        AarOutcome::Failure { injured_ids } => {
+        AarOutcome::Failure { injured_ids, .. } => {
             if injured_ids.is_empty() {
                 "The mission failed. The squad retreated intact."
             } else {
@@ -143,8 +143,8 @@ pub fn format_log_entry(
     narrative: &str,
 ) -> String {
     let outcome_label = match outcome {
-        AarOutcome::Victory { reward } => format!("✅ VICTORY (+${})", reward),
-        AarOutcome::Failure { .. } => "❌ FAILURE".to_string(),
+        AarOutcome::Victory { reward, .. } => format!("✅ VICTORY (+${})", reward),
+        AarOutcome::Failure { .. }         => "❌ FAILURE".to_string(),
         AarOutcome::CriticalFailure { .. } => "☠ CRITICAL FAILURE".to_string(),
     };
 
@@ -182,7 +182,7 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(7);
         let mission = dummy_mission(10, 10, 80);
         let op = dummy_op("Ghost", &mut rng);
-        let outcome = AarOutcome::Victory { reward: 1000 };
+        let outcome = AarOutcome::Victory { reward: 1000, rolls: vec![] };
         let result = generate_narrative(&outcome, &mission, &[&op], &mut rng);
         assert!(!result.is_empty());
         assert!(result.contains("Ghost"), "Operator name should be interpolated");
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn test_format_log_entry_structure() {
-        let entry = format_log_entry("Bank Heist", &AarOutcome::Victory { reward: 500 }, "Great job.");
+        let entry = format_log_entry("Bank Heist", &AarOutcome::Victory { reward: 500, rolls: vec![] }, "Great job.");
         assert!(entry.contains("Bank Heist"));
         assert!(entry.contains("VICTORY"));
         assert!(entry.contains("Great job."));
