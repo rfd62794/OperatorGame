@@ -62,7 +62,7 @@ if (-not (Test-Path $ApkUnsigned)) {
 }
 
 # 4. Convert APK to Protobuf format
-$ProtoApk = "target\proto.apk"
+$ProtoApk = "target\proto.zip"
 $BaseZip = "target\base.zip"
 $AabBase = "target\aab_base"
 

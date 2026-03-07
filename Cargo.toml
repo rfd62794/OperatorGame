@@ -54,7 +54,6 @@ panic         = "abort"
 [package.metadata.android]
 package        = "com.rfditservices.operatorgame"
 version_code   = 2026030601
-version_name   = "0.1.0"
 label          = "OPERATOR"
 stl            = "c++_shared"
 assets         = "assets"
