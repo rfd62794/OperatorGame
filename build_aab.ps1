@@ -88,6 +88,9 @@ if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
 
 Expand-Archive -Path $ProtoApk -DestinationPath $AabBase -Force
 
+New-Item -ItemType Directory -Path "$AabBase\manifest" -ErrorAction SilentlyContinue | Out-Null
+Move-Item -Path "$AabBase\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
+
 if (Test-Path "$AabBase\META-INF") { Remove-Item -Recurse -Force "$AabBase\META-INF" }
 
 Write-Host "Zipping module base.zip..." -ForegroundColor Cyan
