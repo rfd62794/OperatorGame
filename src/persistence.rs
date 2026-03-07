@@ -176,12 +176,15 @@ impl GameState {
         let cost = (days * idle_count as f64 * UPKEEP_PER_DAY as f64) as i64;
         let floor = -(UPKEEP_PER_DAY * 3);
         
+        let mut actual_cost = 0;
         if cost > 0 && self.bank > floor {
+            let prev_bank = self.bank;
             self.bank = (self.bank - cost).max(floor);
+            actual_cost = prev_bank - self.bank;
             self.last_upkeep_at = now;
         }
 
-        (cost, idle_count)
+        (actual_cost, idle_count)
     }
 }
 
