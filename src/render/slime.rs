@@ -22,6 +22,7 @@ use eframe::egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2};
 use std::f32::consts::TAU;
 
 use crate::genetics::{Culture, GeneticTier, LifeStage, SlimeGenome};
+use crate::models::Operator;
 use crate::world_map::culture_accent;
 
 // ---------------------------------------------------------------------------
@@ -216,19 +217,18 @@ pub struct SlimeVisual {
 }
 
 impl SlimeVisual {
-    /// Compute the visual descriptor from the genome snapshot.
+    /// Compute the visual descriptor from the operator snapshot.
     ///
-    /// - `t` = seconds since app start (from `ctx.input(|i| i.time)`)
-    /// - `level` = current slime level (for elder crown check)
-    /// - `dispatched` = whether the slime is on an expedition
-    pub fn from_genome(genome: &SlimeGenome, t: f32, level: u32, dispatched: bool) -> Self {
+    /// - `t` = seconds since app start
+    pub fn from_operator(op: &Operator, t: f32) -> Self {
+        let genome    = &op.genome;
         let culture   = genome.dominant_culture();
         let tier      = genome.genetic_tier();
         let params    = CultureParams::get(culture);
         let accent    = culture_accent(culture);
 
         // --- Size from LifeStage ---
-        let base_radius = match genome.life_stage() {
+        let base_radius = match op.life_stage() {
             LifeStage::Hatchling =>  9.0,
             LifeStage::Juvenile  => 15.0,
             LifeStage::Young     => 22.0,
@@ -278,9 +278,9 @@ impl SlimeVisual {
             radius,
             wobble_phase,
             wobble_amp,
-            alpha:         if dispatched { 0.55 } else { 1.0 },
-            is_elder:      level >= 10,
-            is_dispatched: dispatched,
+            alpha:         if op.is_dispatched() { 0.55 } else { 1.0 },
+            is_elder:      op.level >= 10,
+            is_dispatched: op.is_dispatched(),
         }
     }
 }
@@ -628,19 +628,17 @@ fn with_alpha(c: Color32, alpha: u8) -> Color32 {
 pub fn draw_slime_card(
     painter: &Painter,
     rect: Rect,
-    genome: &SlimeGenome,
+    op: &Operator,
     t: f32,
-    level: u32,
-    dispatched: bool,
     selected: bool,
 ) {
     // Blob preview — left side
     let blob_center = Pos2::new(rect.min.x + 30.0, rect.center().y);
-    let vis         = SlimeVisual::from_genome(genome, t, level, dispatched);
+    let vis         = SlimeVisual::from_operator(op, t);
     draw_slime(painter, blob_center, &vis, selected);
 
     // Card background — culture tint
-    let [cr, cg, cb, _] = culture_accent(genome.dominant_culture());
+    let [cr, cg, cb, _] = culture_accent(op.genome.dominant_culture());
     let tint = Color32::from_rgba_unmultiplied(cr, cg, cb, 18);
     painter.rect_filled(rect, 4.0, tint);
     if selected {

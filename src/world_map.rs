@@ -738,19 +738,20 @@ pub enum SlimeCardStatus {
 }
 
 impl SlimeProfileCard {
-    /// Build a profile card from a SlimeGenome reference.
-    pub fn from_genome(genome: &crate::genetics::SlimeGenome) -> Self {
+    /// Build a profile card from an Operator reference.
+    pub fn from_operator(op: &crate::models::Operator) -> Self {
+        let genome = &op.genome;
         let dominant = genome.dominant_culture();
         let accent   = culture_accent(dominant);
-        let cooldown = genome.exhaustion_remaining()
-            .map(|d| d.num_seconds().max(0));
+        let cooldown = op.synthesis_cooldown_until
+            .map(|until| (until - Utc::now()).num_seconds().max(0));
 
         Self {
             name:          genome.name.clone(),
             id_short:      genome.id.to_string()[..8].to_string(),
             dominant,
             tier_label:    genome.genetic_tier().to_string(),
-            stage_label:   genome.life_stage().to_string(),
+            stage_label:   op.life_stage().to_string(),
             hp:            genome.base_hp,
             atk:           genome.base_atk,
             spd:           genome.base_spd,
