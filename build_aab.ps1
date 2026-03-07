@@ -64,10 +64,10 @@ if (-not (Test-Path $ApkUnsigned)) {
 # 3.5 Patch AndroidManifest.xml for API 35
 Write-Host "Patching AndroidManifest.xml API targets (cargo-apk hardcodes 30)..." -ForegroundColor Cyan
 $ManifestPath = "target\release\apk\AndroidManifest.xml"
-$ManifestContent = Get-Content $ManifestPath -Raw
-$ManifestContent = $ManifestContent -replace 'android:targetSdkVersion="30"', 'android:targetSdkVersion="35"'
-$ManifestContent = $ManifestContent -replace 'android:minSdkVersion="23"', 'android:minSdkVersion="26"'
-Set-Content -Path $ManifestPath -Value $ManifestContent
+$ManifestContent = [System.IO.File]::ReadAllText($ManifestPath)
+$ManifestContent = $ManifestContent -replace 'android:targetSdkVersion="\d+"', 'android:targetSdkVersion="35"'
+$ManifestContent = $ManifestContent -replace 'android:minSdkVersion="\d+"', 'android:minSdkVersion="26"'
+[System.IO.File]::WriteAllText($ManifestPath, $ManifestContent, [System.Text.Encoding]::UTF8)
 
 # 4. Convert APK to Protobuf format
 $ProtoApk = "target\proto.zip"
