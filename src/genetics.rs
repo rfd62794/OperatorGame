@@ -398,7 +398,19 @@ impl LifeStage {
 
     pub fn can_dispatch(self) -> bool { self != LifeStage::Hatchling }
     pub fn can_breed(self)   -> bool { !matches!(self, LifeStage::Hatchling | LifeStage::Juvenile) }
-    pub fn can_mentor(self)  -> bool { matches!(self, LifeStage::Veteran | LifeStage::Elder) }
+    pub fn can_mentor(self)  -> bool { matches!(self, LifeStage::Standard | LifeStage::Veteran | LifeStage::Elder) }
+
+    /// Multiplier on base stats (Sprint 9 §2).
+    pub fn stat_multiplier(self) -> f32 {
+        match self {
+            LifeStage::Hatchling => 0.6,
+            LifeStage::Juvenile  => 0.8,
+            LifeStage::Young     => 1.0,
+            LifeStage::Prime     => 1.2,
+            LifeStage::Veteran   => 1.1,
+            LifeStage::Elder     => 1.0,
+        }
+    }
 
     /// XP needed to level up from `level`.
     pub fn xp_to_next(level: u8) -> u32 {
@@ -471,6 +483,10 @@ pub struct SlimeGenome {
     // Lifecycle
     pub level:        u8,
     pub xp:           u32,
+    /// Per-stat XP pools (ATK, HP, DEF, CHM, SPD, RES, MND, AGI, END).
+    /// Indices match Culture::WHEEL order.
+    #[serde(default)]
+    pub stat_xp:      [u32; 9],
     // Personality (0.0–1.0)
     pub curiosity:    f32,
     pub energy:       f32,
