@@ -693,14 +693,14 @@ impl Expedition {
     /// This is the core gameplay hook: Tide slime → Tide Basin = Advantage.
     pub fn resolve<R: rand::Rng>(
         &self,
-        squad:  &[&crate::genetics::SlimeGenome],
+        squad:  &[&Operator],
         rng:    &mut R,
     ) -> ExpeditionOutcome {
         // Average AGI coverage ratio as the primary stat for field movement.
         let avg_agi: u32 = if squad.is_empty() {
             0
         } else {
-            squad.iter().map(|s| s.base_agility).sum::<u32>() / squad.len() as u32
+            squad.iter().map(|s| s.genome.base_agility).sum::<u32>() / squad.len() as u32
         };
 
         // Treat AGI as "coverage" against a notional requirement of 20 base points.
