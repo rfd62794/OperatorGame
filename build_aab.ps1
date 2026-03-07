@@ -52,6 +52,12 @@ if (-not (Test-Path $AndroidHome)) {
 $BuildToolsDir = Get-ChildItem -Path "$AndroidHome\build-tools" -Directory | Sort-Object Name -Descending | Select-Object -First 1
 $Aapt2 = "$($BuildToolsDir.FullName)\aapt2.exe"
 
+$AndroidJar = Get-ChildItem -Path "$AndroidHome\platforms\android-35\android.jar" -ErrorAction SilentlyContinue
+if (-not $AndroidJar) {
+    Write-Host "Error: Could not find android.jar for API 35 at $AndroidJar" -ForegroundColor Red
+    exit 1
+}
+
 # 3. Build APK
 Write-Host "Building Rust payload with cargo apk..." -ForegroundColor Cyan
 cargo apk build --release
@@ -77,20 +83,6 @@ $AabBase = "target\aab_base"
 Write-Host "Converting APK resources to protobuf format..." -ForegroundColor Cyan
 & $Aapt2 convert --output-format proto -o $ProtoApk $ApkUnsigned
 
-# 5. Extract and format as base.zip module
-Write-Host "Assembling AAB module structure..." -ForegroundColor Cyan
-if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
-if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
-
-Expand-Archive -Path $ProtoApk -DestinationPath $AabBase -Force
-
-Write-Host "Injecting patched AndroidManifest.xml into AAB via aapt2 link..." -ForegroundColor Cyan
-$AndroidJar = Get-ChildItem -Path "$AndroidHome\platforms\android-35\android.jar" -ErrorAction SilentlyContinue
-if (-not $AndroidJar) {
-    Write-Host "Error: Could not find android.jar for API 35 at $AndroidJar" -ForegroundColor Red
-    exit 1
-}
-
 $CompiledManifestDir = "target\manifest_compiled"
 if (Test-Path $CompiledManifestDir) { Remove-Item -Recurse -Force $CompiledManifestDir }
 New-Item -ItemType Directory -Path $CompiledManifestDir | Out-Null
@@ -99,6 +91,13 @@ New-Item -ItemType Directory -Path $CompiledManifestDir | Out-Null
 $FlatManifest = Get-ChildItem -Path $CompiledManifestDir -Filter "*.flat" | Select-Object -First 1
 
 & $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath -R $FlatManifest.FullName --proto-format -o "target\manifest_proto.zip"
+
+Write-Host "Assembling AAB module structure..." -ForegroundColor Cyan
+if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
+if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
+
+Expand-Archive -Path $ProtoApk -DestinationPath $AabBase -Force
+
 Expand-Archive -Path "target\manifest_proto.zip" -DestinationPath "target\manifest_extract" -Force
 New-Item -ItemType Directory -Path "$AabBase\manifest" -Force -ErrorAction SilentlyContinue | Out-Null
 Move-Item -Path "target\manifest_extract\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
