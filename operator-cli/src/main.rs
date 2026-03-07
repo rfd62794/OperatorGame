@@ -95,10 +95,10 @@ async fn main() {
             }
 
             // Preview success rate before locking in
-            let squad_refs: Vec<&operator::genetics::SlimeGenome> = state
+            let squad_refs: Vec<&operator::models::Operator> = state
                 .slimes
                 .iter()
-                .filter(|o| operator_ids.contains(&o.id))
+                .filter(|o| operator_ids.contains(&o.id()))
                 .collect();
             let rate = mission.calculate_success_rate(&squad_refs);
 
