@@ -428,8 +428,8 @@ impl eframe::App for OperatorApp {
         egui::Area::new(egui::Id::new("garden_bg"))
             .order(egui::Order::Background)
             .show(ctx, |ui| {
-                let genome_map = self.state.slimes.iter().map(|g| (g.id, g)).collect();
-                draw_garden(ui.painter(), screen_rect, &genome_map, &self.garden, t);
+                let operator_map = self.state.slimes.iter().map(|op| (op.id(), op)).collect();
+                crate::garden::draw_garden(ui.painter(), screen_rect, &operator_map, &self.garden, t);
             });
         */
 
