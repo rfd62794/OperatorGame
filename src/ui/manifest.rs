@@ -31,17 +31,37 @@ impl OperatorApp {
                 let mut equip_action: Option<(uuid::Uuid, usize)> = None;
                 let mut unequip_action: Option<(uuid::Uuid, usize)> = None;
 
-                for genome in &self.state.slimes {
                     let is_staged = staged.contains(&genome.id);
                     let is_dispatched = matches!(genome.state, crate::models::SlimeState::Deployed(_));
                     let can_stage = !is_dispatched && selected_mission_id.is_some();
 
-                    let [cr, cg, cb, _] = crate::world_map::culture_accent(genome.dominant_culture());
+                    let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
                     let color = egui::Color32::from_rgb(cr, cg, cb);
 
                     ui.label(format!("#{}", &genome.id.to_string()[..5]));
-                    ui.colored_label(color, format!("{:?}", genome.dominant_culture()).to_uppercase());
-                    ui.label(egui::RichText::new(&genome.name).strong());
+                    
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.colored_label(color, egui::RichText::new(&genome.name).strong());
+                            ui.label(egui::RichText::new(genome.genetic_tier().name())
+                                .small()
+                                .color(egui::Color32::from_gray(160)));
+                        });
+                        
+                        // Culture Tier and Name
+                        ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture()).to_uppercase())
+                            .small()
+                            .color(color));
+
+                        // Phase B: Culture Spectrum Bar
+                        render_culture_spectrum(ui, &genome.culture_alleles.dominant.0, 1.0);
+                        
+                        // Phase B: Recessive Bar (Gated by Lens)
+                        if self.state.lens_unlocked {
+                            render_culture_spectrum(ui, &genome.culture_alleles.recessive.0, 0.4);
+                        }
+                    });
+
                     ui.label(format!("{:.0} Hz", genome.frequency));
 
                     ui.vertical(|ui| {
@@ -230,5 +250,34 @@ impl OperatorApp {
                 }
             });
         });
+    }
+}
+
+/// Helper for Sprint 6: Renders a segmented horizontal bar representing the Culture genome.
+fn render_culture_spectrum(ui: &mut egui::Ui, expr: &[f32; 9], opacity: f32) {
+    let segments = crate::genetics::spectrum_segments(expr, 0.05);
+    if segments.is_empty() { return; }
+
+    let height = 4.0;
+    let width = 120.0; // Standard manifest width for spectrum
+    
+    let (rect, _) = ui.allocate_at_least(egui::vec2(width, height), egui::Sense::hover());
+    let mut current_x = rect.min.x;
+
+    for (idx, weight) in segments {
+        let seg_width = width * weight;
+        let seg_rect = egui::Rect::from_min_max(
+            egui::pos2(current_x, rect.min.y),
+            egui::pos2(current_x + seg_width, rect.max.y)
+        );
+        
+        // Map index to HSL
+        let hue = crate::genetics::CULTURE_HUES[idx];
+        let sat = crate::genetics::CULTURE_SATURATIONS[idx];
+        let (r, g, b) = crate::genetics::hsl_to_rgb(hue, sat, 0.5);
+        let color = egui::Color32::from_rgba_unmultiplied(r, g, b, (opacity * 255.0) as u8);
+        
+        ui.painter().rect_filled(seg_rect, 0.0, color);
+        current_x += seg_width;
     }
 }
