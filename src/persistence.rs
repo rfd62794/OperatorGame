@@ -160,8 +160,7 @@ impl GameState {
     /// Sprint 7B: Maintenance Pressure
     /// Deducts $50 per idle operator per day.
     /// Returns (cost_deducted, idle_count).
-    pub fn apply_daily_upkeep(&mut self) -> (i64, i64) {
-        let now = Utc::now();
+    pub fn apply_daily_upkeep(&mut self, now: DateTime<Utc>) -> (i64, i64) {
         let elapsed = now - self.last_upkeep_at;
         let days = elapsed.num_seconds() as f64 / 86400.0;
         

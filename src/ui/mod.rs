@@ -366,7 +366,7 @@ impl eframe::App for OperatorApp {
         }
 
         // Sprint 7B: Tick daily upkeep
-        let (deducted, idle_count) = self.state.apply_daily_upkeep();
+        let (deducted, idle_count) = self.state.apply_daily_upkeep(Utc::now());
         if deducted > 0 {
             let msg = format!("Deducted ${} in maintenance costs for {} idle operator(s).", deducted, idle_count);
             self.combat_log.insert(0, msg);
