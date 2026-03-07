@@ -637,16 +637,18 @@ impl SlimeGenome {
         LifeStage::xp_to_next(self.level)
     }
 
-    /// Add XP and return true if levelled up.
-    pub fn award_xp(&mut self, xp: u32) -> bool {
-        self.xp += xp;
-        let needed = self.xp_to_next();
-        if needed > 0 && self.xp >= needed {
-            self.xp -= needed;
-            self.level = (self.level + 1).min(10);
-            true
-        } else {
-            false
+    /// Add XP and return true if levelled up (Sprint 9 §2).
+    pub fn award_xp(&mut self, amount: u32) -> bool {
+        self.xp += amount;
+        let old_level = self.level;
+        self.level = LifeStage::level_from_xp(self.xp);
+        self.level > old_level
+    }
+
+    /// Awards specific stat XP (Sprint 9 §4.2).
+    pub fn award_stat_xp(&mut self, culture: Culture, amount: u32) {
+        if let Some(idx) = culture.wheel_index() {
+            self.stat_xp[idx] += amount;
         }
     }
 }
