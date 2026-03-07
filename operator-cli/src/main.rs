@@ -12,7 +12,6 @@ use operator::persistence::{load, save, save_path};
 use operator::ui::run_gui;
 use operator::world_map::{seed_expedition_targets};
 use include_dir::{include_dir, Dir};
-use chrono::{Utc, Duration};
 
 #[allow(dead_code)]
 static DOCS_DIR: Dir = include_dir!("docs");
@@ -175,7 +174,7 @@ async fn main() {
                             let pass = rolls.iter().filter(|r| r.success).count();
                             println!("  Result: VICTORY ({}/3 checks passed)", pass);
 
-                            state.bank += reward;
+                            state.bank += *reward as i64;
                             println!("  ✅ +${reward} | Bank: ${}", state.bank);
                             
                             // Play Tide Bowl (Plate Resonance) based on total Mind of squad
@@ -223,7 +222,7 @@ async fn main() {
                             
                             operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Startled { base_freq: 100.0 });
 
-                            for &id in &injured_ids {
+                            for &id in injured_ids {
                                 if let Some(pos) = state.slimes.iter().position(|o| o.id() == id) {
                                     println!("     ↳ {} is injured (Critical).", state.slimes[pos].name());
                                 }
