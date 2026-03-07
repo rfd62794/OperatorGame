@@ -44,10 +44,9 @@ impl From<serde_json::Error> for PersistenceError {
 
 /// A genome currently being synthesised in the Bio-Incubator (ADR-010).
 /// Collected by `operator incubate` once `completes_at` has passed.
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IncubatingGenome {
-    /// The genome-in-progress.
-    pub genome:       SlimeGenome,
+    /// The operator-in-progress.
+    pub operator:     crate::models::Operator,
     /// UTC timestamp when synthesis completes and the slime can be collected.
     pub completes_at: DateTime<Utc>,
 }
@@ -56,9 +55,9 @@ impl IncubatingGenome {
     /// Create a new incubation entry. Duration follows ADR-010 tier table:
     /// Blooded/Bordered: 900s | Sundered/Drifted: 1200s | Threaded: 1500s
     /// Convergent: 1800s | Liminal: 2100s | Void: 2400s
-    pub fn new(genome: SlimeGenome) -> Self {
+    pub fn new(operator: crate::models::Operator) -> Self {
         let base_secs = 900i64;
-        let tier_bonus = match genome.genetic_tier() {
+        let tier_bonus = match operator.genome.genetic_tier() {
             GeneticTier::Blooded | GeneticTier::Bordered => 0,
             GeneticTier::Sundered | GeneticTier::Drifted => 300,
             GeneticTier::Threaded                        => 600,
@@ -68,7 +67,7 @@ impl IncubatingGenome {
         };
         let duration_secs = base_secs + tier_bonus;
         Self {
-            genome,
+            operator,
             completes_at: Utc::now() + chrono::Duration::seconds(duration_secs),
         }
     }
@@ -90,8 +89,8 @@ impl IncubatingGenome {
 // ---------------------------------------------------------------------------
 
 /// Current save format version. Increment with every breaking schema change.
-/// v6 (Sprint 7): Deployment.is_emergency
-pub const SAVE_VERSION: u32 = 7;
+/// v8 (Sprint 9): Operator struct (biological/operational separation)
+pub const SAVE_VERSION: u32 = 8;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -99,11 +98,11 @@ pub struct GameState {
     pub bank: i64,
     /// Active or unresolved deployments.
     pub deployments: Vec<Deployment>,
-    /// Static mission pool. Populated from seed data if absent.
+    /// Available missions for the day.
     pub missions: Vec<Mission>,
-    /// Slime stable — persists across sessions.
+    /// Operational operators (identity + state).
     #[serde(default)]
-    pub slimes: Vec<SlimeGenome>,
+    pub slimes: Vec<crate::models::Operator>,
     /// Genomes currently incubating.
     #[serde(default)]
     pub incubating: Vec<IncubatingGenome>,
@@ -117,10 +116,8 @@ pub struct GameState {
     #[serde(default)]
     pub world_map: WorldMap,
     /// Last time daily upkeep was deducted.
-    #[serde(default = "Utc::now")]
     pub last_upkeep_at: DateTime<Utc>,
     /// Last time the mission pool was refreshed.
-    #[serde(default = "Utc::now")]
     pub last_pool_refresh: DateTime<Utc>,
     /// Cross-session Cargo Bay (Biomass, Scrap, Reagents). ADR-030.
     #[serde(default)]

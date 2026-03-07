@@ -86,9 +86,12 @@ pub struct GardenAgent {
 }
 
 impl GardenAgent {
-    /// Build a new garden agent from a genome. `spawn` is the initial
+    /// Build a new garden agent from an operator. `spawn` is the initial
     /// position in garden-local coordinates.
-    pub fn new(genome: &SlimeGenome, spawn: Pos2, level: u32, dispatched: bool) -> Self {
+    pub fn new(op: &crate::models::Operator, spawn: Pos2) -> Self {
+        let genome = &op.genome;
+        let leveled = op.level as u32;
+        let dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
         // Use the real personality axes from the genome (they're stored there directly)
         let energy    = genome.energy.clamp(0.0, 1.0);
         let shyness   = genome.shyness.clamp(0.0, 1.0);
@@ -108,7 +111,7 @@ impl GardenAgent {
             curiosity,
             mood,
             target:      None,
-            level,
+            level:       leveled,
             dispatched,
         }
     }
@@ -134,9 +137,9 @@ pub struct Garden {
 impl Garden {
     /// Build a garden from the current roster. Agents are placed in a simple
     /// grid layout within the given rect.
-    pub fn from_genomes(genomes: &[SlimeGenome], rect: Rect) -> Self {
-        let n = genomes.len();
-        let agents = genomes.iter().enumerate().map(|(i, g)| {
+    pub fn from_operators(ops: &[crate::models::Operator], rect: Rect) -> Self {
+        let n = ops.len();
+        let agents = ops.iter().enumerate().map(|(i, op)| {
             // Deterministic grid spawn — evenly placed left-to-right, row-wrapped
             let cols    = (n as f32).sqrt().ceil().max(1.0) as usize;
             let col     = i % cols;
@@ -145,7 +148,7 @@ impl Garden {
             let cell_h  = rect.height() / ((n / cols + 1) as f32 + 1.0);
             let x       = rect.min.x + cell_w * (col as f32 + 1.0);
             let y       = rect.min.y + cell_h * (row as f32 + 1.0);
-            GardenAgent::new(g, Pos2::new(x, y), 1, false)
+            GardenAgent::new(op, Pos2::new(x, y))
         }).collect();
         Self { agents, selected: None }
     }

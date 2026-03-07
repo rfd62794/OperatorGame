@@ -75,7 +75,7 @@ pub enum MobileTab {
 
 impl OperatorApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, state: GameState, save_path: PathBuf) -> Self {
-        let garden = Garden::from_genomes(&state.slimes, egui::Rect::EVERYTHING);
+        let garden = Garden::from_operators(&state.slimes, egui::Rect::EVERYTHING);
         Self {
             state,
             save_path,

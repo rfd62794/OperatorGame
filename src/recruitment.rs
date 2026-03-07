@@ -36,7 +36,7 @@ pub fn purchase_recruit(state: &mut GameState, name: &str) -> Result<uuid::Uuid,
     state.bank -= STANDARD_RECRUIT_COST as i64;
     let genome = generate_recruit(None, name);
     let id = genome.id;
-    state.slimes.push(genome);
+    state.slimes.push(crate::models::Operator::new(genome));
 
     Ok(id)
 }
@@ -56,7 +56,7 @@ pub fn claim_elders_gift(state: &mut GameState) -> Result<uuid::Uuid, &'static s
     let mut rng = rand::thread_rng();
     let genome = generate_random(Culture::Void, "Elder's Seed", &mut rng);
     let id = genome.id;
-    state.slimes.push(genome);
-
+    state.slimes.push(crate::models::Operator::new(genome));
+    
     Ok(id)
 }
