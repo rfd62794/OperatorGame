@@ -383,4 +383,36 @@ mod tests {
         assert_eq!(cost2, 0);
         assert_eq!(state.bank, -150);
     }
+
+    #[test]
+    fn test_mission_pool_refresh_logic() {
+        let mut state = GameState::default();
+        let now = Utc::now();
+        
+        // Initial refresh
+        state.refresh_missions_if_needed(now);
+        assert_eq!(state.missions.len(), 5);
+        let first_id = state.missions[0].id;
+        
+        // Same day — should NOT refresh
+        state.refresh_missions_if_needed(now + chrono::Duration::hours(1));
+        assert_eq!(state.missions[0].id, first_id);
+        
+        // Next day — SHOULD refresh
+        state.refresh_missions_if_needed(now + chrono::Duration::hours(25));
+        assert_ne!(state.missions[0].id, first_id);
+    }
+
+    #[test]
+    fn test_mission_pool_seed_determinism() {
+        let mut state1 = GameState::default();
+        let mut state2 = GameState::default();
+        let now = Utc::now();
+        
+        state1.refresh_missions_if_needed(now);
+        state2.refresh_missions_if_needed(now);
+        
+        assert_eq!(state1.missions[0].name, state2.missions[0].name);
+        assert_eq!(state1.missions[0].difficulty, state2.missions[0].difficulty);
+    }
 }
