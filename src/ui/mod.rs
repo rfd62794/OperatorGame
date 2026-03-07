@@ -152,10 +152,10 @@ impl OperatorApp {
         let staged_ids: Vec<Uuid> = self.staged_operators.iter().cloned().collect();
         let mut is_emergency = false;
         for id in &staged_ids {
-            let op = self.state.slimes.iter().find(|o| o.id == *id);
+            let op = self.state.slimes.iter().find(|o| o.genome.id == *id);
             if let Some(op) = op {
                 if matches!(op.state, SlimeState::Deployed(_)) {
-                    self.status_msg = format!("{} is currently deployed elsewhere.", op.name);
+                    self.status_msg = format!("{} is currently deployed elsewhere.", op.name());
                     return;
                 }
                 // If it's an Injured slime, it's an emergency deployment.
@@ -167,7 +167,7 @@ impl OperatorApp {
 
         // Mark operators as deployed
         for op in self.state.slimes.iter_mut() {
-            if staged_ids.contains(&op.id) {
+            if staged_ids.contains(&op.genome.id) {
                 op.state = SlimeState::Deployed(mission.id);
             }
         }
@@ -190,7 +190,7 @@ impl OperatorApp {
         // Trigger Ember Chord (Geometric frequency mapping)
         let mut freqs = Vec::new();
         for op_id in &deployment.operator_ids {
-            if let Some(op) = self.state.slimes.iter().find(|s| s.id == *op_id) {
+            if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == *op_id) {
                 let (s, a, i, _, _, _) = op.total_stats();
                 freqs.push(200.0 + (s as f32 * 2.0));
                 freqs.push(300.0 + (a as f32 * 2.0));
@@ -218,19 +218,19 @@ impl OperatorApp {
             .cloned();
         let Some(mission) = mission else { return; };
 
-        let squad: Vec<&crate::genetics::SlimeGenome> = self
+        let squad: Vec<&crate::models::Operator> = self
             .state
             .slimes
             .iter()
-            .filter(|o| dep.operator_ids.contains(&o.id))
+            .filter(|o| dep.operator_ids.contains(&o.genome.id))
             .collect();
 
         let mut rng = rand::thread_rng();
         let mut outcome = dep.resolve(&mission, &squad, &mut rng);
         
         // Calculate stats needed for audio/UI before we drop the immutable borrow (squad)
-        let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
-        let mut narrative = generate_narrative(&outcome, &mission, &squad, &mut rand::thread_rng());
+        let avg_mnd: f32 = squad.iter().map(|s| s.genome.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
+        let mut narrative = generate_narrative(&outcome, &mission, &squad.iter().map(|o| &o.genome).collect::<Vec<_>>(), &mut rand::thread_rng());
         if dep.is_emergency {
             narrative.push_str("\nFIELD OPS PROTOCOL §7 ACTIVE: Personnel operating outside approved medical clearance. Deployment authorized with +15 Critical Stress Penalty.");
         }
@@ -244,18 +244,18 @@ impl OperatorApp {
 
         // Sprint 8: Award XP to the squad
         {
-            let mut mut_squad: Vec<&mut crate::genetics::SlimeGenome> = self
+            let mut mut_squad: Vec<&mut crate::models::Operator> = self
                 .state
                 .slimes
                 .iter_mut()
-                .filter(|o| dep.operator_ids.contains(&o.id))
+                .filter(|o| dep.operator_ids.contains(&o.genome.id))
                 .collect();
                 
             let xp_results = dep.award_squad_xp(&mission, &mut mut_squad, &outcome);
             for (id, _xp, leveled) in xp_results {
                 if leveled {
-                    if let Some(op) = self.state.slimes.iter().find(|s| s.id == id) {
-                        let msg = format!(">> EXCELLENCE RECOGNIZED: {} has reached Level {}!", op.name, op.level);
+                    if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
+                        let msg = format!(">> EXCELLENCE RECOGNIZED: {} has reached Level {}!", op.name(), op.level);
                         self.combat_log.insert(0, msg);
                     }
                 }
