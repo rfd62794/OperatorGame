@@ -3,8 +3,7 @@
 /// Sprint 4: 15-node fixed graph, simplified bleed-and-flip faction tick.
 /// Sprint 5: Full RPS_BEATS pressure system + BFS supply chain ported from
 ///           rpgCore `demos/culture_node_wars.py` (see DESIGN_BLUEPRINT.md §2).
-use chrono::{DateTime, Utc, Duration};
-use crate::models::Operator;
+use chrono::Utc;
 use crate::genetics::Culture;
 use rand::Rng;
 use serde::{Deserialize, Serialize};

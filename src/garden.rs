@@ -28,11 +28,10 @@
 /// persistent.
 
 use eframe::egui::{Color32, Painter, Pos2, Rect, Stroke};
-use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::genetics::SlimeGenome;
-use crate::render::slime::{draw_slime, SlimeMood, SlimeVisual};
+use crate::render::slime::{draw_slime, SlimeMood};
 
 // ---------------------------------------------------------------------------
 // Constants — ported from slime.py update logic

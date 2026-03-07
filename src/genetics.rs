@@ -7,7 +7,7 @@
 ///  - BreedingResolver: 3-rule stat inheritance + culture blending + mutation
 ///  - GeneticTier derived from nonagon adjacency (ADR-023 v2)
 ///  - LifeStage gate (Hatchling → Elder)
-use chrono::{DateTime, Duration, Utc};
+use chrono::Duration;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -1149,8 +1149,8 @@ mod tests {
         let a = generate_random(Culture::Ember, "Alpha", &mut r);
         let b = generate_random(Culture::Crystal, "Beta", &mut r);
         let child = BreedingResolver::breed(&a, &b, "Child", &mut r);
-        // both are Hatchlings — must fail
-        assert!(child.is_err(), "Hatchlings cannot breed");
+        // BreedingResolver is now a pure mixer; maturity is checked at Operator level
+        assert!(child.is_ok(), "BreedingResolver should successfully mix genomes");
     }
 
     #[test]

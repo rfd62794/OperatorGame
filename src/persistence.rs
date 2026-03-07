@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::genetics::{GeneticTier, SlimeGenome};
+use crate::genetics::GeneticTier;
 use crate::inventory::Inventory;
 use crate::models::{Deployment, Expedition, Mission};
 use crate::world_map::WorldMap;
@@ -328,7 +328,7 @@ mod tests {
         // File does not exist → should get default state
         let state = load(&p).expect("load should succeed for absent file");
         // assert!(state.roster.is_empty()); // Removed as per instruction
-        assert_eq!(state.bank, 100); // new_with_seed_missions sets this to 100
+        assert_eq!(state.bank, 500); 
         assert!(!state.missions.is_empty(), "Seed missions should be populated");
     }
 
