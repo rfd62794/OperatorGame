@@ -471,11 +471,13 @@ impl Deployment {
     pub fn resolve<R: Rng>(
         &self,
         mission: &Mission,
-        squad: &[&crate::genetics::SlimeGenome],
+        squad: &[&Operator],
         rng: &mut R,
     ) -> AarOutcome {
         // --- Aggregate squad stats -------------------------------------------
-        let (mut total_str, mut total_agi, mut total_int) = (0u32, 0u32, 0u32);
+        let mut total_str = 0u32;
+        let mut total_agi = 0u32;
+        let mut total_int = 0u32;
         for op in squad {
             let (s, a, i, _, _, _) = op.total_stats();
             total_str += s;
@@ -534,7 +536,7 @@ impl Deployment {
     }
 
     /// XP awarded proportional to reward. Base: 1 XP per $100.
-    pub fn award_squad_xp(&self, mission: &Mission, squad: &mut [&mut crate::genetics::SlimeGenome], outcome: &AarOutcome) -> Vec<(Uuid, u32, bool)> {
+    pub fn award_squad_xp(&self, mission: &Mission, squad: &mut [&mut Operator], outcome: &AarOutcome) -> Vec<(Uuid, u32, bool)> {
         let mut results = Vec::new();
         let base_xp = match outcome {
             AarOutcome::Victory { .. } => (mission.reward / 100).max(1) as u32,
@@ -547,7 +549,7 @@ impl Deployment {
             let mut op_xp = base_xp;
             // Culture Affinity Bonus: +25% XP
             if let Some(aff) = mission.affinity {
-                if op.dominant_culture() == aff {
+                if op.genome.dominant_culture() == aff {
                     op_xp = (op_xp as f64 * 1.25) as u32;
                 }
             }
@@ -564,9 +566,10 @@ impl Deployment {
 /// - Critical Failure: 1-2 operators (capped at squad size), 4-8 hours recovery.
 /// - Failure: 10% chance for 1 operator, 2-4 hours recovery.
 /// - Returns the IDs and recovery timestamps of operators who were newly injured.
+/// Applies injuries to the roster based on the deployment outcome.
 pub fn apply_outcome_injuries(
     outcome: &mut AarOutcome,
-    roster: &mut [crate::genetics::SlimeGenome],
+    roster: &mut [Operator],
     squad_ids: &[Uuid],
     rng: &mut impl Rng,
 ) -> Vec<(Uuid, DateTime<Utc>)> {
