@@ -507,8 +507,8 @@ async fn main() {
                     }
                 }
             }
-        },
-
+        }
+    }
 
     // CLI path: persist state after every command.
     if let Err(e) = save(&state, &path) {

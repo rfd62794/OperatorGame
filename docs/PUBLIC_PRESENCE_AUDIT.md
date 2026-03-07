@@ -43,28 +43,28 @@
 - **First-Time Visitor Experience:** Poor. A visitor to the GitHub root sees a file list but no project description, screenshots, or "Quick Start" guide. The 30-second comprehension test is currently failing.
 
 ### 5. Test Floor State
-- **Total Tests:** 145 (confirmed via `cargo test --lib`)
+- **Total Tests:** 145 (confirmed via `cargo test`)
 - **Modules Covered:** `models`, `persistence`, `log_engine`, `genetics`, `combat`, `dungeon`, `garden`, `racing`, `world_map`.
-- **Status:** ✅ **145 PASSING / 0 FAILED**. (Significant drift from `SPEC.md` v2.0 which only lists 23 tests).
+- **Status:** ✅ **145 PASSING / 0 FAILED**. (Substantial engineering floor; identifies drift from `SPEC.md` v2.0).
 
 ---
 
 ## Phase B: Audience Gap Analysis
 
 ### 1. Technical Recruiter / Hiring Manager
-- **Current Sight:** High-quality Rust code, strong SDD/ADR process, Android support.
-- **Gap:** No high-level architecture diagram. No "How to Run" instructions at the root. No clear project status summary (e.g., "Sprint 9 Complete").
-- **Competence Signal:** Use of `uv`, Pydantic (referenced in specs), and Rust FFI (PyO3) in the broader ecosystem.
+- **Current Sight:** High-quality Rust 2021 code, advanced `egui` implementation, and Android `cdylib` targeting.
+- **Gap:** Evidence of the "front door" (README) and a clear architecture overview for the multi-crate workspace.
+- **Competence Signal:** Strict ADR (Architectural Decision Record) governance, 145+ unit tests, and wall-clock async timer patterns for real-time simulation safety.
 
 ### 2. Indie Game Developer Community
-- **Current Sight:** Complex genetic math, D20 combat core, procedurally generated tracks.
-- **Gap:** No "DevLog" link at the root. No "Tech Stack" overview (e.g., "Built with Egui/Tokio").
-- **Loss Point:** Requiring a deep dive into `docs/` to find any context.
+- **Current Sight:** Custom D20 combat engine, procedural track generation, and physics-integrated genetics.
+- **Gap:** No DevLog link at the root to explain the "Cymatics" visual identity or the math behind the genetic tiers.
+- **Loss Point:** Requiring a deep dive into `docs/src/GDD/` to understand the vision.
 
 ### 3. Potential Player
-- **Current Sight:** A wall of `.rs` files and `.md` specs.
-- **Gap:** ❌ **ZERO VISUALS**. No screenshots, no GIFs of the Garden, no link to the WASM build or Play Store.
-- **Sentiment:** Feels like an internal tool, not a "Game."
+- **Current Sight:** Code-heavy root.
+- **Gap:** ❌ **ZERO VISUALS**. No screenshots, no GIFs of the Garden habitat, and no direct link to the WASM build.
+- **Sentiment:** A "hardcore simulation" that is currently gated behind a technical barrier.
 
 ---
 
