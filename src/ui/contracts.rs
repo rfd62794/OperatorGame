@@ -55,8 +55,8 @@ impl OperatorApp {
                         );
 
                         // Show affinity bonus if applicable
-                        let staged_ops: Vec<&crate::genetics::SlimeGenome> = self.state.slimes.iter()
-                            .filter(|s| self.staged_operators.contains(&s.id))
+                        let staged_ops: Vec<&crate::models::Operator> = self.state.slimes.iter()
+                            .filter(|op| self.staged_operators.contains(&op.genome.id))
                             .collect();
                         let bonus = mission.get_affinity_bonus(&staged_ops);
                         if bonus < 0.0 {
