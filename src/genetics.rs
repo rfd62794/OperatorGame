@@ -1,11 +1,11 @@
-/// genetics.rs — Slime Genome Engine (Sprint 1)
+/// genetics.rs — Slime Genome Engine (Sprint 1, updated Sprint 4)
 ///
 /// Implements the full rpgCore genetic system in Rust:
-///  - Culture enum (6-culture hex-wheel + Void wildcard)
-///  - CultureExpression (6-float vector, always sums to 1.0)
+///  - Culture enum (9-culture nonagon-wheel + Void wildcard)
+///  - CultureExpression (9-float vector, always sums to 1.0)
 ///  - SlimeGenome (fully serialisable — fixes the Python persistence gap)
 ///  - BreedingResolver: 3-rule stat inheritance + culture blending + mutation
-///  - GeneticTier derived from hexagon adjacency
+///  - GeneticTier derived from nonagon adjacency (ADR-023 v2)
 ///  - LifeStage gate (Hatchling → Elder)
 use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
@@ -16,91 +16,103 @@ use uuid::Uuid;
 // Culture (the DNA alphabet)
 // ---------------------------------------------------------------------------
 
-/// Six elemental cultures arranged on a hexagon wheel, plus Void (wildcard).
+/// Nine elemental cultures arranged on a nonagon wheel, plus Void (wildcard).
 ///
-/// Hex adjacency (from rpgCore `HEXAGON_ADJACENCY`):
-///   Ember   ↔ Gale, Marsh
-///   Gale    ↔ Ember, Tundra
-///   Crystal ↔ Gale, Tide
-///   Marsh   ↔ Ember, Tide
-///   Tide    ↔ Crystal, Marsh
-///   Tundra  ↔ Gale, Marsh
+/// Nonagon wheel (clockwise, ADR-023 v2):
+///   Ember(0) → Tide(1) → Orange(2) → Marsh(3) → Teal(4)
+///   → Crystal(5) → Gale(6) → Tundra(7) → Frost(8) → Ember
 ///
-/// Opposites: Ember↔Crystal, Gale↔Tundra, Marsh↔Tide
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// Adjacency: wheel distance == 1 (either direction, wrapping).
+/// Near-opposites (Sundered): wheel distance == 4 OR 5 — both fire.
+/// Note: on an odd-count wheel (n=9), no culture has a single exact opposite.
+/// See ADR-023 v2 for full geometry derivation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Culture {
-    Ember,
-    Gale,
-    Marsh,
-    Crystal,
-    Tundra,
-    Tide,
-    Void,
+    // Inner loop (Primary) — Ember=0, Tide=1, (skip2)... see WHEEL for ordering
+    Ember,    // RED        256 Hz  ATK-dominant
+    Tide,     // ORANGE     320 Hz  CHM-dominant
+    Orange,   // AMBER      336 Hz  MND-dominant  [NEW]
+    Marsh,    // YELLOW     384 Hz  HP-dominant
+    Teal,     // TEAL       407 Hz  AGI-dominant  [NEW]
+    Crystal,  // BLUE       426 Hz  DEF-dominant
+    Gale,     // GREEN      288 Hz  SPD-dominant
+    Tundra,   // VIOLET     540 Hz  RES-dominant
+    Frost,    // ICE BLUE   480 Hz  END-dominant  [NEW]
+    Void,     // EQUAL MIX  432 Hz  no dominance
+}
+
+/// Standalone geometry helpers — free functions so combat.rs can call them
+/// without needing a Culture receiver (ADR-023 v2 contract).
+
+/// True if a and b are adjacent on the 9-point nonagon (wheel distance == 1).
+pub fn is_adjacent(a: Culture, b: Culture) -> bool {
+    if a == Culture::Void || b == Culture::Void { return false; }
+    let Some(pa) = Culture::WHEEL.iter().position(|&c| c == a) else { return false; };
+    let Some(pb) = Culture::WHEEL.iter().position(|&c| c == b) else { return false; };
+    let d = (pa as i32 - pb as i32).unsigned_abs() as usize;
+    d.min(9 - d) == 1
+}
+
+/// True if a and b are near-opposites on the 9-point nonagon (wheel distance == 4 or 5).
+/// Both arc distances qualify — permissive Sundered interpretation (ADR-023 v2).
+/// On an odd-count wheel no single true opposite exists; both near-slots fire.
+pub fn is_near_opposite(a: Culture, b: Culture) -> bool {
+    if a == Culture::Void || b == Culture::Void { return false; }
+    let Some(pa) = Culture::WHEEL.iter().position(|&c| c == a) else { return false; };
+    let Some(pb) = Culture::WHEEL.iter().position(|&c| c == b) else { return false; };
+    let d = (pa as i32 - pb as i32).unsigned_abs() as usize;
+    let min_d = d.min(9 - d);
+    min_d == 4 || min_d == 5
 }
 
 impl Culture {
-    /// The six non-Void cultures in CultureExpression index order.
-    pub const WHEEL: [Culture; 6] = [
+    /// Nine non-Void cultures in CultureExpression index order (nonagon clockwise).
+    /// WHEEL[i] gives the culture at position i. Used by is_adjacent/is_near_opposite.
+    pub const WHEEL: [Culture; 9] = [
         Culture::Ember,
-        Culture::Gale,
-        Culture::Marsh,
-        Culture::Crystal,
-        Culture::Tundra,
         Culture::Tide,
+        Culture::Orange,
+        Culture::Marsh,
+        Culture::Teal,
+        Culture::Crystal,
+        Culture::Gale,
+        Culture::Tundra,
+        Culture::Frost,
     ];
 
-    /// Stat multipliers extracted from `cultural_base.py` and Faction-Core profiles.
+    /// Stat multipliers — derived from ADR-023 v2 stat dominance profiles.
     pub fn params(self) -> CulturalParams {
         match self {
             Culture::Ember   => CulturalParams { hp: 0.8, atk: 1.4, spd: 1.1, rare: 0.05, openness: 0.2 },
-            Culture::Gale    => CulturalParams { hp: 0.9, atk: 0.9, spd: 1.4, rare: 0.06, openness: 0.8 },
-            Culture::Marsh   => CulturalParams { hp: 1.0, atk: 0.9, spd: 1.3, rare: 0.04, openness: 0.7 },
-            Culture::Crystal => CulturalParams { hp: 1.4, atk: 0.8, spd: 0.7, rare: 0.08, openness: 0.1 },
-            Culture::Tundra  => CulturalParams { hp: 1.1, atk: 0.9, spd: 0.8, rare: 0.05, openness: 0.3 },
             Culture::Tide    => CulturalParams { hp: 1.0, atk: 1.0, spd: 1.2, rare: 0.07, openness: 0.9 },
+            Culture::Orange  => CulturalParams { hp: 0.9, atk: 0.8, spd: 1.0, rare: 0.06, openness: 0.6 },
+            Culture::Marsh   => CulturalParams { hp: 1.0, atk: 0.9, spd: 1.3, rare: 0.04, openness: 0.7 },
+            Culture::Teal    => CulturalParams { hp: 0.9, atk: 0.8, spd: 1.5, rare: 0.07, openness: 0.8 },
+            Culture::Crystal => CulturalParams { hp: 1.4, atk: 0.8, spd: 0.7, rare: 0.08, openness: 0.1 },
+            Culture::Gale    => CulturalParams { hp: 0.9, atk: 0.9, spd: 1.4, rare: 0.06, openness: 0.8 },
+            Culture::Tundra  => CulturalParams { hp: 1.1, atk: 0.9, spd: 0.8, rare: 0.05, openness: 0.3 },
+            Culture::Frost   => CulturalParams { hp: 1.2, atk: 0.7, spd: 0.7, rare: 0.05, openness: 0.2 },
             Culture::Void    => CulturalParams { hp: 1.2, atk: 1.2, spd: 1.2, rare: 0.25, openness: 1.0 },
         }
     }
 
-    /// Primary frequency for Cymatics audio/visual generation.
+    /// Primary frequency for Cymatics audio/visual generation (ADR-023 v2).
     pub fn frequency(self) -> f32 {
         match self {
             Culture::Ember   => 256.0,
-            Culture::Gale    => 288.0,
             Culture::Tide    => 320.0,
+            Culture::Orange  => 336.0,
             Culture::Marsh   => 384.0,
+            Culture::Teal    => 407.0,
             Culture::Crystal => 426.0,
+            Culture::Gale    => 288.0,
             Culture::Tundra  => 540.0,
-            Culture::Void    => 432.0, // Default to Meadow/Solfeggio harmony
+            Culture::Frost   => 480.0,
+            Culture::Void    => 432.0,
         }
     }
 
-    /// Is `other` hex-adjacent to `self`?
-    pub fn is_adjacent(self, other: Culture) -> bool {
-        use Culture::*;
-        matches!(
-            (self, other),
-            (Ember, Gale)    | (Ember, Marsh)    |
-            (Gale, Ember)    | (Gale, Tundra)    |
-            (Crystal, Gale)  | (Crystal, Tide)   |
-            (Marsh, Ember)   | (Marsh, Tide)      |
-            (Tide, Crystal)  | (Tide, Marsh)      |
-            (Tundra, Gale)   | (Tundra, Marsh)
-        )
-    }
-
-    /// Is `other` the hexagon opposite of `self`?
-    pub fn is_opposite(self, other: Culture) -> bool {
-        use Culture::*;
-        matches!(
-            (self, other),
-            (Ember, Crystal) | (Crystal, Ember) |
-            (Gale, Tundra)   | (Tundra, Gale)   |
-            (Marsh, Tide)    | (Tide, Marsh)
-        )
-    }
-
-    /// Index in `CultureExpression` (Void has no dedicated slot).
+    /// Index in `CultureExpression` (Void has no dedicated slot — returns None).
     pub fn wheel_index(self) -> Option<usize> {
         Self::WHEEL.iter().position(|c| *c == self)
     }
@@ -108,11 +120,14 @@ impl Culture {
     pub fn name(self) -> &'static str {
         match self {
             Culture::Ember   => "Ember",
-            Culture::Gale    => "Gale",
-            Culture::Marsh   => "Marsh",
-            Culture::Crystal => "Crystal",
-            Culture::Tundra  => "Tundra",
             Culture::Tide    => "Tide",
+            Culture::Orange  => "Orange",
+            Culture::Marsh   => "Marsh",
+            Culture::Teal    => "Teal",
+            Culture::Crystal => "Crystal",
+            Culture::Gale    => "Gale",
+            Culture::Tundra  => "Tundra",
+            Culture::Frost   => "Frost",
             Culture::Void    => "Void",
         }
     }
@@ -152,25 +167,28 @@ impl CulturalParams {
 }
 
 // ---------------------------------------------------------------------------
-// CultureExpression — the 6-float genome vector
+// CultureExpression — the 9-float genome vector (Sprint 4: expanded from 6)
 // ---------------------------------------------------------------------------
 
-/// A normalised distribution across the 6 wheel cultures.
-/// Indices match `Culture::WHEEL` order: Ember=0, Gale=1, Marsh=2,
-/// Crystal=3, Tundra=4, Tide=5.
+/// A normalised distribution across the 9 wheel cultures.
+/// Indices match `Culture::WHEEL` order:
+///   Ember=0, Tide=1, Orange=2, Marsh=3, Teal=4, Crystal=5, Gale=6, Tundra=7, Frost=8
 /// Invariant: values.iter().sum() ≈ 1.0
+///
+/// Save migration (v2→v3): existing [f32;6] saves are zero-padded to [f32;9]
+/// and renormalised. No data loss — new slots start at 0.0.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub struct CultureExpression(pub [f32; 6]);
+pub struct CultureExpression(pub [f32; 9]);
 
 impl CultureExpression {
-    /// Equal distribution (the Void genome).
+    /// Equal distribution across all 9 cultures (the Void genome).
     pub fn void() -> Self {
-        Self([1.0 / 6.0; 6])
+        Self([1.0 / 9.0; 9])
     }
 
     /// Pure culture: 1.0 on that culture, 0.0 on all others.
     pub fn pure(culture: Culture) -> Self {
-        let mut arr = [0.0f32; 6];
+        let mut arr = [0.0f32; 9];
         if let Some(i) = culture.wheel_index() {
             arr[i] = 1.0;
         } else {
@@ -201,14 +219,33 @@ impl CultureExpression {
     }
 
     /// Renormalise so all values sum to 1.0.
-    fn normalise(mut arr: [f32; 6]) -> Self {
+    pub fn normalise(mut arr: [f32; 9]) -> Self {
         let total: f32 = arr.iter().sum();
         if total > 0.0 {
             arr.iter_mut().for_each(|v| *v /= total);
         } else {
-            arr = [1.0 / 6.0; 6];
+            arr = [1.0 / 9.0; 9];
         }
         Self(arr)
+    }
+
+    /// Migrate a 6-slot expression to 9 slots by zero-padding.
+    /// Used in save migration v2→v3.
+    pub fn migrate_from_6(old: [f32; 6]) -> Self {
+        let mut arr = [0.0f32; 9];
+        // Old WHEEL order was: Ember=0,Gale=1,Marsh=2,Crystal=3,Tundra=4,Tide=5
+        // New WHEEL order is:  Ember=0,Tide=1,Orange=2,Marsh=3,Teal=4,Crystal=5,Gale=6,Tundra=7,Frost=8
+        // Map old indices to new positions:
+        arr[0] = old[0]; // Ember   → Ember(0)   unchanged
+        arr[1] = old[5]; // Tide    ← old Tide(5)
+        // Orange(2) = 0.0 (new)
+        arr[3] = old[2]; // Marsh   ← old Marsh(2)
+        // Teal(4) = 0.0 (new)
+        arr[5] = old[3]; // Crystal ← old Crystal(3)
+        arr[6] = old[1]; // Gale    ← old Gale(1)
+        arr[7] = old[4]; // Tundra  ← old Tundra(4)
+        // Frost(8) = 0.0 (new)
+        Self::normalise(arr)  // sum unchanged (new slots are 0) — renormalise for safety
     }
 }
 
@@ -237,22 +274,17 @@ impl GeneticTier {
             .collect();
 
         match active.len() {
-            1 => GeneticTier::Blooded,
+            0 | 1 => GeneticTier::Blooded,
             2 => {
                 let (c1, c2) = (active[0], active[1]);
-                if c1.is_adjacent(c2) {
-                    GeneticTier::Bordered
-                } else if c1.is_opposite(c2) {
-                    GeneticTier::Sundered
-                } else {
-                    GeneticTier::Drifted
-                }
+                if is_near_opposite(c1, c2)    { GeneticTier::Sundered }
+                else if is_adjacent(c1, c2)    { GeneticTier::Bordered }
+                else                           { GeneticTier::Drifted  }
             }
-            3 => GeneticTier::Threaded,
-            4 => GeneticTier::Convergent,
-            5 => GeneticTier::Liminal,
-            6 => GeneticTier::Void,
-            _ => GeneticTier::Blooded,
+            3       => GeneticTier::Threaded,
+            4 | 5   => GeneticTier::Convergent,
+            6 | 7   => GeneticTier::Liminal,
+            _       => GeneticTier::Void,   // 8 or 9 active
         }
     }
 
@@ -659,8 +691,8 @@ impl BreedingResolver {
         b: &CultureExpression,
         rng: &mut R,
     ) -> CultureExpression {
-        let mut raw = [0.0f32; 6];
-        for i in 0..6 {
+        let mut raw = [0.0f32; 9];
+        for i in 0..9 {
             let blended  = (a.0[i] + b.0[i]) / 2.0;
             let variance = rng.gen_range(-VARIANCE_RANGE..=VARIANCE_RANGE);
             raw[i] = (blended + variance * blended).max(0.0);
