@@ -352,14 +352,14 @@ impl GeneticTier {
 
     pub fn name(self) -> &'static str {
         match self {
-            GeneticTier::Blooded    => "Blooded",
-            GeneticTier::Bordered   => "Bordered",
-            GeneticTier::Sundered   => "Sundered",
-            GeneticTier::Drifted    => "Drifted",
-            GeneticTier::Threaded   => "Threaded",
-            GeneticTier::Convergent => "Convergent",
-            GeneticTier::Liminal    => "Liminal",
-            GeneticTier::Void       => "Void",
+            GeneticTier::Blooded    => "BLOODED",
+            GeneticTier::Bordered   => "BORDERED",
+            GeneticTier::Sundered   => "SUNDERED",
+            GeneticTier::Drifted    => "DRIFTED",
+            GeneticTier::Threaded   => "THREADED",
+            GeneticTier::Convergent => "CONVERGENT",
+            GeneticTier::Liminal    => "LIMINAL",
+            GeneticTier::Void       => "VOID",
         }
     }
 }
@@ -1029,6 +1029,12 @@ pub const CULTURE_SATURATIONS: [f32; 9] = [
 /// - max_weight = 1.0 (Blooded): full saturation — unmistakable hue.
 /// - max_weight ≈ 0.11 (all 9 equal): heavily muted — readable blend.
 pub fn culture_display_color(alleles: &CultureAlleles) -> (u8, u8, u8) {
+    // Sprint 6: Void Slime Prismatic Shift
+    // If the dominant array indicates a Tier 8/9 (Void), bypass muddy grey for Prismatic White.
+    if GeneticTier::from_expression(&alleles.dominant) == GeneticTier::Void {
+        return (255, 255, 255);
+    }
+
     let expressed: Vec<(usize, f32)> = alleles.dominant
         .0
         .iter()
@@ -1119,6 +1125,28 @@ pub fn refine_culture(alleles: &mut CultureAlleles, target: Culture, intensity: 
 }
 
 
+
+// ---------------------------------------------------------------------------
+// Phase E — UI Data Helpers (Sprint 6)
+// ---------------------------------------------------------------------------
+
+/// Filter and renormalise expression slots for the UI Spectrum Bar.
+/// Returns (WHEEL_index, normalized_weight) pairs.
+pub fn spectrum_segments(expr: &[f32; 9], threshold: f32) -> Vec<(usize, f32)> {
+    let filtered: Vec<(usize, f32)> = expr.iter()
+        .enumerate()
+        .filter(|(_, &w)| w >= threshold)
+        .map(|(i, &w)| (i, w))
+        .collect();
+
+    if filtered.is_empty() {
+        return Vec::new();
+    }
+
+    let total: f32 = filtered.iter().map(|(_, w)| w).sum();
+    filtered.into_iter().map(|(i, w)| (i, w / total)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1126,6 +1154,41 @@ mod tests {
     use rand::rngs::SmallRng;
 
     fn rng() -> SmallRng { SmallRng::seed_from_u64(42) }
+
+    #[test]
+    fn test_tier_label_strings() {
+        assert_eq!(GeneticTier::Blooded.name(), "BLOODED");
+        assert_eq!(GeneticTier::Sundered.name(), "SUNDERED");
+        assert_eq!(GeneticTier::Void.name(), "VOID");
+    }
+
+    #[test]
+    fn test_spectrum_segments_renormalize() {
+        // 0.5 Ember, 0.5 Crystal, 0.01 Tide (below threshold)
+        let mut arr = [0.0f32; 9];
+        arr[0] = 0.5;
+        arr[5] = 0.5;
+        arr[1] = 0.01;
+        
+        let segments = spectrum_segments(&arr, 0.05);
+        assert_eq!(segments.len(), 2);
+        assert_eq!(segments[0], (0, 0.5)); // Ember
+        assert_eq!(segments[1], (5, 0.5)); // Crystal
+    }
+
+    #[test]
+    fn test_spectrum_segments_empty() {
+        let arr = [0.0f32; 9];
+        let segments = spectrum_segments(&arr, 0.05);
+        assert!(segments.is_empty());
+    }
+
+    #[test]
+    fn test_culture_display_color_void_white() {
+        let alleles = CultureAlleles::void();
+        let (r, g, b) = culture_display_color(&alleles);
+        assert_eq!((r, g, b), (255, 255, 255));
+    }
 
     #[test]
     fn test_genetic_tier_blooded() {
