@@ -37,12 +37,25 @@ if (-not (Test-Path $Keystore)) {
     exit 1
 }
 
-Write-Host "🚀 Building release binary (aarch64-linux-android)..." -ForegroundColor Cyan
-cargo build --release --target aarch64-linux-android
+$AndroidHome = $env:LOCALAPPDATA + "\Android\Sdk"
+if (-not (Test-Path $AndroidHome)) {
+    Write-Host "Could not find Android SDK at $AndroidHome. Ensure ANDROID_HOME is set or SDK is installed." -ForegroundColor Red
+    exit 1
+}
 
-Write-Host "📦 Packaging APK..." -ForegroundColor Cyan
-# Replace with xbuild if your project uses it instead of cargo-apk
-cargo apk build --release 
+$BuildToolsDir = Get-ChildItem -Path "$AndroidHome\build-tools" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+if ($null -eq $BuildToolsDir) {
+    Write-Host "Could not find build-tools in Android SDK." -ForegroundColor Red
+    exit 1
+}
+
+$Zipalign = "$($BuildToolsDir.FullName)\zipalign.exe"
+$Apksigner = "$($BuildToolsDir.FullName)\apksigner.bat"
+
+Write-Host "📦 Building and packaging APK with cargo apk..." -ForegroundColor Cyan
+cargo apk build --release
+
+$ApkUnsigned = "target/release/apk/operator.apk"
 
 if (-not (Test-Path $ApkUnsigned)) {
     Write-Host "Error: Could not find output APK at $ApkUnsigned. Adjust path in script." -ForegroundColor Red
@@ -50,12 +63,13 @@ if (-not (Test-Path $ApkUnsigned)) {
 }
 
 Write-Host "🔐 Aligning APK..." -ForegroundColor Cyan
-zipalign -v -p 4 $ApkUnsigned $ApkAligned
+& $Zipalign -v -p 4 $ApkUnsigned $ApkAligned
 
-Write-Host "✍️ Signing APK via apksigner (or jarsigner fallback)..." -ForegroundColor Cyan
-if (Get-Command apksigner -ErrorAction SilentlyContinue) {
-    apksigner sign --ks $Keystore --out $ApkFinal $ApkAligned
-} else {
+Write-Host "✍️ Signing APK via apksigner..." -ForegroundColor Cyan
+if (Test-Path $Apksigner) {
+    & $Apksigner sign --ks $Keystore --out $ApkFinal $ApkAligned
+}
+else {
     Write-Host "apksigner not found, falling back to jarsigner..." -ForegroundColor Yellow
     Copy-Item $ApkAligned $ApkFinal -Force
     jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore $Keystore $ApkFinal $Alias
