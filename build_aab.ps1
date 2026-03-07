@@ -91,13 +91,21 @@ if (-not $AndroidJar) {
     exit 1
 }
 
-& $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath --proto-format -o "target\manifest_proto.zip"
+$CompiledManifestDir = "target\manifest_compiled"
+if (Test-Path $CompiledManifestDir) { Remove-Item -Recurse -Force $CompiledManifestDir }
+New-Item -ItemType Directory -Path $CompiledManifestDir | Out-Null
+
+& $Aapt2 compile $ManifestPath -o $CompiledManifestDir
+$FlatManifest = Get-ChildItem -Path $CompiledManifestDir -Filter "*.flat" | Select-Object -First 1
+
+& $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath -R $FlatManifest.FullName --proto-format -o "target\manifest_proto.zip"
 Expand-Archive -Path "target\manifest_proto.zip" -DestinationPath "target\manifest_extract" -Force
+New-Item -ItemType Directory -Path "$AabBase\manifest" -Force -ErrorAction SilentlyContinue | Out-Null
 Move-Item -Path "target\manifest_extract\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
+
 Remove-Item -Recurse -Force "target\manifest_extract"
 Remove-Item -Force "target\manifest_proto.zip"
-New-Item -ItemType Directory -Path "$AabBase\manifest" | Out-Null
-Move-Item -Path "$AabBase\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
+Remove-Item -Recurse -Force $CompiledManifestDir
 
 if (Test-Path "$AabBase\META-INF") { Remove-Item -Recurse -Force "$AabBase\META-INF" }
 
