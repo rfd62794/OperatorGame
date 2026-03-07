@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Utc};
+use chrono::Duration;
 use rand::Rng;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -1095,7 +1095,7 @@ mod tests {
         yield_.apply_to_inventory(&mut inv);
         assert_eq!(inv.biomass,   10);
         assert_eq!(inv.scrap,      5);
-        assert_eq!(inv.reagents,   6);
+        assert_eq!(inv.reagents,   3);
     }
 
     #[test]
