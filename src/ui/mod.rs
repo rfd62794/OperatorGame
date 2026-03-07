@@ -303,7 +303,7 @@ impl OperatorApp {
                 if !newly_injured.is_empty() {
                     let (id, until) = newly_injured[0];
                     let op = self.state.slimes.iter().find(|s| s.genome.id == id);
-                    let name = op.map(|s| s.name()).unwrap_or_else(|| "Operator".to_string());
+                    let name = op.map(|s| s.name()).unwrap_or("Operator");
                     
                     let remaining = until - Utc::now();
                     let h = remaining.num_hours();

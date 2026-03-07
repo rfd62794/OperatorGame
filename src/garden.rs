@@ -350,7 +350,7 @@ pub fn draw_garden(
     // Draw each agent
     for agent in &garden.agents {
         let Some(&genome) = genomes.get(&agent.genome_id) else { continue };
-        let vis      = SlimeVisual::from_genome(genome, t, agent.level, agent.dispatched);
+        let vis      = crate::render::slime::SlimeVisual::from_operator(&agent.operator, t);
         let selected = garden.selected == Some(agent.genome_id);
         draw_slime(painter, agent.pos, &vis, selected);
 

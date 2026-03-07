@@ -149,6 +149,23 @@ impl Operator {
         crate::genetics::LifeStage::xp_to_next(self.level)
     }
 
+    pub fn is_dispatched(&self) -> bool {
+        matches!(self.state, SlimeState::Deployed(_))
+    }
+
+    pub fn is_injured(&self) -> bool {
+        matches!(self.state, SlimeState::Injured(_))
+    }
+
+    pub fn can_synthesize(&self) -> bool {
+        // Synthesis possible if not deployed, not injured, and cooldown expired.
+        if self.is_dispatched() || self.is_injured() { return false; }
+        if let Some(until) = self.synthesis_cooldown_until {
+            if until > Utc::now() { return false; }
+        }
+        true
+    }
+
     /// Add XP and return true if levelled up (Sprint 9 §2).
     pub fn award_xp(&mut self, amount: u32) -> bool {
         self.total_xp += amount;
