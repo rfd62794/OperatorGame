@@ -83,7 +83,7 @@ async fn main() {
                         std::process::exit(1);
                     }
                     Some(op) if !op.is_available() => {
-                        eprintln!("Operator '{}' is not available: {}", op.name, op.state);
+                        eprintln!("Operator '{}' is not available: {}", op.name(), op.state);
                         std::process::exit(1);
                     }
                     Some(op) => {
@@ -154,7 +154,7 @@ async fn main() {
                     let Some(mission) = mission else { continue; };
 
                     let squad_ids = deployment.operator_ids.clone();
-                    let squad: Vec<&operator::genetics::SlimeGenome> = state
+                    let squad: Vec<&operator::models::Operator> = state
                         .slimes
                         .iter()
                         .filter(|o| squad_ids.contains(&o.id()))
@@ -440,7 +440,7 @@ async fn main() {
                 } else {
                     for &idx in &completed {
                         let exp = &state.active_expeditions[idx];
-                        let squad: Vec<_> = state.slimes.iter()
+                        let squad: Vec<&operator::models::Operator> = state.slimes.iter()
                             .filter(|s| exp.slime_ids.contains(&s.id()))
                             .collect();
                         let outcome = exp.resolve(&squad, &mut rng);
