@@ -140,6 +140,15 @@ impl Operator {
 
     pub fn id(&self) -> Uuid { self.genome.id }
     pub fn name(&self) -> &str { &self.genome.name }
+}
+
+impl std::fmt::Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (Lvl {})", self.name(), self.level)
+    }
+}
+
+impl Operator {
 
     pub fn life_stage(&self) -> crate::genetics::LifeStage {
         crate::genetics::LifeStage::from_level(self.level)
