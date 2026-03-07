@@ -31,6 +31,7 @@ impl OperatorApp {
                 let mut equip_action: Option<(uuid::Uuid, usize)> = None;
                 let mut unequip_action: Option<(uuid::Uuid, usize)> = None;
 
+                for genome in &self.state.slimes {
                     let is_staged = staged.contains(&genome.id);
                     let is_dispatched = matches!(genome.state, crate::models::SlimeState::Deployed(_));
                     let can_stage = !is_dispatched && selected_mission_id.is_some();
