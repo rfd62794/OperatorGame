@@ -266,7 +266,7 @@ impl OperatorApp {
             self.state.slimes.extend(new_slimes);
             
             // Re-sync garden to ensure new slimes wander immediately
-            self.garden = crate::garden::Garden::from_genomes(&self.state.slimes, ui.max_rect());
+            self.garden = crate::garden::Garden::from_operators(&self.state.slimes, ui.max_rect());
             self.persist();
         }
     }
@@ -294,7 +294,7 @@ impl OperatorApp {
                         Ok(id) => {
                             self.status_msg = format!("Granted Elder's Gift: Void Slime #{}", &id.to_string()[..5]);
                             self.persist();
-                            self.garden = crate::garden::Garden::from_genomes(&self.state.slimes, ui.max_rect());
+                            self.garden = crate::garden::Garden::from_operators(&self.state.slimes, ui.max_rect());
                         }
                         Err(e) => self.status_msg = e.to_string(),
                     }
@@ -320,7 +320,7 @@ impl OperatorApp {
                             Ok(id) => {
                                 self.status_msg = format!("Drafted new recruit: {} #{}", r_name, &id.to_string()[..5]);
                                 self.persist();
-                                self.garden = crate::garden::Garden::from_genomes(&self.state.slimes, ui.max_rect());
+                                self.garden = crate::garden::Garden::from_operators(&self.state.slimes, ui.max_rect());
                             }
                             Err(e) => self.status_msg = e.to_string(),
                         }

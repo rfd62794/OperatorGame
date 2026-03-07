@@ -593,12 +593,6 @@ impl BreedingResolver {
         name: &str,
         rng: &mut R,
     ) -> Result<SlimeGenome, &'static str> {
-        if !a.can_synthesize() {
-            return Err("Donor A is in Cellular Exhaustion — synthesis unavailable");
-        }
-        if !b.can_synthesize() {
-            return Err("Donor B is in Cellular Exhaustion — synthesis unavailable");
-        }
 
         let mutation_chance = Self::mutation_chance(a, b);
         let mut culture_alleles = Self::resolve_culture(&a.culture_alleles, &b.culture_alleles, rng);
@@ -613,7 +607,7 @@ impl BreedingResolver {
 
         let (hp, atk, spd)  = Self::resolve_stats(a, b, culture_alleles.dominant.dominant(), mutation_chance, rng);
         let (shape, size, pattern, accessory, base_color, pattern_color) =
-            Self::resolve_visuals(a, b, &a.culture_alleles.dominant, &b.culture_alleles.dominant, a.life_stage(), rng);
+            Self::resolve_visuals(a, b, &a.culture_alleles.dominant, &b.culture_alleles.dominant, rng);
         let personality = Self::resolve_personality(a, b, rng);
 
         Ok(SlimeGenome {
