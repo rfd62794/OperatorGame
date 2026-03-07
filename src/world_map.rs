@@ -258,12 +258,13 @@ pub struct WorldMap {
 }
 
 impl WorldMap {
-    /// Generate the canonical 15-node planet map.
+    /// Generate the canonical 19-node planet map.
     ///
     /// Node layout (3 rings):
     ///   Centre:   Crash Site (your base — always Neutral/Void, locked)
     ///   Ring 1:   6 nodes — one per Culture, strongly held
-    ///   Ring 2:   8 nodes — frontier/contested, mix of zone types
+    ///   Ring 2:   6 nodes — frontier/contested, mix of zone types
+    ///   Ring 3:   6 nodes — deep wilds, high difficulty
     pub fn generate<R: Rng>(rng: &mut R) -> Self {
         let radial_nodes = radial::generate_ripple_map();
         let mut nodes = Vec::new();
@@ -671,7 +672,7 @@ mod tests {
     #[test]
     fn map_has_15_nodes() {
         let map = WorldMap::generate(&mut rng());
-        assert_eq!(map.nodes.len(), 15);
+        assert_eq!(map.nodes.len(), 19);
     }
 
     #[test]
@@ -707,7 +708,7 @@ mod tests {
     fn influence_summary_counts_all_nodes() {
         let map   = WorldMap::generate(&mut rng());
         let total: usize = map.influence_summary().values().sum();
-        assert_eq!(total, 15);
+        assert_eq!(total, 19);
     }
 
     #[test]
