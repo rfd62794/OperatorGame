@@ -83,14 +83,7 @@ $AabBase = "target\aab_base"
 Write-Host "Converting APK resources to protobuf format..." -ForegroundColor Cyan
 & $Aapt2 convert --output-format proto -o $ProtoApk $ApkUnsigned
 
-$CompiledManifestDir = "target\manifest_compiled"
-if (Test-Path $CompiledManifestDir) { Remove-Item -Recurse -Force $CompiledManifestDir }
-New-Item -ItemType Directory -Path $CompiledManifestDir | Out-Null
-
-& $Aapt2 compile $ManifestPath -o $CompiledManifestDir
-$FlatManifest = Get-ChildItem -Path $CompiledManifestDir -Filter "*.flat" | Select-Object -First 1
-
-& $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath -R $FlatManifest.FullName --proto-format -o "target\manifest_proto.zip"
+& $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath --proto-format -o "target\manifest_proto.zip"
 
 Write-Host "Assembling AAB module structure..." -ForegroundColor Cyan
 if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
@@ -104,7 +97,6 @@ Move-Item -Path "target\manifest_extract\AndroidManifest.xml" -Destination "$Aab
 
 Remove-Item -Recurse -Force "target\manifest_extract"
 Remove-Item -Force "target\manifest_proto.zip"
-Remove-Item -Recurse -Force $CompiledManifestDir
 
 if (Test-Path "$AabBase\META-INF") { Remove-Item -Recurse -Force "$AabBase\META-INF" }
 
