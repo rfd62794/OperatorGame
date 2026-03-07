@@ -179,6 +179,7 @@ impl Operator {
         self.total_xp += amount;
         let old_level = self.level;
         self.level = crate::genetics::LifeStage::level_from_xp(self.total_xp);
+        println!("DEBUG: total_xp={}, level={}, old_level={}", self.total_xp, self.level, old_level);
         self.level > old_level
     }
 
