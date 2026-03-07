@@ -25,7 +25,7 @@ if ($GenerateKeys) {
         -keyalg RSA -keysize 2048 `
         -validity 10000
     
-    Write-Host "⚠️ IMPORTANT: Backup $Keystore securely in 2+ locations! ⚠️" -ForegroundColor Yellow
+    Write-Host "IMPORTANT: Backup $Keystore securely in 2+ locations!" -ForegroundColor Yellow
     exit 0
 }
 
@@ -38,7 +38,7 @@ if (-not (Test-Path $Keystore)) {
 # 1. Download bundletool if needed
 $BundleTool = "bundletool.jar"
 if (-not (Test-Path $BundleTool)) {
-    Write-Host "⬇️ Downloading bundletool.jar..." -ForegroundColor Cyan
+    Write-Host "Downloading bundletool.jar..." -ForegroundColor Cyan
     Invoke-WebRequest -Uri "https://github.com/google/bundletool/releases/download/1.17.1/bundletool-all-1.17.1.jar" -OutFile $BundleTool
 }
 
@@ -53,7 +53,7 @@ $BuildToolsDir = Get-ChildItem -Path "$AndroidHome\build-tools" -Directory | Sor
 $Aapt2 = "$($BuildToolsDir.FullName)\aapt2.exe"
 
 # 3. Build APK
-Write-Host "📦 Building Rust payload with cargo apk..." -ForegroundColor Cyan
+Write-Host "Building Rust payload with cargo apk..." -ForegroundColor Cyan
 cargo apk build --release
 
 if (-not (Test-Path $ApkUnsigned)) {
@@ -66,11 +66,11 @@ $ProtoApk = "target\proto.apk"
 $BaseZip = "target\base.zip"
 $AabBase = "target\aab_base"
 
-Write-Host "🔄 Converting APK resources to protobuf format..." -ForegroundColor Cyan
+Write-Host "Converting APK resources to protobuf format..." -ForegroundColor Cyan
 & $Aapt2 convert --output-format proto -o $ProtoApk $ApkUnsigned
 
 # 5. Extract and format as base.zip module
-Write-Host "📂 Assembling AAB module structure..." -ForegroundColor Cyan
+Write-Host "Assembling AAB module structure..." -ForegroundColor Cyan
 if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
 if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
 
@@ -86,11 +86,11 @@ Compress-Archive -Path "$AabBase\*" -DestinationPath $BaseZip -Force
 $AabFinal = "operatorgame-release.aab"
 if (Test-Path $AabFinal) { Remove-Item -Force $AabFinal }
 
-Write-Host "🧱 Building Android App Bundle ($AabFinal)..." -ForegroundColor Cyan
+Write-Host "Building Android App Bundle ($AabFinal)..." -ForegroundColor Cyan
 java -jar $BundleTool build-bundle --modules=$BaseZip --output=$AabFinal
 
 # 7. Sign AAB
-Write-Host "✍️ Signing AAB with jarsigner..." -ForegroundColor Cyan
+Write-Host "Signing AAB with jarsigner..." -ForegroundColor Cyan
 jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore $Keystore $AabFinal $Alias
 
 # Cleanup
@@ -98,4 +98,4 @@ Remove-Item $ProtoApk -ErrorAction SilentlyContinue
 Remove-Item $BaseZip -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force $AabBase -ErrorAction SilentlyContinue
 
-Write-Host "✅ Success! Signed App Bundle ready for Play Store: $AabFinal" -ForegroundColor Green
+Write-Host "Success! Signed App Bundle ready for Play Store: $AabFinal" -ForegroundColor Green
