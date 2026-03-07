@@ -86,7 +86,13 @@ jar cMf "..\base.zip" *
 Pop-Location
 
 # 6. Build final AAB
-$AabFinal = "operatorgame-release.aab"
+$VersionLine = Select-String -Path "Cargo.toml" -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1
+$Version = if ($VersionLine) { $VersionLine.Matches.Groups[1].Value } else { "unknown" }
+
+$OutputDir = "target\googleplay"
+if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir | Out-Null }
+
+$AabFinal = "$OutputDir\operatorgame-release-v$Version.aab"
 if (Test-Path $AabFinal) { Remove-Item -Force $AabFinal }
 
 Write-Host "Building Android App Bundle ($AabFinal)..." -ForegroundColor Cyan
