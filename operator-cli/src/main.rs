@@ -207,6 +207,7 @@ async fn main() {
                             operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Failure { base_freq: 200.0 });
 
                             for op in state.slimes.iter_mut() {
+                                if injured_ids.contains(&op.id()) {
                                     println!("     ↳ {} is injured.", op.name());
                                     op.state = SlimeState::Injured(recover_at);
                                 }
@@ -293,8 +294,8 @@ async fn main() {
         }
 
         Commands::Splice { parent_a_prefix, parent_b_prefix, offspring_name } => {
-            let a_idx = state.slimes.iter().position(|s| s.id.to_string().starts_with(&parent_a_prefix));
-            let b_idx = state.slimes.iter().position(|s| s.id.to_string().starts_with(&parent_b_prefix));
+            let a_idx = state.slimes.iter().position(|s| s.id().to_string().starts_with(&parent_a_prefix));
+            let b_idx = state.slimes.iter().position(|s| s.id().to_string().starts_with(&parent_b_prefix));
 
             let (Some(ai), Some(bi)) = (a_idx, b_idx) else {
                 eprintln!("One or both parent IDs not found. Use `operator slimes` to list IDs.");
@@ -405,8 +406,8 @@ async fn main() {
                 let mut slime_ids = Vec::new();
                 for prefix in &slime_id_prefixes {
                     let id = state.slimes.iter()
-                        .find(|s| s.id.to_string().starts_with(prefix.as_str()))
-                        .map(|s| s.id);
+                        .find(|s| s.id().to_string().starts_with(prefix.as_str()))
+                        .map(|s| s.id());
                     match id {
                         Some(id) => slime_ids.push(id),
                         None => {
@@ -440,7 +441,7 @@ async fn main() {
                     for &idx in &completed {
                         let exp = &state.active_expeditions[idx];
                         let squad: Vec<_> = state.slimes.iter()
-                            .filter(|s| exp.slime_ids.contains(&s.id))
+                            .filter(|s| exp.slime_ids.contains(&s.id()))
                             .collect();
                         let outcome = exp.resolve(&squad, &mut rng);
 
@@ -508,6 +509,7 @@ async fn main() {
                         state.active_expeditions[idx].resolved = true;
                     }
                 }
+            }
             }
         }
     }
