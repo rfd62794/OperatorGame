@@ -2,6 +2,7 @@ use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::combat::{D20Result, D20, RollMode};
 
 // ---------------------------------------------------------------------------
 // Gear — Industrial Grade Tools
@@ -156,11 +157,15 @@ impl std::fmt::Display for Mission {
 // AAR (After Action Report) outcomes
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, PartialEq)]
+/// After-Action Report outcome — produced by `Deployment::resolve()`.
+///
+/// Each variant carries the three per-stat D20 rolls (STR / AGI / INT) so the
+/// narrative log can display individual check results.
+#[derive(Debug, Clone)]
 pub enum AarOutcome {
-    Victory { reward: u64 },
-    Failure { injured_ids: Vec<Uuid> },
-    CriticalFailure { killed_id: Uuid },
+    Victory        { reward: u64,            rolls: Vec<D20Result> },
+    Failure        { injured_ids: Vec<Uuid>, rolls: Vec<D20Result> },
+    CriticalFailure { killed_id: Uuid,       rolls: Vec<D20Result> },
 }
 
 // ---------------------------------------------------------------------------
@@ -196,31 +201,61 @@ impl Deployment {
 
     /// Resolve a completed deployment into an AAR outcome.
     ///
-    /// This consumes a random roll and applies the mission formula.
-    /// Call only after `is_complete()` returns `true`.
+    /// Runs three independent D20 checks (STR / AGI / INT). The squad's
+    /// aggregate stat coverage ratio determines the modifier for each check.
+    /// Outcome: 2-of-3 successes → Victory; crit-fail on all failing checks → CriticalFailure;
+    /// otherwise → Failure. Call only after `is_complete()` returns `true`.
     pub fn resolve<R: Rng>(
         &self,
         mission: &Mission,
         squad: &[&crate::genetics::SlimeGenome],
         rng: &mut R,
     ) -> AarOutcome {
-        let success_rate = mission.calculate_success_rate(squad);
-        let roll: f64 = rng.gen();
+        // --- Aggregate squad stats -------------------------------------------
+        let (mut total_str, mut total_agi, mut total_int) = (0u32, 0u32, 0u32);
+        for op in squad {
+            let (s, a, i, _, _, _) = op.total_stats();
+            total_str += s;
+            total_agi += a;
+            total_int += i;
+        }
 
-        if roll < success_rate {
-            AarOutcome::Victory {
-                reward: mission.reward,
-            }
-        } else if roll >= 0.95 {
-            // Critical failure — pick a random casualty
-            let idx = rng.gen_range(0..self.operator_ids.len());
+        let coverage = |stat: u32, req: u32| -> f64 {
+            if req == 0 { 2.0 } else { (stat as f64 / req as f64).clamp(0.0, 2.0) }
+        };
+
+        let str_cov = coverage(total_str, mission.req_strength);
+        let agi_cov = coverage(total_agi, mission.req_agility);
+        let int_cov = coverage(total_int, mission.req_intelligence);
+
+        // --- Three per-stat D20 checks ----------------------------------------
+        // RollMode::Normal — culture synergy wired in Sprint 4 post 9-culture migration
+        let str_roll = D20::mission_check(str_cov, mission.difficulty, RollMode::Normal, rng);
+        let agi_roll = D20::mission_check(agi_cov, mission.difficulty, RollMode::Normal, rng);
+        let int_roll = D20::mission_check(int_cov, mission.difficulty, RollMode::Normal, rng);
+
+        let successes = [str_roll.success, agi_roll.success, int_roll.success]
+            .iter().filter(|&&s| s).count();
+
+        // Crit-fail: nat-1 on a check that itself failed
+        let any_crit_fail = (str_roll.nat_one && !str_roll.success)
+            || (agi_roll.nat_one && !agi_roll.success)
+            || (int_roll.nat_one && !int_roll.success);
+
+        let rolls = vec![str_roll, agi_roll, int_roll];
+
+        if successes >= 2 {
+            AarOutcome::Victory { reward: mission.reward, rolls }
+        } else if any_crit_fail && successes == 0 {
+            let idx = rng.gen_range(0..self.operator_ids.len().max(1));
             AarOutcome::CriticalFailure {
                 killed_id: self.operator_ids[idx],
+                rolls,
             }
         } else {
-            // Standard failure — all deployed operators are injured
             AarOutcome::Failure {
                 injured_ids: self.operator_ids.clone(),
+                rolls,
             }
         }
     }
@@ -270,18 +305,44 @@ mod tests {
     }
 
     #[test]
-    fn test_resolve_victory_with_seeded_rng() {
-        // Seed RNG to produce a known low roll → Victory
-        let mut rng = SmallRng::seed_from_u64(42);
-        let op = make_op(Job::Analyst, 100, 100, 100);
-        let m = make_mission(50, 50, 50, 0.0); // 100% success rate
-        let mut d = Deployment::start(&m, vec![op.id]);
+    fn test_resolve_d20_victory_with_slime() {
+        use crate::genetics::generate_random;
+        use crate::genetics::Culture;
+        // A slime with ample stats vs a low-req mission at trivial difficulty
+        // should win 2-of-3 D20 checks with high probability (seeded for determinism).
+        let mut rng = SmallRng::seed_from_u64(99);
+        let slime = generate_random(Culture::Ember, "TestSlime", &mut rng);
+        // req = 1 so coverage ≈ slime's total stat → +modifier well above Trivial DC 5
+        let m = make_mission(1, 1, 1, 0.0);
+        let mut d = Deployment::start(&m, vec![slime.id]);
         d.completes_at = Utc::now() - Duration::seconds(1);
 
-        let outcome = d.resolve(&m, &[&op], &mut rng);
+        let mut rng2 = SmallRng::seed_from_u64(99);
+        let outcome = d.resolve(&m, &[&slime], &mut rng2);
+        // With DC 5 and a very high coverage modifier, should always succeed
         assert!(
             matches!(outcome, AarOutcome::Victory { .. }),
-            "Expected Victory with guaranteed success rate"
+            "Expected Victory on trivial mission with capable slime"
         );
+    }
+
+    #[test]
+    fn test_resolve_rolls_has_three_entries() {
+        use crate::genetics::generate_random;
+        use crate::genetics::Culture;
+        let mut rng = SmallRng::seed_from_u64(7);
+        let slime = generate_random(Culture::Gale, "RollsTest", &mut rng);
+        let m = make_mission(50, 50, 50, 0.5);
+        let mut d = Deployment::start(&m, vec![slime.id]);
+        d.completes_at = Utc::now() - Duration::seconds(1);
+
+        let mut rng2 = SmallRng::seed_from_u64(7);
+        let outcome = d.resolve(&m, &[&slime], &mut rng2);
+        let rolls = match outcome {
+            AarOutcome::Victory        { rolls, .. } => rolls,
+            AarOutcome::Failure        { rolls, .. } => rolls,
+            AarOutcome::CriticalFailure { rolls, .. } => rolls,
+        };
+        assert_eq!(rolls.len(), 3, "resolve() must produce exactly 3 D20 rolls (STR/AGI/INT)");
     }
 }
