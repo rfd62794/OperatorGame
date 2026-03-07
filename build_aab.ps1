@@ -69,7 +69,7 @@ $ManifestContent = $ManifestContent -replace 'android:targetSdkVersion="\d+"', '
 $ManifestContent = $ManifestContent -replace 'android:minSdkVersion="\d+"', 'android:minSdkVersion="26"'
 [System.IO.File]::WriteAllText($ManifestPath, $ManifestContent, [System.Text.Encoding]::UTF8)
 
-# 4. Convert APK to Protobuf format
+# 4. Extract Proto APK and Inject Fixed Manifest
 $ProtoApk = "target\proto.zip"
 $BaseZip = "target\base.zip"
 $AabBase = "target\aab_base"
@@ -83,6 +83,19 @@ if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
 if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
 
 Expand-Archive -Path $ProtoApk -DestinationPath $AabBase -Force
+
+Write-Host "Injecting patched AndroidManifest.xml into AAB via aapt2 link..." -ForegroundColor Cyan
+$AndroidJar = Get-ChildItem -Path "$AndroidHome\platforms\android-35\android.jar" -ErrorAction SilentlyContinue
+if (-not $AndroidJar) {
+    Write-Host "Error: Could not find android.jar for API 35 at $AndroidJar" -ForegroundColor Red
+    exit 1
+}
+
+& $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath --proto-format -o "target\manifest_proto.zip"
+Expand-Archive -Path "target\manifest_proto.zip" -DestinationPath "target\manifest_extract" -Force
+Move-Item -Path "target\manifest_extract\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
+Remove-Item -Recurse -Force "target\manifest_extract"
+Remove-Item -Force "target\manifest_proto.zip"
 New-Item -ItemType Directory -Path "$AabBase\manifest" | Out-Null
 Move-Item -Path "$AabBase\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
 
