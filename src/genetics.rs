@@ -624,8 +624,6 @@ impl BreedingResolver {
             base_spd:     spd,
             generation:   a.generation.max(b.generation) + 1,
             parent_ids:   Some([a.id, b.id]),
-            level:        0,
-            xp:           0,
             curiosity:    personality[0],
             energy:       personality[1],
             affection:    personality[2],
@@ -638,7 +636,6 @@ impl BreedingResolver {
             pattern_color,
             frequency:     culture_alleles.dominant.dominant().frequency(),
             name:          name.to_string(),
-            synthesis_cooldown_until: None,
             // ADR-037 stats
             base_strength: rng.gen_range(5..=8),
             base_agility:  rng.gen_range(5..=8),
@@ -646,8 +643,6 @@ impl BreedingResolver {
             base_mind: rng.gen_range(5..=8),
             base_sensory: rng.gen_range(5..=8),
             base_tenacity: rng.gen_range(5..=8),
-            equipped_gear: Vec::new(),
-            state: crate::models::SlimeState::Idle,
         })
     }
 
