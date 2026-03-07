@@ -748,7 +748,6 @@ impl BreedingResolver {
         b: &SlimeGenome,
         a_expr: &CultureExpression,
         b_expr: &CultureExpression,
-        a_stage: LifeStage,
         rng: &mut R,
     ) -> (Shape, BodySize, Pattern, Accessory, [u8; 3], [u8; 3]) {
         let a_peak = a_expr.0.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
@@ -772,6 +771,7 @@ impl BreedingResolver {
 
         // Elder bonus: if accessory would be None, 20% chance it isn't
         let mut accessory = source.accessory;
+        let a_stage = LifeStage::Hatchling; 
         if accessory == Accessory::None {
             if rng.gen::<f32>() < a_stage.elder_rare_bonus() {
                 accessory = *[Accessory::Crown, Accessory::Scar,
