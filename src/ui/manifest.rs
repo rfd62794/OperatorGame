@@ -48,7 +48,6 @@ impl OperatorApp {
                         }
                     }
 
-                    let can_stage = !is_dispatched && !is_injured && selected_mission_id.is_some();
 
                     let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
                     let mut color = egui::Color32::from_rgb(cr, cg, cb);
