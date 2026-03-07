@@ -1101,17 +1101,17 @@ pub fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
 /// `intensity`: 0.0–1.0, proportional to Reagents spent.
 /// A single Reagents unit corresponds to intensity ≈ 0.33.
 pub fn refine_culture(alleles: &mut CultureAlleles, target: Culture, intensity: f32) -> bool {
-    let Some(idx) = WHEEL.iter().position(|&c| c == target) else {
+    let Some(idx) = Culture::WHEEL.iter().position(|&c| c == target) else {
         return false; // Void is not on WHEEL — cannot refine
     };
 
     // Amplify target dominant slot
-    alleles.dominant.0[idx] = (alleles.dominant.0[idx] + intensity * 0.3).min(1.0);
+    alleles.dominant.0[idx] = (alleles.dominant.0[idx] + intensity * 0.3_f32).min(1.0);
 
     // Suppress others and bleed into recessive
     for i in 0..9 {
         if i == idx { continue; }
-        let suppressed = alleles.dominant.0[i] * intensity * 0.2;
+        let suppressed = alleles.dominant.0[i] * intensity * 0.2_f32;
         alleles.dominant.0[i]  = (alleles.dominant.0[i] - suppressed).max(0.0);
         alleles.recessive.0[i] = (alleles.recessive.0[i] + suppressed).min(0.5);
     }
