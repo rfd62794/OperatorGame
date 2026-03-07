@@ -985,4 +985,63 @@ mod tests {
         };
         assert!(big.race_stats().mass > small.race_stats().mass, "Massive must be heavier");
     }
+
+    // Phase G — Sprint 4 tests (nonagon geometry, CultureExpression 9-slot, GeneticTier)
+    #[test]
+    fn test_culture_expression_nine_slots_normalize() {
+        let expr = CultureExpression::pure(Culture::Ember);
+        assert_eq!(expr.0.len(), 9, "CultureExpression must have 9 slots");
+        let sum: f32 = expr.0.iter().sum();
+        assert!((sum - 1.0).abs() < 0.001, "Sum must normalise to 1.0");
+        assert!((expr.get(Culture::Ember) - 1.0).abs() < 0.001, "Ember slot must be 1.0");
+        assert!((expr.get(Culture::Frost) - 0.0).abs() < 0.001, "Frost slot must be 0.0");
+    }
+
+    #[test]
+    fn test_culture_expression_void_all_equal() {
+        let expr = CultureExpression::void();
+        for v in expr.0 {
+            assert!((v - 1.0/9.0).abs() < 0.001, "Void must be 1/9 each");
+        }
+    }
+
+    #[test]
+    fn test_is_near_opposite_all_nine_pairs_symmetric() {
+        // Verify all 9 Sundered pairs from ADR-023 v2 near-opposite table
+        let pairs = [
+            (Culture::Ember,   Culture::Teal),    // 0 ↔ 4: dist 4
+            (Culture::Ember,   Culture::Crystal),  // 0 ↔ 5: dist 5, min=4
+            (Culture::Tide,    Culture::Crystal),  // 1 ↔ 5: dist 4
+            (Culture::Tide,    Culture::Gale),     // 1 ↔ 6: dist 5, min=4 (1+5=6)
+            (Culture::Orange,  Culture::Gale),     // 2 ↔ 6: dist 4
+            (Culture::Orange,  Culture::Tundra),   // 2 ↔ 7: dist 5, min=4
+            (Culture::Marsh,   Culture::Tundra),   // 3 ↔ 7: dist 4
+            (Culture::Marsh,   Culture::Frost),    // 3 ↔ 8: dist 5, min=4
+            (Culture::Teal,    Culture::Frost),    // 4 ↔ 8: dist 4
+        ];
+        for (a, b) in pairs {
+            assert!(is_near_opposite(a, b), "{:?} ↔ {:?} must be near-opposite", a, b);
+            assert!(is_near_opposite(b, a), "{:?} ↔ {:?} symmetric check failed", b, a);
+        }
+    }
+
+    #[test]
+    fn test_genetic_tier_sundered_near_opposite() {
+        // Ember(0) and Crystal(5) are near-opposites → GeneticTier::Sundered
+        let mut arr = [0.0f32; 9];
+        arr[0] = 0.6; // Ember
+        arr[5] = 0.4; // Crystal
+        let expr = CultureExpression::normalise(arr);
+        assert_eq!(GeneticTier::from_expression(&expr), GeneticTier::Sundered);
+    }
+
+    #[test]
+    fn test_genetic_tier_void_eight_active() {
+        // 8 cultures active at significant level → GeneticTier::Void
+        let arr = [0.125f32; 9]; // all equal (all 9 active)
+        let expr = CultureExpression::normalise(arr);
+        let active = expr.0.iter().filter(|&&v| v >= 0.05).count();
+        assert_eq!(active, 9);
+        assert_eq!(GeneticTier::from_expression(&expr), GeneticTier::Void);
+    }
 }
