@@ -709,7 +709,7 @@ impl BreedingResolver {
 
         Ok(SlimeGenome {
             id:           Uuid::new_v4(),
-            culture_alleles,
+            culture_alleles: culture_alleles.clone(),
             base_hp:      hp,
             base_atk:     atk,
             base_spd:     spd,
@@ -938,7 +938,6 @@ impl BreedingResolver {
 // ---------------------------------------------------------------------------
 
 pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> SlimeGenome {
-    let expr = CultureExpression::pure(culture);
     let params = culture.params();
 
     let shapes    = [Shape::Round, Shape::Cubic, Shape::Elongated, Shape::Crystalline, Shape::Amorphous];
