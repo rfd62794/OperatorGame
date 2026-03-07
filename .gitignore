@@ -1,3 +1,4 @@
 **/target
 *.apk
 *.idsig
+*.jks
