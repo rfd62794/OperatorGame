@@ -630,7 +630,7 @@ pub struct ExpeditionTarget {
     pub resource_yield: ResourceYield,
 }
 
-/// Six canonical expedition sites — one per non-Void culture.
+/// Nine canonical expedition sites — one per non-Void culture.
 ///
 /// Targets are deterministic so they can be matched by name from CLI input.
 pub fn seed_expedition_targets() -> Vec<ExpeditionTarget> {
@@ -683,6 +683,30 @@ pub fn seed_expedition_targets() -> Vec<ExpeditionTarget> {
             distance_secs:  150,
             danger_level:   0.30,
             resource_yield: ResourceYield { biomass: 12, scrap: 10, reagents: 6 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE07),
+            name:           "Orange Reach".into(),
+            culture:        Culture::Orange,
+            distance_secs:  5400,
+            danger_level:   0.35,
+            resource_yield: ResourceYield { biomass: 12, scrap: 0,  reagents: 0 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE08),
+            name:           "Teal Shelf".into(),
+            culture:        Culture::Teal,
+            distance_secs:  7200,
+            danger_level:   0.45,
+            resource_yield: ResourceYield { biomass: 0,  scrap: 0,  reagents: 4 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE09),
+            name:           "Frost Basin".into(),
+            culture:        Culture::Frost,
+            distance_secs:  9000,
+            danger_level:   0.60,
+            resource_yield: ResourceYield { biomass: 0,  scrap: 18, reagents: 0 },
         },
     ]
 }

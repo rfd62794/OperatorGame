@@ -380,6 +380,111 @@ impl TurnOrderManager {
 }
 
 
+// ---------------------------------------------------------------------------
+// RPS Modifier — Phase B (ADR-023 v2, 63-relationship table)
+// ---------------------------------------------------------------------------
+
+/// Returns the RPS pressure modifier for attacker vs defender culture.
+///
+/// 1.25 = advantage (attacker has positive pressure),
+/// 0.75 = disadvantage (defender has positive pressure),
+/// 1.0  = neutral (or Void involved, or same culture).
+///
+/// 27 advantage pairs encode three nested RPS loops:
+///   Inner (Ember/Marsh/Crystal) → beats adjacent Middle
+///   Middle (Tide/Gale/Tundra) → beats adjacent Outer
+///   Outer (Orange/Teal/Frost) → resists Inner
+ pub fn get_rps_modifier(attacker: Culture, defender: Culture) -> f32 {
+    use Culture::*;
+    if attacker == Void || defender == Void { return 1.0; }
+    if attacker == defender               { return 1.0; }
+
+    const ADVANTAGES: &[(Culture, Culture)] = &[
+        // Inner RPS
+        (Ember, Marsh),   (Marsh, Crystal),   (Crystal, Ember),
+        // Inner beats adjacent Middle
+        (Ember, Tide),    (Ember, Tundra),
+        (Marsh, Tide),    (Marsh, Gale),
+        (Crystal, Gale),  (Crystal, Tundra),
+        // Middle RPS
+        (Tide, Gale),     (Gale, Tundra),     (Tundra, Tide),
+        // Middle beats adjacent Outer
+        (Tide, Orange),   (Tide, Frost),
+        (Gale, Orange),   (Gale, Teal),
+        (Tundra, Teal),   (Tundra, Frost),
+        // Outer RPS
+        (Orange, Teal),   (Teal, Frost),      (Frost, Orange),
+        // Outer resists Inner (counter-pressure)
+        (Orange, Marsh),  (Orange, Crystal),
+        (Teal,   Ember),  (Teal,   Marsh),
+        (Frost,  Crystal),(Frost,  Ember),
+    ];
+
+    if ADVANTAGES.contains(&(attacker, defender)) { return 1.25; }
+    if ADVANTAGES.contains(&(defender, attacker)) { return 0.75; }
+    1.0
+}
+
+// ---------------------------------------------------------------------------
+// Trinity Bonus — Phase C (ADR-023 v2, Option B: any complete loop)
+// ---------------------------------------------------------------------------
+
+/// Which Trinity formation the squad currently holds.
+///
+/// Sprint 4 decision: **Option B** — any complete loop qualifies.
+/// If two loops are complete simultaneously, DualLoop fires.
+/// All three → TripleLoop (9-culture squad convergence).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrinityBonus {
+    None,
+    /// Ember + Marsh + Crystal — Inner / Raw Power triad.
+    InnerLoop,
+    /// Tide + Gale + Tundra — Middle / Balance triad.
+    MiddleLoop,
+    /// Orange + Teal + Frost — Outer / Ancient triad.
+    OuterLoop,
+    /// Any two complete loops present simultaneously.
+    DualLoop,
+    /// All three complete loops — Void convergence formation.
+    TripleLoop,
+}
+
+impl TrinityBonus {
+    /// DC adjustment to apply before rolling.
+    pub fn dc_adjustment(self) -> i32 {
+        match self {
+            TrinityBonus::None       =>  0,
+            TrinityBonus::InnerLoop  => -2,
+            TrinityBonus::MiddleLoop => -2,
+            TrinityBonus::OuterLoop  => -2,
+            TrinityBonus::DualLoop   => -4,
+            TrinityBonus::TripleLoop => -6,
+        }
+    }
+}
+
+/// Detect which Trinity bonus applies to a squad.
+///
+/// `squad`: slice of dominant cultures (one per slime; duplicates OK).
+pub fn detect_trinity(squad: &[Culture]) -> TrinityBonus {
+    let has = |c: Culture| squad.contains(&c);
+    let inner  = has(Culture::Ember)  && has(Culture::Marsh)   && has(Culture::Crystal);
+    let middle = has(Culture::Tide)   && has(Culture::Gale)    && has(Culture::Tundra);
+    let outer  = has(Culture::Orange) && has(Culture::Teal)    && has(Culture::Frost);
+
+    match (inner, middle, outer) {
+        (true, true, true)   => TrinityBonus::TripleLoop,
+        (true, true, _)  |
+        (true, _, true)  |
+        (_, true, true)      => TrinityBonus::DualLoop,
+        (true,  false, false) => TrinityBonus::InnerLoop,
+        (false, true,  false) => TrinityBonus::MiddleLoop,
+        (false, false, true)  => TrinityBonus::OuterLoop,
+        _                     => TrinityBonus::None,
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -427,17 +532,24 @@ mod tests {
 
     #[test]
     fn culture_zone_opposite_gives_disadvantage() {
-        assert_eq!(culture_zone_mode(Culture::Ember, Culture::Crystal), RollMode::Disadvantage);
-        assert_eq!(culture_zone_mode(Culture::Gale,  Culture::Tundra),  RollMode::Disadvantage);
-        assert_eq!(culture_zone_mode(Culture::Marsh, Culture::Tide),    RollMode::Disadvantage);
+        // Near-opposites on 9-point wheel → Disadvantage
+        // Ember(0) ↔ Crystal(5): min(5,4)=4 ✓
+        assert_eq!(culture_zone_mode(Culture::Ember,   Culture::Crystal), RollMode::Disadvantage);
+        // Ember(0) ↔ Teal(4):    min(4,5)=4 ✓
+        assert_eq!(culture_zone_mode(Culture::Ember,   Culture::Teal),    RollMode::Disadvantage);
+        // Tundra(7) ↔ Orange(2): min(5,4)=4 ✓
+        assert_eq!(culture_zone_mode(Culture::Tundra,  Culture::Orange),  RollMode::Disadvantage);
     }
 
     #[test]
-    fn culture_zone_adjacent_gives_normal() {
-        // Adjacent but NOT opposite pairs → no advantage/disadvantage, just Normal
-        // Hex-wheel: Ember adj to Gale, Marsh | Crystal adj to Gale, Tide
-        assert_eq!(culture_zone_mode(Culture::Ember, Culture::Marsh),   RollMode::Normal);
-        assert_eq!(culture_zone_mode(Culture::Crystal, Culture::Gale),  RollMode::Normal);
+    fn culture_zone_adjacent_gives_advantage() {
+        // Adjacent on nonagon → Advantage (Phase B update: adjacency now grants Advantage)
+        // Ember(0) adj to Tide(1) and Frost(8)
+        assert_eq!(culture_zone_mode(Culture::Ember, Culture::Tide),  RollMode::Advantage);
+        assert_eq!(culture_zone_mode(Culture::Ember, Culture::Frost), RollMode::Advantage);
+        // Marsh(3) adj to Orange(2) and Teal(4)
+        assert_eq!(culture_zone_mode(Culture::Marsh, Culture::Orange), RollMode::Advantage);
+        assert_eq!(culture_zone_mode(Culture::Marsh, Culture::Teal),   RollMode::Advantage);
     }
 
     #[test]
@@ -542,5 +654,112 @@ mod tests {
     fn next_turn_returns_none_on_empty() {
         let mut manager = TurnOrderManager::new();
         assert_eq!(manager.next_turn(), None);
+    }
+
+    // Phase G tests --------------------------------------------------------
+
+    // Nonagon geometry
+    #[test]
+    fn test_is_adjacent_ember_tide_true() {
+        // Ember(0) ↔ Tide(1): dist=1 → adjacent
+        assert!(crate::genetics::is_adjacent(Culture::Ember, Culture::Tide));
+        assert!(crate::genetics::is_adjacent(Culture::Tide,  Culture::Ember)); // symmetric
+    }
+
+    #[test]
+    fn test_is_adjacent_wraps_frost_ember_true() {
+        // Frost(8) ↔ Ember(0): dist=8, min(8,1)=1 → adjacent (wrap)
+        assert!(crate::genetics::is_adjacent(Culture::Frost, Culture::Ember));
+    }
+
+    #[test]
+    fn test_is_adjacent_ember_crystal_false() {
+        // Ember(0) ↔ Crystal(5): dist=5, min(5,4)=4 → near-opposite, NOT adjacent
+        assert!(!crate::genetics::is_adjacent(Culture::Ember, Culture::Crystal));
+    }
+
+    #[test]
+    fn test_is_near_opposite_ember_teal_true() {
+        // Ember(0) ↔ Teal(4): dist=4, min(4,5)=4 → near-opposite ✓
+        assert!(crate::genetics::is_near_opposite(Culture::Ember, Culture::Teal));
+        assert!(crate::genetics::is_near_opposite(Culture::Teal,  Culture::Ember)); // symmetric
+    }
+
+    #[test]
+    fn test_is_near_opposite_ember_crystal_true() {
+        // Ember(0) ↔ Crystal(5): dist=5, min(5,4)=4 → near-opposite ✓
+        assert!(crate::genetics::is_near_opposite(Culture::Ember, Culture::Crystal));
+    }
+
+    #[test]
+    fn test_is_near_opposite_void_returns_false() {
+        assert!(!crate::genetics::is_near_opposite(Culture::Void,  Culture::Ember));
+        assert!(!crate::genetics::is_near_opposite(Culture::Ember, Culture::Void));
+    }
+
+    // RPS modifier
+    #[test]
+    fn test_get_rps_modifier_ember_beats_marsh() {
+        assert!((get_rps_modifier(Culture::Ember, Culture::Marsh) - 1.25).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_get_rps_modifier_marsh_beats_ember() {
+        // Reverse: defender has advantage → 0.75
+        assert!((get_rps_modifier(Culture::Marsh, Culture::Ember) - 0.75).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_get_rps_modifier_outer_resists_inner() {
+        // Orange resists Crystal (outer resists inner)
+        assert!((get_rps_modifier(Culture::Orange, Culture::Crystal) - 1.25).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_get_rps_modifier_void_always_neutral() {
+        assert!((get_rps_modifier(Culture::Void,  Culture::Ember)  - 1.0).abs() < 0.001);
+        assert!((get_rps_modifier(Culture::Ember, Culture::Void)   - 1.0).abs() < 0.001);
+    }
+
+    // Zone mode
+    #[test]
+    fn test_culture_zone_mode_adjacent_advantage() {
+        // Gale(6) ↔ Tundra(7): adjacent → Advantage
+        assert_eq!(culture_zone_mode(Culture::Gale, Culture::Tundra), RollMode::Advantage);
+    }
+
+    #[test]
+    fn test_culture_zone_mode_near_opposite_disadvantage() {
+        // Marsh(3) ↔ Frost(8): dist=5, min(5,4)=4 → near-opposite → Disadvantage
+        assert_eq!(culture_zone_mode(Culture::Marsh, Culture::Frost), RollMode::Disadvantage);
+    }
+
+    // Trinity bonus
+    #[test]
+    fn test_detect_trinity_inner_loop() {
+        let squad = [Culture::Ember, Culture::Marsh, Culture::Crystal, Culture::Gale];
+        assert_eq!(detect_trinity(&squad), TrinityBonus::InnerLoop);
+    }
+
+    #[test]
+    fn test_detect_trinity_triple_loop() {
+        let squad = [
+            Culture::Ember,  Culture::Marsh, Culture::Crystal,
+            Culture::Tide,   Culture::Gale,  Culture::Tundra,
+            Culture::Orange, Culture::Teal,  Culture::Frost,
+        ];
+        assert_eq!(detect_trinity(&squad), TrinityBonus::TripleLoop);
+    }
+
+    #[test]
+    fn test_detect_trinity_none() {
+        let squad = [Culture::Ember, Culture::Gale];
+        assert_eq!(detect_trinity(&squad), TrinityBonus::None);
+    }
+
+    #[test]
+    fn test_detect_trinity_outer_loop() {
+        let squad = [Culture::Orange, Culture::Teal, Culture::Frost, Culture::Ember];
+        assert_eq!(detect_trinity(&squad), TrinityBonus::OuterLoop);
     }
 }
