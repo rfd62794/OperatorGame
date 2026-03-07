@@ -115,22 +115,25 @@ pub fn generate_narrative<R: Rng>(
                 MissionType::Cyber    => VICTORY_CYBER,
                 MissionType::Balanced => VICTORY_BALANCED,
             };
-            pool.choose(rng).copied().unwrap_or("Mission complete.")
+            pool.choose(rng).copied().unwrap_or("Mission complete.").to_string()
         }
-        AarOutcome::Failure { injured_ids, .. } => {
+        AarOutcome::Failure { injured_ids, .. } | AarOutcome::CriticalFailure { injured_ids, .. } => {
             if injured_ids.is_empty() {
-                "The mission failed. The squad retreated intact."
+                "The mission failed. The squad retreated intact.".to_string()
             } else {
-                FAILURE_INJURY
-                    .choose(rng)
-                    .copied()
-                    .unwrap_or("The mission failed. Operators are injured.")
+                // Sprint 7: INCIDENT REPORT template
+                // Pick the first injured operator for the report
+                let name = if let Some(id) = injured_ids.first() {
+                    squad.iter().find(|s| s.id == *id).map(|s| s.name.as_str()).unwrap_or("Operator")
+                } else {
+                    "Operator"
+                };
+                
+                let id_short = &mission.id.to_string()[..4];
+                // Note: RTD time is simplified here, will be refined in Phase B
+                format!("INCIDENT REPORT #{}: {} sustained injuries during extraction. Medical leave approved.", id_short, name)
             }
         }
-        AarOutcome::CriticalFailure { .. } => CRITICAL_LINES
-            .choose(rng)
-            .copied()
-            .unwrap_or("An operator was lost."),
     };
 
     template.replace("{op}", lead)

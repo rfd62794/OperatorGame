@@ -163,9 +163,18 @@ impl std::fmt::Display for Mission {
 /// narrative log can display individual check results.
 #[derive(Debug, Clone)]
 pub enum AarOutcome {
-    Victory        { reward: u64,            rolls: Vec<D20Result> },
-    Failure        { injured_ids: Vec<Uuid>, rolls: Vec<D20Result> },
-    CriticalFailure { killed_id: Uuid,       rolls: Vec<D20Result> },
+    Victory {
+        reward: u64,
+        rolls: Vec<D20Result>,
+    },
+    Failure {
+        injured_ids: Vec<Uuid>,
+        rolls: Vec<D20Result>,
+    },
+    CriticalFailure {
+        injured_ids: Vec<Uuid>,
+        rolls: Vec<D20Result>,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -245,20 +254,78 @@ impl Deployment {
         let rolls = vec![str_roll, agi_roll, int_roll];
 
         if successes >= 2 {
-            AarOutcome::Victory { reward: mission.reward, rolls }
+            AarOutcome::Victory {
+                reward: mission.reward,
+                rolls,
+            }
         } else if any_crit_fail && successes == 0 {
-            let idx = rng.gen_range(0..self.operator_ids.len().max(1));
             AarOutcome::CriticalFailure {
-                killed_id: self.operator_ids[idx],
+                injured_ids: Vec::new(), // Populated by apply_outcome_injuries
                 rolls,
             }
         } else {
             AarOutcome::Failure {
-                injured_ids: self.operator_ids.clone(),
+                injured_ids: Vec::new(), // Populated by apply_outcome_injuries
                 rolls,
             }
         }
     }
+}
+
+/// Phase A — Data Layer (Sprint 7A)
+/// Applies injuries to the roster based on the deployment outcome.
+/// - Critical Failure: 1-2 operators (capped at squad size), 4-8 hours recovery.
+/// - Failure: 10% chance for 1 operator, 2-4 hours recovery.
+/// - Returns the IDs of operators who were newly injured for logging.
+pub fn apply_outcome_injuries(
+    outcome: &mut AarOutcome,
+    roster: &mut [crate::genetics::SlimeGenome],
+    squad_ids: &[Uuid],
+    rng: &mut impl Rng,
+) -> Vec<Uuid> {
+    let mut injured = Vec::new();
+
+    match outcome {
+        AarOutcome::Victory { .. } => {}
+        AarOutcome::CriticalFailure { injured_ids, .. } => {
+            // min(rng.gen_range(1..=2), squad_size)
+            let mut pool = squad_ids.to_vec();
+            use rand::seq::SliceRandom;
+            pool.shuffle(rng);
+
+            let count = if pool.len() >= 2 {
+                rng.gen_range(1..=2)
+            } else {
+                1
+            };
+
+            let hours = rng.gen_range(4..=8);
+            let until = Utc::now() + Duration::hours(hours);
+
+            for id in pool.into_iter().take(count) {
+                if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
+                    op.state = SlimeState::Injured(until);
+                    injured.push(id);
+                }
+            }
+            *injured_ids = injured.clone();
+        }
+        AarOutcome::Failure { injured_ids, .. } => {
+            if rng.gen_bool(0.1) && !squad_ids.is_empty() {
+                let id = squad_ids[rng.gen_range(0..squad_ids.len())];
+                let hours = rng.gen_range(2..=4);
+                let until = Utc::now() + Duration::hours(hours);
+
+                if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
+                    op.state = SlimeState::Injured(until);
+                    injured.push(id);
+                }
+            }
+            *injured_ids = injured.clone();
+        }
+    }
+
+    injured
 }
 
 // ---------------------------------------------------------------------------

@@ -574,9 +574,13 @@ impl SlimeGenome {
         (s, a, i, m, se, t)
     }
 
-    /// A slime is deployable only when fully Idle.
+    /// A slime is deployable only when fully Idle and not recovering from injury.
     pub fn is_available(&self) -> bool {
-        matches!(self.state, crate::models::SlimeState::Idle)
+        match self.state {
+            crate::models::SlimeState::Idle => true,
+            crate::models::SlimeState::Injured(until) => Utc::now() >= until,
+            _ => false,
+        }
     }
 
     /// Tick: clear Injured state if recovery timestamp has passed.
