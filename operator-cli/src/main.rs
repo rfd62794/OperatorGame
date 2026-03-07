@@ -102,7 +102,7 @@ async fn main() {
                 .collect();
             let rate = mission.calculate_success_rate(&squad_refs);
 
-            let deployment = Deployment::start(&mission, operator_ids);
+            let deployment = Deployment::start(&mission, operator_ids, false);
             let eta = mission.duration_secs;
             println!(
                 "DEPLOYED: [{}] → Mission: '{}' | Squad: {} | Success: {:.0}% | ETA: {}s",
@@ -309,11 +309,11 @@ async fn main() {
             let a = state.slimes[ai].clone();
             let b = state.slimes[bi].clone();
 
-            match BreedingResolver::breed(&a, &b, &offspring_name, &mut rng) {
+            match BreedingResolver::breed(&a.genome, &b.genome, &offspring_name, &mut rng) {
                 Ok(child) => {
                     println!("=== SPLICE RESULT ===");
-                    println!("  Parent A: {a}");
-                    println!("  Parent B: {b}");
+                    println!("  Parent A: {}", a.genome);
+                    println!("  Parent B: {}", b.genome);
                     println!("  Offspring: {child}");
                     state.slimes.push(operator::models::Operator::new(child));
                 }
