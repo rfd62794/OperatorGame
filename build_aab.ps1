@@ -24,7 +24,7 @@ if ($GenerateKeys) {
         -alias $Alias `
         -keyalg RSA -keysize 2048 `
         -validity 10000
-    
+
     Write-Host "IMPORTANT: Backup $Keystore securely in 2+ locations!" -ForegroundColor Yellow
     exit 0
 }
@@ -58,8 +58,8 @@ if (-not $AndroidJar) {
     exit 1
 }
 
-# 3. Build APK
-Write-Host "Cleaning cached cargo-apk metadata to force manifest parse..." -ForegroundColor Cyan
+# 3. Clean and Build APK
+Write-Host "Cleaning cached cargo-apk metadata to force rebuild..." -ForegroundColor Cyan
 Remove-Item -Recurse -Force "target\release\apk" -ErrorAction SilentlyContinue
 
 Write-Host "Building Rust payload with cargo apk..." -ForegroundColor Cyan
@@ -70,11 +70,15 @@ if (-not (Test-Path $ApkUnsigned)) {
     exit 1
 }
 
-# Verify the manifest actually has targetSdkVersion 35 compiled into the binary
-Write-Host "Verifying targetSdkVersion directly inside the APK..." -ForegroundColor Cyan
-& $Aapt2 dump badging $ApkUnsigned | Select-String "targetSdkVersion"
+# 3.5 Patch AndroidManifest.xml for API 35
+Write-Host "Patching AndroidManifest.xml API targets (cargo-apk hardcodes 30)..." -ForegroundColor Cyan
+$ManifestPath = "target\release\apk\AndroidManifest.xml"
+$ManifestContent = [System.IO.File]::ReadAllText($ManifestPath)
+$ManifestContent = $ManifestContent -replace 'android:targetSdkVersion="\d+"', 'android:targetSdkVersion="35"'
+$ManifestContent = $ManifestContent -replace 'android:minSdkVersion="\d+"', 'android:minSdkVersion="26"'
+[System.IO.File]::WriteAllText($ManifestPath, $ManifestContent, [System.Text.Encoding]::UTF8)
 
-# 4. Convert APK to Protobuf format for AAB
+# 4. Extract Proto APK and Inject Fixed Manifest
 $ProtoApk = "target\proto.zip"
 $BaseZip = "target\base.zip"
 $AabBase = "target\aab_base"
@@ -82,14 +86,20 @@ $AabBase = "target\aab_base"
 Write-Host "Converting APK resources to protobuf format..." -ForegroundColor Cyan
 & $Aapt2 convert --output-format proto -o $ProtoApk $ApkUnsigned
 
+& $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath --proto-format -o "target\manifest_proto.zip"
+
 Write-Host "Assembling AAB module structure..." -ForegroundColor Cyan
 if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
 if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
 
 Expand-Archive -Path $ProtoApk -DestinationPath $AabBase -Force
 
-New-Item -ItemType Directory -Path "$AabBase\manifest" -ErrorAction SilentlyContinue | Out-Null
-Move-Item -Path "$AabBase\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
+Expand-Archive -Path "target\manifest_proto.zip" -DestinationPath "target\manifest_extract" -Force
+New-Item -ItemType Directory -Path "$AabBase\manifest" -Force -ErrorAction SilentlyContinue | Out-Null
+Move-Item -Path "target\manifest_extract\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
+
+Remove-Item -Recurse -Force "target\manifest_extract"
+Remove-Item -Force "target\manifest_proto.zip"
 
 if (Test-Path "$AabBase\META-INF") { Remove-Item -Recurse -Force "$AabBase\META-INF" }
 
@@ -111,13 +121,14 @@ if (Test-Path $AabFinal) { Remove-Item -Force $AabFinal }
 Write-Host "Building Android App Bundle ($AabFinal)..." -ForegroundColor Cyan
 java -jar $BundleTool build-bundle --modules=$BaseZip --output=$AabFinal
 
-# 7. Sign AAB
-Write-Host "Signing AAB with jarsigner..." -ForegroundColor Cyan
-jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore $Keystore $AabFinal $Alias
-
 # Cleanup
 Remove-Item $ProtoApk -ErrorAction SilentlyContinue
 Remove-Item $BaseZip -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force $AabBase -ErrorAction SilentlyContinue
 
-Write-Host "Success! Signed App Bundle ready for Play Store: $AabFinal" -ForegroundColor Green
+# 7. Provide explicit signing instructions
+Write-Host "=============================================" -ForegroundColor Green
+Write-Host "AAB built successfully! ($AabFinal)" -ForegroundColor Green
+Write-Host "To sign it for Play Console, run this command manually:" -ForegroundColor Green
+Write-Host "jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore operatorgame-release.jks $AabFinal operatorgame" -ForegroundColor Yellow
+Write-Host "=============================================" -ForegroundColor Green
