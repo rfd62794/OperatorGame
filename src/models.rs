@@ -376,16 +376,22 @@ impl Expedition {
         let flavor = match self.target.culture {
             Culture::Ember   => if exceptional { "uncovered a smouldering cache no one was meant to find" }
                                 else           { "navigated the thermal vents and returned with singed margins" },
-            Culture::Gale    => if exceptional { "rode the updrafts to a ridge no survey had mapped" }
-                                else           { "outpaced the storm front and made it back before it turned" },
-            Culture::Marsh   => if exceptional { "found a submerged cache beneath the root network" }
-                                else           { "waded through the delta and surfaced intact" },
-            Culture::Crystal => if exceptional { "resonated with the spire lattice and extracted pure nodes" }
-                                else           { "navigated the refraction corridors without incident" },
-            Culture::Tundra  => if exceptional { "broke into a preserved vault beneath the permafrost" }
-                                else           { "crossed the shelf in the cold window and came back clean" },
             Culture::Tide    => if exceptional { "caught the basin at low ebb and found what the water hides" }
                                 else           { "read the tide schedule correctly and returned on schedule" },
+            Culture::Orange  => if exceptional { "decoded the amber lattice and returned with warm-harvest surplus" }
+                                else           { "traced the amber paths and came back heavy with yield" },
+            Culture::Marsh   => if exceptional { "found a submerged cache beneath the root network" }
+                                else           { "waded through the delta and surfaced intact" },
+            Culture::Teal    => if exceptional { "located a precision cache at depth-zero and extracted cleanly" }
+                                else           { "crossed the teal shelf with surgical accuracy" },
+            Culture::Crystal => if exceptional { "resonated with the spire lattice and extracted pure nodes" }
+                                else           { "navigated the refraction corridors without incident" },
+            Culture::Gale    => if exceptional { "rode the updrafts to a ridge no survey had mapped" }
+                                else           { "outpaced the storm front and made it back before it turned" },
+            Culture::Tundra  => if exceptional { "broke into a preserved vault beneath the permafrost" }
+                                else           { "crossed the shelf in the cold window and came back clean" },
+            Culture::Frost   => if exceptional { "found the still-point beneath the ice and listened" }
+                                else           { "moved through the frost zone without disturbing the ancient layer" },
             Culture::Void    => "returned. No further details.",
         };
         format!("The team reached {} and {}.", self.target.name, flavor)

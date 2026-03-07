@@ -51,12 +51,13 @@ impl std::fmt::Display for RollMode {
 /// assert_eq!(culture_zone_mode(Culture::Ember, Culture::Gale),    RollMode::Normal);
 /// ```
 pub fn culture_zone_mode(slime_culture: Culture, zone_element: Culture) -> RollMode {
+    use crate::genetics::{is_adjacent, is_near_opposite};
     if slime_culture == Culture::Void || zone_element == Culture::Void {
         return RollMode::Normal; // Void is inert — no advantage or penalty
     }
-    if slime_culture == zone_element {
+    if slime_culture == zone_element || is_adjacent(slime_culture, zone_element) {
         RollMode::Advantage
-    } else if slime_culture.is_opposite(zone_element) {
+    } else if is_near_opposite(slime_culture, zone_element) {
         RollMode::Disadvantage
     } else {
         RollMode::Normal

@@ -217,11 +217,14 @@ impl CultureTraits {
     pub fn for_culture(c: Culture) -> Self {
         match c {
             Culture::Ember   => Self { pressure_mult: 1.3, supply_sensitivity: 1.0 },
-            Culture::Gale    => Self { pressure_mult: 1.6, supply_sensitivity: 0.6 },
-            Culture::Marsh   => Self { pressure_mult: 0.8, supply_sensitivity: 0.5 },
-            Culture::Crystal => Self { pressure_mult: 1.0, supply_sensitivity: 1.0 },
-            Culture::Tundra  => Self { pressure_mult: 0.9, supply_sensitivity: 0.3 },
             Culture::Tide    => Self { pressure_mult: 1.2, supply_sensitivity: 1.5 },
+            Culture::Orange  => Self { pressure_mult: 1.1, supply_sensitivity: 1.2 },
+            Culture::Marsh   => Self { pressure_mult: 0.8, supply_sensitivity: 0.5 },
+            Culture::Teal    => Self { pressure_mult: 1.0, supply_sensitivity: 0.8 },
+            Culture::Crystal => Self { pressure_mult: 1.0, supply_sensitivity: 1.0 },
+            Culture::Gale    => Self { pressure_mult: 1.6, supply_sensitivity: 0.6 },
+            Culture::Tundra  => Self { pressure_mult: 0.9, supply_sensitivity: 0.3 },
+            Culture::Frost   => Self { pressure_mult: 0.7, supply_sensitivity: 0.2 },
             Culture::Void    => Self { pressure_mult: 0.0, supply_sensitivity: 0.0 },
         }
     }
@@ -233,12 +236,15 @@ impl CultureTraits {
 fn culture_index(c: Culture) -> usize {
     match c {
         Culture::Ember   => 0,
-        Culture::Gale    => 1,
-        Culture::Marsh   => 2,
-        Culture::Crystal => 3,
-        Culture::Tundra  => 4,
-        Culture::Tide    => 5,
-        Culture::Void    => 6,
+        Culture::Tide    => 1,
+        Culture::Orange  => 2,
+        Culture::Marsh   => 3,
+        Culture::Teal    => 4,
+        Culture::Crystal => 5,
+        Culture::Gale    => 6,
+        Culture::Tundra  => 7,
+        Culture::Frost   => 8,
+        Culture::Void    => 9,
     }
 }
 
@@ -760,12 +766,15 @@ impl SlimeProfileCard {
 /// Culture → RGBA accent colour for Profile Cards.
 pub fn culture_accent(culture: Culture) -> [u8; 4] {
     match culture {
-        Culture::Ember   => [220,  80,  40, 255], // deep red-orange
-        Culture::Gale    => [120, 200, 255, 255], // sky blue
-        Culture::Marsh   => [ 80, 160,  80, 255], // deep green
-        Culture::Crystal => [180, 140, 255, 255], // violet
-        Culture::Tundra  => [160, 220, 255, 255], // ice blue
-        Culture::Tide    => [ 40, 160, 200, 255], // ocean teal
+        Culture::Ember   => [204,  34,   0, 255], // #CC2200 RED
+        Culture::Tide    => [232, 112,   0, 255], // #E87000 ORANGE
+        Culture::Orange  => [221, 136,   0, 255], // #DD8800 AMBER
+        Culture::Marsh   => [232, 192,   0, 255], // #E8C000 YELLOW
+        Culture::Teal    => [  0, 170, 170, 255], // #00AAAA TEAL
+        Culture::Crystal => [ 17,  68, 204, 255], // #1144CC BLUE
+        Culture::Gale    => [ 34, 170,  68, 255], // #22AA44 GREEN
+        Culture::Tundra  => [119,  34, 204, 255], // #7722CC VIOLET
+        Culture::Frost   => [136, 204, 255, 255], // #88CCFF ICE BLUE
         Culture::Void    => [100, 100, 100, 255], // dark grey
     }
 }

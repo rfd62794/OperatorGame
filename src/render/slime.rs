@@ -46,11 +46,14 @@ impl CultureParams {
     pub fn get(c: Culture) -> Self {
         match c {
             Culture::Ember   => Self { roundness_range: (0.2, 0.5), wobble_freq: (1.5, 2.5), hp_mod: 0.8, atk_mod: 1.4, spd_mod: 1.1 },
-            Culture::Gale    => Self { roundness_range: (0.3, 0.6), wobble_freq: (2.0, 3.5), hp_mod: 0.9, atk_mod: 0.9, spd_mod: 1.4 },
-            Culture::Marsh   => Self { roundness_range: (0.6, 0.9), wobble_freq: (0.5, 1.0), hp_mod: 1.0, atk_mod: 0.9, spd_mod: 1.3 },
-            Culture::Crystal => Self { roundness_range: (0.4, 0.7), wobble_freq: (0.3, 0.8), hp_mod: 1.4, atk_mod: 0.8, spd_mod: 0.7 },
-            Culture::Tundra  => Self { roundness_range: (0.7, 0.9), wobble_freq: (0.3, 0.6), hp_mod: 1.1, atk_mod: 0.9, spd_mod: 0.8 },
             Culture::Tide    => Self { roundness_range: (0.3, 0.6), wobble_freq: (2.0, 3.5), hp_mod: 1.0, atk_mod: 1.0, spd_mod: 1.2 },
+            Culture::Orange  => Self { roundness_range: (0.5, 0.8), wobble_freq: (0.8, 1.5), hp_mod: 0.9, atk_mod: 0.8, spd_mod: 1.0 },
+            Culture::Marsh   => Self { roundness_range: (0.6, 0.9), wobble_freq: (0.5, 1.0), hp_mod: 1.0, atk_mod: 0.9, spd_mod: 1.3 },
+            Culture::Teal    => Self { roundness_range: (0.2, 0.4), wobble_freq: (1.8, 3.0), hp_mod: 0.9, atk_mod: 0.8, spd_mod: 1.5 },
+            Culture::Crystal => Self { roundness_range: (0.4, 0.7), wobble_freq: (0.3, 0.8), hp_mod: 1.4, atk_mod: 0.8, spd_mod: 0.7 },
+            Culture::Gale    => Self { roundness_range: (0.3, 0.6), wobble_freq: (2.0, 3.5), hp_mod: 0.9, atk_mod: 0.9, spd_mod: 1.4 },
+            Culture::Tundra  => Self { roundness_range: (0.7, 0.9), wobble_freq: (0.3, 0.6), hp_mod: 1.1, atk_mod: 0.9, spd_mod: 0.8 },
+            Culture::Frost   => Self { roundness_range: (0.8, 1.0), wobble_freq: (0.1, 0.3), hp_mod: 1.2, atk_mod: 0.7, spd_mod: 0.7 },
             Culture::Void    => Self { roundness_range: (0.1, 0.9), wobble_freq: (0.1, 3.0), hp_mod: 1.2, atk_mod: 1.2, spd_mod: 1.2 },
         }
     }
