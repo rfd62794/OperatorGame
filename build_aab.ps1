@@ -80,7 +80,10 @@ Move-Item -Path "$AabBase\AndroidManifest.xml" -Destination "$AabBase\manifest\A
 
 if (Test-Path "$AabBase\META-INF") { Remove-Item -Recurse -Force "$AabBase\META-INF" }
 
-Compress-Archive -Path "$AabBase\*" -DestinationPath $BaseZip -Force
+Write-Host "Zipping module base.zip..." -ForegroundColor Cyan
+Push-Location $AabBase
+jar cMf "..\base.zip" *
+Pop-Location
 
 # 6. Build final AAB
 $AabFinal = "operatorgame-release.aab"

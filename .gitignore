@@ -2,3 +2,5 @@
 *.apk
 *.idsig
 *.jks
+*.aab
+bundletool*.jar
