@@ -94,6 +94,7 @@ if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
 if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
 
 Expand-Archive -Path $ProtoApk -DestinationPath $AabBase -Force
+Remove-Item -Path "$AabBase\AndroidManifest.xml" -Force
 
 Expand-Archive -Path "target\manifest_proto.zip" -DestinationPath "target\manifest_extract" -Force
 New-Item -ItemType Directory -Path "$AabBase\manifest" -Force -ErrorAction SilentlyContinue | Out-Null
