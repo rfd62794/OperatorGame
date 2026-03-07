@@ -218,8 +218,11 @@ impl OperatorApp {
         let mut rng = rand::thread_rng();
         let mut outcome = dep.resolve(&mission, &squad, &mut rng);
         
-        // Generate narrative BEFORE mutating squad state
+        // Calculate stats needed for audio/UI before we drop the immutable borrow (squad)
+        let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
         let narrative = generate_narrative(&outcome, &mission, &squad, &mut rand::thread_rng());
+        
+        // Drop the immutable borrow by finishing use of squad
         let log_entry = format_log_entry(&mission.name, &outcome, &narrative);
         self.combat_log.insert(0, log_entry); // newest first
         if self.combat_log.len() > 50 { self.combat_log.truncate(50); }
@@ -227,6 +230,7 @@ impl OperatorApp {
         self.state.deployments[dep_idx].resolved = true;
 
         // Phase A: Apply injuries (probabilistic)
+        // This requires &mut self.state.slimes
         let newly_injured_ids = crate::models::apply_outcome_injuries(
             &mut outcome,
             &mut self.state.slimes,
@@ -244,8 +248,7 @@ impl OperatorApp {
 
                 self.status_msg = format!("✅ '{}' — VICTORY (+${}).{}", mission.name, reward, debt_warning);
                 
-                // Play Tide Bowl (Plate Resonance) based on total Mind of squad
-                let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
+                // Play Tide Bowl (Plate Resonance) based on pre-calculated Mind
                 let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
                 crate::audio::OperatorSynth::play(crate::audio::PlayEvent::TideBowl { 
                     base_freq: crate::audio::BASE_RESONANCE, 
