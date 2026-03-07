@@ -704,8 +704,9 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(42);
         let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
         let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        op.state = SlimeState::Deployed(Uuid::new_v4());
         let squad = vec![op.id];
-        let mut roster = vec![op.clone()]; // Only 1 op in roster
+        let mut roster = vec![op]; // Only 1 op in roster
         
         let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
         // Should NOT injure the last operator
