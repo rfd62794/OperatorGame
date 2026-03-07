@@ -89,6 +89,10 @@ impl IncubatingGenome {
 // GameState — the single source of truth serialised to disk
 // ---------------------------------------------------------------------------
 
+/// Current save format version. Increment with every breaking schema change.
+/// v4 (Sprint 5): SlimeGenome.culture_expr → culture_alleles {dominant, recessive}
+pub const SAVE_VERSION: u32 = 4;
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GameState {
     /// Player currency.
@@ -117,6 +121,11 @@ pub struct GameState {
     /// Active or resolved island expeditions (Sprint 3). ADR-002 wall-clock.
     #[serde(default)]
     pub active_expeditions: Vec<Expedition>,
+    /// Lens unlock: reveals the recessive allele array in Bio-Manifest.
+    /// Defaults to false for all existing saves. Set by in-game Lens upgrade.
+    /// Sprint 6: gate for Bio-Manifest recessive display.
+    #[serde(default)]
+    pub lens_unlocked: bool,
 }
 
 impl GameState {
@@ -163,8 +172,46 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
     }
 
     let raw = fs::read_to_string(path)?;
+    // v3 → v4 migration: rename culture_expr → culture_alleles on each slime
+    let raw = migrate_v3_to_v4(&raw);
     let state: GameState = serde_json::from_str(&raw)?;
     Ok(state)
+}
+
+/// Migrate a raw save JSON string from v3 to v4 schema.
+/// Renames `culture_expr` to `culture_alleles.dominant` on every slime,
+/// zero-padding the `recessive` field. No-op on already-migrated saves.
+fn migrate_v3_to_v4(raw: &str) -> String {
+    // Fast path: if the save already uses culture_alleles, skip.
+    if !raw.contains("\"culture_expr\"") {
+        return raw.to_string();
+    }
+    // Parse as generic JSON and patch each slime entry
+    let Ok(mut root) = serde_json::from_str::<serde_json::Value>(raw) else {
+        return raw.to_string(); // Let load() surface the error
+    };
+    let zero_recessive = serde_json::json!([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    // Patch slimes array
+    for arr_key in &["slimes", "incubating"] {
+        if let Some(arr) = root.get_mut(*arr_key).and_then(|v| v.as_array_mut()) {
+            for entry in arr.iter_mut() {
+                let genome = if *arr_key == "incubating" {
+                    entry.get_mut("genome")
+                } else {
+                    Some(entry)
+                };
+                if let Some(g) = genome {
+                    if let Some(expr) = g.as_object_mut().and_then(|m| m.remove("culture_expr")) {
+                        g["culture_alleles"] = serde_json::json!({
+                            "dominant":  expr,
+                            "recessive": zero_recessive.clone(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    serde_json::to_string(&root).unwrap_or_else(|_| raw.to_string())
 }
 
 /// Save GameState to disk using an atomic write:

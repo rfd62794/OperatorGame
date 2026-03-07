@@ -981,8 +981,145 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
 }
 
 // ---------------------------------------------------------------------------
-// Tests
+// Phase C — HSL Color Derivation (ADR-023 v2 hue map)
 // ---------------------------------------------------------------------------
+
+/// Hue values (degrees, 0.0–360.0) for each culture in WHEEL order.
+/// Indices: Ember=0, Tide=1, Orange=2, Marsh=3, Teal=4, Crystal=5, Gale=6, Tundra=7, Frost=8
+///
+/// Non-linear spacing reflects colour theory. The cool cluster (Teal 180°,
+/// Frost 200°, Crystal 220°) is intentional — cultures within 40° means any
+/// two-culture cool blend converges toward the third. Either design as a
+/// feature (blends signal kinship) or add hue-spread correction in Sprint 6.
+pub const CULTURE_HUES: [f32; 9] = [
+      0.0,  // Ember   — RED
+     25.0,  // Tide    — ORANGE
+     38.0,  // Orange  — AMBER
+     52.0,  // Marsh   — YELLOW
+    140.0,  // Gale    — GREEN
+    180.0,  // Teal    — TEAL
+    200.0,  // Frost   — ICE BLUE  (cool cluster: within 40° of Teal and Crystal)
+    220.0,  // Crystal — BLUE
+    280.0,  // Tundra  — VIOLET
+];
+
+/// Per-culture base saturation (0.0–1.0).
+/// Inner primaries most vivid; outer tertiaries slightly muted.
+pub const CULTURE_SATURATIONS: [f32; 9] = [
+    0.95,  // Ember
+    0.90,  // Tide
+    0.85,  // Orange
+    0.90,  // Marsh
+    0.85,  // Gale
+    0.80,  // Teal
+    0.75,  // Frost
+    0.90,  // Crystal
+    0.85,  // Tundra
+];
+
+/// Derive an RGB display colour from a `CultureAlleles` dominant array.
+///
+/// Algorithm:
+/// 1. Filter dominant slots above 0.05 expression threshold.
+/// 2. Circular mean of hue values (handles 0°/360° wrap correctly).
+/// 3. Weighted average of per-culture saturations, then
+///    scaled by peak dominant weight — purity = vivid, blend = muted.
+/// 4. Lightness fixed at 0.50 for readability across all screens.
+/// 5. Returns RGB via `hsl_to_rgb()`.
+///
+/// Saturation scaling: `base_sat × (0.4 + 0.6 × max_weight)`
+/// - max_weight = 1.0 (Blooded): full saturation — unmistakable hue.
+/// - max_weight ≈ 0.11 (all 9 equal): heavily muted — readable blend.
+pub fn culture_display_color(alleles: &CultureAlleles) -> (u8, u8, u8) {
+    let expressed: Vec<(usize, f32)> = alleles.dominant
+        .0
+        .iter()
+        .enumerate()
+        .filter(|(_, &w)| w > 0.05)
+        .map(|(i, &w)| (i, w))
+        .collect();
+
+    if expressed.is_empty() {
+        return (136, 136, 136); // Void grey fallback
+    }
+
+    let total: f32 = expressed.iter().map(|(_, w)| w).sum();
+    let weights: Vec<f32> = expressed.iter().map(|(_, w)| w / total).collect();
+
+    // Circular hue mean — prevents wrap-around artefact at 0°/360°
+    let sin_sum: f32 = expressed.iter().zip(&weights)
+        .map(|((i, _), w)| w * CULTURE_HUES[*i].to_radians().sin())
+        .sum();
+    let cos_sum: f32 = expressed.iter().zip(&weights)
+        .map(|((i, _), w)| w * CULTURE_HUES[*i].to_radians().cos())
+        .sum();
+    let hue = sin_sum.atan2(cos_sum).to_degrees().rem_euclid(360.0);
+
+    let base_sat: f32 = expressed.iter().zip(&weights)
+        .map(|((i, _), w)| w * CULTURE_SATURATIONS[*i])
+        .sum();
+    let max_weight = weights.iter().cloned().fold(0.0f32, f32::max);
+    // max_weight 1.0 → full saturation; 0.11 (9-equal) → heavily muted
+    let saturation = base_sat * (0.4 + 0.6 * max_weight);
+    let lightness  = 0.50_f32;
+
+    hsl_to_rgb(hue, saturation, lightness)
+}
+
+/// Standard HSL → RGB conversion.
+pub fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
+    let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+    let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
+    let m = l - c / 2.0;
+    let (r, g, b) = match h as u32 {
+        0..=59   => (c, x, 0.0),
+        60..=119 => (x, c, 0.0),
+        120..=179 => (0.0, c, x),
+        180..=239 => (0.0, x, c),
+        240..=299 => (x, 0.0, c),
+        _         => (c, 0.0, x),
+    };
+    (
+        ((r + m) * 255.0).round() as u8,
+        ((g + m) * 255.0).round() as u8,
+        ((b + m) * 255.0).round() as u8,
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Phase D — refine_culture(): Reagents spend operation
+// ---------------------------------------------------------------------------
+
+/// Amplify a culture's dominant weight via Reagents spend.
+///
+/// - Amplifies `target` dominant slot by `intensity × 0.3`.
+/// - Suppresses all other dominant slots by `intensity × 0.2` each,
+///   bleeding the suppressed weight into their recessive slots.
+/// - Normalises the dominant array afterward.
+/// - Returns `false` if `target == Culture::Void` (Void cannot be refined).
+///
+/// `intensity`: 0.0–1.0, proportional to Reagents spent.
+/// A single Reagents unit corresponds to intensity ≈ 0.33.
+pub fn refine_culture(alleles: &mut CultureAlleles, target: Culture, intensity: f32) -> bool {
+    let Some(idx) = WHEEL.iter().position(|&c| c == target) else {
+        return false; // Void is not on WHEEL — cannot refine
+    };
+
+    // Amplify target dominant slot
+    alleles.dominant.0[idx] = (alleles.dominant.0[idx] + intensity * 0.3).min(1.0);
+
+    // Suppress others and bleed into recessive
+    for i in 0..9 {
+        if i == idx { continue; }
+        let suppressed = alleles.dominant.0[i] * intensity * 0.2;
+        alleles.dominant.0[i]  = (alleles.dominant.0[i] - suppressed).max(0.0);
+        alleles.recessive.0[i] = (alleles.recessive.0[i] + suppressed).min(0.5);
+    }
+
+    alleles.normalise_dominant();
+    true
+}
+
 
 #[cfg(test)]
 mod tests {
