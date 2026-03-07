@@ -118,7 +118,7 @@ async fn main() {
             // Trigger Ember Chord (Geometric frequency mapping)
             let mut freqs = Vec::new();
             for op_id in &deployment.operator_ids {
-                if let Some(op) = state.slimes.iter().find(|s| s.id == *op_id) {
+                if let Some(op) = state.slimes.iter().find(|s| s.id() == *op_id) {
                     let (s, a, i, _, _, _) = op.total_stats();
                     freqs.push(200.0 + (s as f32 * 2.0));
                     freqs.push(300.0 + (a as f32 * 2.0));
@@ -157,7 +157,7 @@ async fn main() {
                     let squad: Vec<&operator::genetics::SlimeGenome> = state
                         .slimes
                         .iter()
-                        .filter(|o| squad_ids.contains(&o.id))
+                        .filter(|o| squad_ids.contains(&o.id()))
                         .collect();
 
                     let outcome = deployment.resolve(&mission, &squad, &mut rng);
@@ -166,7 +166,7 @@ async fn main() {
                     println!("=== AAR: {} ===", mission.name);
                     let stat_labels = ["STR", "AGI", "INT"];
                     match &outcome {
-                        AarOutcome::Victory { reward, rolls } => {
+                        AarOutcome::Victory { reward, success_rate, rolls } => {
                             // Print per-stat D20 roll results
                             for (label, roll) in stat_labels.iter().zip(rolls.iter()) {
                                 println!("  {} check: {}", label, roll.narrative());
@@ -178,7 +178,7 @@ async fn main() {
                             println!("  ✅ +${reward} | Bank: ${}", state.bank);
                             
                             // Play Tide Bowl (Plate Resonance) based on total Mind of squad
-                            let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
+                            let avg_mnd: f32 = squad.iter().map(|s| s.genome.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
                             let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
                             operator::audio::OperatorSynth::play(operator::audio::PlayEvent::TideBowl { 
                                 base_freq: operator::audio::BASE_RESONANCE, 
@@ -187,7 +187,7 @@ async fn main() {
 
                             // Return squad to Idle
                             for op in state.slimes.iter_mut() {
-                                if squad_ids.contains(&op.id) {
+                                if squad_ids.contains(&op.id()) {
                                     op.state = SlimeState::Idle;
                                 }
                             }
@@ -207,13 +207,12 @@ async fn main() {
                             operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Failure { base_freq: 200.0 });
 
                             for op in state.slimes.iter_mut() {
-                                if injured_ids.contains(&op.id) {
-                                    println!("     ↳ {} is injured.", op.name);
+                                    println!("     ↳ {} is injured.", op.name());
                                     op.state = SlimeState::Injured(recover_at);
                                 }
                             }
                         }
-                        AarOutcome::CriticalFailure { killed_id, rolls } => {
+                        AarOutcome::CriticalFailure { injured_ids, rolls } => {
                             for (label, roll) in stat_labels.iter().zip(rolls.iter()) {
                                 println!("  {} check: {}", label, roll.narrative());
                             }
@@ -222,9 +221,12 @@ async fn main() {
                             
                             operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Startled { base_freq: 100.0 });
 
-                            if let Some(pos) = state.slimes.iter().position(|o| &o.id == killed_id) {
-                                println!("     ↳ {} is KIA.", state.slimes[pos].name);
-                                state.slimes.remove(pos);
+                            for &id in &injured_ids {
+                                if let Some(pos) = state.slimes.iter().position(|o| o.id() == id) {
+                                    println!("     ↳ {} is injured (Critical).", state.slimes[pos].name());
+                                    // Set injured state if not already handled by apply_outcome_injuries logic
+                                    // (Actually apply_outcome_injuries handles it, but let's be safe or just log)
+                                }
                             }
                         }
                     }
@@ -467,8 +469,8 @@ async fn main() {
                             }
                             ExpeditionOutcome::SlimeInjured { slime_id, partial_yield, roll, report } => {
                                 let name = state.slimes.iter()
-                                    .find(|s| s.id == *slime_id)
-                                    .map(|s| s.name.as_str())
+                                    .find(|s| s.id() == *slime_id)
+                                    .map(|s| s.name())
                                     .unwrap_or("Unknown");
                                 println!("  AGI check: {}", roll.narrative());
                                 println!();
@@ -480,7 +482,7 @@ async fn main() {
                                 // Mark slime as injured (recovery = distance_secs)
                                 let recover_at = chrono::Utc::now()
                                     + chrono::Duration::seconds(exp.target.distance_secs as i64);
-                                if let Some(s) = state.slimes.iter_mut().find(|s| s.id == *slime_id) {
+                                if let Some(s) = state.slimes.iter_mut().find(|s| s.id() == *slime_id) {
                                     s.state = SlimeState::Injured(recover_at);
                                 }
                                 partial_yield.apply_to_inventory(&mut state.inventory);
