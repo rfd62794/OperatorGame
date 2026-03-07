@@ -61,6 +61,14 @@ impl std::fmt::Display for SlimeState {
 // Mission
 // ---------------------------------------------------------------------------
 
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+pub enum DifficultyBand {
+    Trivial,
+    Moderate,
+    Hard,
+    Extreme,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Mission {
     pub id: Uuid,
@@ -74,6 +82,7 @@ pub struct Mission {
     /// Wall-clock seconds this mission takes to complete.
     pub duration_secs: u64,
     pub reward: u64,
+    pub affinity: Option<crate::genetics::Culture>,
 }
 
 impl Mission {
@@ -86,6 +95,7 @@ impl Mission {
         difficulty: f64,
         duration_secs: u64,
         reward: u64,
+        affinity: Option<crate::genetics::Culture>,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -96,7 +106,43 @@ impl Mission {
             difficulty: difficulty.clamp(0.0, 0.9),
             duration_secs,
             reward,
+            affinity,
         }
+    }
+
+    /// Sprint 8: Difficulty bands for dynamic generation
+    pub fn generate<R: Rng>(rng: &mut R, band: DifficultyBand) -> Self {
+        let (name, prim_stat, affinity) = blueprint(rng);
+        
+        let (base_req, diff_range, reward_base) = match band {
+            DifficultyBand::Trivial => (5, 0.0..0.1, 100),
+            DifficultyBand::Moderate => (25, 0.1..0.4, 500),
+            DifficultyBand::Hard => (60, 0.4..0.7, 1500),
+            DifficultyBand::Extreme => (100, 0.7..0.9, 5000),
+        };
+
+        let diff = rng.gen_range(diff_range);
+        let mut reqs = [rng.gen_range(1..base_req/2), rng.gen_range(1..base_req/2), rng.gen_range(1..base_req/2)];
+        reqs[prim_stat] = rng.gen_range(base_req..base_req*2);
+
+        Self::new(
+            name,
+            reqs[0], reqs[1], reqs[2],
+            diff,
+            rng.gen_range(60..600),
+            reward_base + (diff * 2000.0) as u64,
+            Some(affinity),
+        )
+    }
+
+    /// Returns -15.0 if the squad matches the mission's culture affinity.
+    pub fn get_affinity_bonus(&self, squad: &[&crate::genetics::SlimeGenome]) -> f64 {
+        if let Some(aff) = self.affinity {
+            if squad.iter().any(|s| s.dominant_culture() == aff) {
+                return -15.0;
+            }
+        }
+        0.0
     }
 
     /// Core "Mafia Wars" formula.
@@ -132,8 +178,27 @@ impl Mission {
             + score(total_int, self.req_intelligence))
             / 3.0;
 
-        avg * (1.0 - self.difficulty)
+        let affinity_bonus = self.get_affinity_bonus(squad);
+        avg * (1.0 - (self.difficulty + affinity_bonus / 100.0).clamp(0.0, 1.0))
     }
+}
+
+/// Internal helper for randomized mission names and primary affinities.
+fn blueprint<R: Rng>(rng: &mut R) -> (String, usize, crate::genetics::Culture) {
+    let adjs = ["Industrial", "Corporate", "Stealth", "Deep-Sea", "Orbital", "Thermal", "Sub-Zero", "Clandestine"];
+    let nouns = ["Extraction", "Espionage", "Sabotage", "Data-Siphon", "Recon", "Breach", "Harvest", "Surveillance"];
+    let name = format!("{} {}", adjs.choose(rng).unwrap(), nouns.choose(rng).unwrap());
+    
+    // Choose a primary stat requirement (0=STR, 1=AGI, 2=INT)
+    // and a matching culture affinity for the flavor of the mission.
+    use crate::genetics::Culture;
+    let (stat, cult) = match rng.gen_range(0..3) {
+        0 => (0, [Culture::Ember, Culture::Marsh, Culture::Frost].choose(rng).unwrap()),
+        1 => (1, [Culture::Teal, Culture::Gale, Culture::Crystal].choose(rng).unwrap()),
+        _ => (2, [Culture::Orange, Culture::Tundra, Culture::Tide].choose(rng).unwrap()),
+    };
+    
+    (name, stat, *cult)
 }
 
 impl std::fmt::Display for Mission {
@@ -240,10 +305,11 @@ impl Deployment {
         let agi_cov = coverage(total_agi, mission.req_agility);
         let int_cov = coverage(total_int, mission.req_intelligence);
 
+        let affinity_bonus = mission.get_affinity_bonus(squad);
         let difficulty = if self.is_emergency {
-            mission.difficulty + 15.0
+            mission.difficulty + 15.0 + affinity_bonus
         } else {
-            mission.difficulty
+            mission.difficulty + affinity_bonus
         };
 
         // --- Three per-stat D20 checks ----------------------------------------
@@ -279,6 +345,31 @@ impl Deployment {
                 rolls,
             }
         }
+    }
+
+    /// XP awarded proportional to reward. Base: 1 XP per $100.
+    pub fn award_squad_xp(&self, mission: &Mission, squad: &mut [&mut crate::genetics::SlimeGenome], outcome: &AarOutcome) -> Vec<(Uuid, u32, bool)> {
+        let mut results = Vec::new();
+        let base_xp = match outcome {
+            AarOutcome::Victory { .. } => (mission.reward / 100).max(1) as u32,
+            _ => (mission.reward / 400).max(0) as u32, // Consolidation XP
+        };
+
+        if base_xp == 0 { return results; }
+
+        for op in squad {
+            let mut op_xp = base_xp;
+            // Culture Affinity Bonus: +25% XP
+            if let Some(aff) = mission.affinity {
+                if op.dominant_culture() == aff {
+                    op_xp = (op_xp as f64 * 1.25) as u32;
+                }
+            }
+            
+            let leveled = op.award_xp(op_xp);
+            results.push((op.id, op_xp, leveled));
+        }
+        results
     }
 }
 

@@ -91,7 +91,7 @@ impl IncubatingGenome {
 
 /// Current save format version. Increment with every breaking schema change.
 /// v6 (Sprint 7): Deployment.is_emergency
-pub const SAVE_VERSION: u32 = 6;
+pub const SAVE_VERSION: u32 = 7;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -119,6 +119,9 @@ pub struct GameState {
     /// Last time daily upkeep was deducted.
     #[serde(default = "Utc::now")]
     pub last_upkeep_at: DateTime<Utc>,
+    /// Last time the mission pool was refreshed.
+    #[serde(default = "Utc::now")]
+    pub last_pool_refresh: DateTime<Utc>,
     /// Cross-session Cargo Bay (Biomass, Scrap, Reagents). ADR-030.
     #[serde(default)]
     pub inventory: Inventory,
@@ -139,11 +142,39 @@ impl Default for GameState {
             lens_unlocked: false,
             world_map: WorldMap::default(),
             last_upkeep_at: Utc::now(),
+            last_pool_refresh: Utc::now(),
             inventory: Inventory::default(),
             active_expeditions: Vec::new(),
+            mission_pool: Vec::new(),
         }
     }
 }
+
+impl GameState {
+    /// Sprint 8: Refresh pool if calendar date has changed (00:00 UTC).
+    pub fn refresh_missions_if_needed(&mut self, now: DateTime<Utc>) -> bool {
+        let is_same_day = self.last_pool_refresh.date_naive() == now.date_naive();
+        
+        if is_same_day && !self.mission_pool.is_empty() {
+            return false;
+        }
+
+        use rand::SeedableRng;
+        use rand::rngs::SmallRng;
+        // Seed from the date (days since unix epoch) to ensure consistent daily pool.
+        let days = now.timestamp() / 86400;
+        let mut rng = SmallRng::seed_from_u64(days as u64);
+
+        self.mission_pool.clear();
+        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Trivial));
+        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Moderate));
+        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Moderate));
+        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Hard));
+        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Extreme));
+
+        self.last_pool_refresh = now;
+        true
+    }
 
 /// Constant for daily upkeep per idle operator.
 pub const UPKEEP_PER_DAY: i64 = 50;
