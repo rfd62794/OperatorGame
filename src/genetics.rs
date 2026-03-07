@@ -441,19 +441,6 @@ impl LifeStage {
     }
 }
 
-impl std::fmt::Display for LifeStage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            LifeStage::Hatchling => "Hatchling",
-            LifeStage::Juvenile  => "Juvenile",
-            LifeStage::Young     => "Young",
-            LifeStage::Prime     => "Prime",
-            LifeStage::Veteran   => "Veteran",
-            LifeStage::Elder     => "Elder",
-        };
-        write!(f, "{s}")
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Visual trait enums
