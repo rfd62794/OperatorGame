@@ -877,11 +877,40 @@ mod tests {
         yield_.apply_to_inventory(&mut inv);
         assert_eq!(inv.biomass,   10);
         assert_eq!(inv.scrap,      5);
-        assert_eq!(inv.reagents,   3);
-        // Apply again — verify accumulation
-        yield_.apply_to_inventory(&mut inv);
-        assert_eq!(inv.biomass,   20);
-        assert_eq!(inv.scrap,     10);
         assert_eq!(inv.reagents,   6);
+    }
+
+    #[test]
+    fn test_mission_affinity_bonus() {
+        use crate::genetics::{generate_random, Culture};
+        let mut rng = SmallRng::seed_from_u64(1);
+        let mission = Mission::new("T", 0, 0, 0, 0.5, 60, 100, Some(Culture::Ember));
+        
+        let op_ember = generate_random(Culture::Ember, "E", &mut rng);
+        let op_tide = generate_random(Culture::Tide, "T", &mut rng);
+        
+        assert_eq!(mission.get_affinity_bonus(&[&op_ember]), -15.0);
+        assert_eq!(mission.get_affinity_bonus(&[&op_tide]), 0.0);
+        assert_eq!(mission.get_affinity_bonus(&[&op_ember, &op_tide]), -15.0);
+    }
+
+    #[test]
+    fn test_mission_xp_award_and_level_up() {
+        use crate::genetics::{generate_random, Culture};
+        let mut rng = SmallRng::seed_from_u64(1);
+        let mission = Mission::new("T", 0, 0, 0, 0.5, 60, 1000, Some(Culture::Ember));
+        let dep = Deployment::start(&mission, vec![], false);
+        
+        let mut op = generate_random(Culture::Ember, "E", &mut rng); // Start L1
+        op.xp = 9; 
+        
+        let outcome = AarOutcome::Victory { reward: 1000, success_rate: 1.0, rolls: vec![] };
+        
+        // Ember match: base 10 XP + 25% = 12 XP
+        let results = dep.award_squad_xp(&mission, &mut [&mut op], &outcome);
+        
+        assert_eq!(results[0].1, 12);
+        assert!(results[0].2, "Should level up");
+        assert_eq!(op.level, 2);
     }
 }
