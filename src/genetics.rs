@@ -250,8 +250,70 @@ impl CultureExpression {
 }
 
 // ---------------------------------------------------------------------------
-// GeneticTier — computed from hex-wheel position
+// CultureAlleles — dominant + recessive allele pair (Sprint 5)
 // ---------------------------------------------------------------------------
+
+/// Full allele representation for a slime's culture genome.
+/// `dominant` drives all visible behavior: HSL color, stat modifiers,
+/// GeneticTier, RPS match-ups.
+/// `recessive` is hidden until Lens unlock. Participates in breeding
+/// resolution. Can surface as dominant in offspring via reemergence.
+///
+/// Save migration (v3→v4): existing saves load culture_expr into dominant;
+/// recessive is zeroed via `#[serde(default)]` on that field.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CultureAlleles {
+    pub dominant:  CultureExpression,
+    pub recessive: CultureExpression,
+}
+
+impl CultureAlleles {
+    /// Blooded — dominant fully set to one culture, recessive zeroed.
+    pub fn blooded(culture: Culture) -> Self {
+        Self {
+            dominant:  CultureExpression::pure(culture),
+            recessive: CultureExpression([ 0.0; 9]),
+        }
+    }
+
+    /// Construct from an existing CultureExpression (migration path).
+    /// Recessive starts fully zeroed.
+    pub fn from_expression(expr: CultureExpression) -> Self {
+        Self { dominant: expr, recessive: CultureExpression([0.0; 9]) }
+    }
+
+    /// Void — all dominant slots equal, recessive zeroed.
+    pub fn void() -> Self {
+        Self {
+            dominant:  CultureExpression::void(),
+            recessive: CultureExpression([0.0; 9]),
+        }
+    }
+
+    /// Convenience: normalise the dominant array in-place.
+    pub fn normalise_dominant(&mut self) {
+        self.dominant = CultureExpression::normalise(self.dominant.0);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Allele resolver constants — locked per Sprint 5 directive
+// ---------------------------------------------------------------------------
+
+/// Probability that a parent contributes its dominant allele
+/// rather than its recessive allele for any given culture slot.
+/// 0.75 means purity is rewarded (Blooded always passes) but not guaranteed.
+pub const DOMINANT_DRAW_BIAS: f32 = 0.75;
+
+/// Minimum recessive weight in both parents required to trigger
+/// reemergence check. Below this threshold the recessive is too weak
+/// to surface in offspring.
+pub const REEMERGENCE_THRESHOLD: f32 = 0.15;
+
+/// Probability of reemergence when both parents exceed REEMERGENCE_THRESHOLD
+/// for the same culture slot.
+pub const REEMERGENCE_CHANCE: f32 = 0.30;
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GeneticTier {
@@ -400,7 +462,7 @@ impl BodySize {
 pub struct SlimeGenome {
     pub id:           Uuid,
     // Genetics
-    pub culture_expr: CultureExpression,
+    pub culture_alleles: CultureAlleles,
     pub base_hp:      f32,
     pub base_atk:     f32,
     pub base_spd:     f32,
@@ -459,11 +521,11 @@ impl SlimeGenome {
     }
 
     pub fn genetic_tier(&self) -> GeneticTier {
-        GeneticTier::from_expression(&self.culture_expr)
+        GeneticTier::from_expression(&self.culture_alleles.dominant)
     }
 
     pub fn dominant_culture(&self) -> Culture {
-        self.culture_expr.dominant()
+        self.culture_alleles.dominant.dominant()
     }
 
     /// Returns true if this slime is available as a synthesis donor.
@@ -630,24 +692,24 @@ impl BreedingResolver {
         }
 
         let mutation_chance = Self::mutation_chance(a, b);
-        let mut culture_expr = Self::resolve_culture(&a.culture_expr, &b.culture_expr, rng);
+        let mut culture_alleles = Self::resolve_culture(&a.culture_alleles, &b.culture_alleles, rng);
 
         // ADR-010 §3: Void Glitch — 1% chance when two Sundered parents are used.
         let void_glitch = a.genetic_tier() == GeneticTier::Sundered
             && b.genetic_tier() == GeneticTier::Sundered
             && rng.gen::<f32>() < 0.01;
         if void_glitch {
-            culture_expr = CultureExpression::void();
+            culture_alleles = CultureAlleles::void();
         }
 
-        let (hp, atk, spd)  = Self::resolve_stats(a, b, culture_expr.dominant(), mutation_chance, rng);
+        let (hp, atk, spd)  = Self::resolve_stats(a, b, culture_alleles.dominant.dominant(), mutation_chance, rng);
         let (shape, size, pattern, accessory, base_color, pattern_color) =
-            Self::resolve_visuals(a, b, &a.culture_expr, &b.culture_expr, a.life_stage(), rng);
+            Self::resolve_visuals(a, b, &a.culture_alleles.dominant, &b.culture_alleles.dominant, a.life_stage(), rng);
         let personality = Self::resolve_personality(a, b, rng);
 
         Ok(SlimeGenome {
             id:           Uuid::new_v4(),
-            culture_expr,
+            culture_alleles,
             base_hp:      hp,
             base_atk:     atk,
             base_spd:     spd,
@@ -665,7 +727,7 @@ impl BreedingResolver {
             accessory,
             base_color,
             pattern_color,
-            frequency:     culture_expr.dominant().frequency(),
+            frequency:     culture_alleles.dominant.dominant().frequency(),
             name:          name.to_string(),
             synthesis_cooldown_until: None,
             // ADR-037 stats
@@ -681,23 +743,61 @@ impl BreedingResolver {
     }
 
     // -----------------------------------------------------------------------
-    // Step 1: Culture Expression blending
+    // Step 1: Culture allele blending — Weighted Mendelian + reemergence
     // -----------------------------------------------------------------------
 
-    /// Weighted average + variance noise, renormalised to sum 1.0.
-    /// Python source: `BreedingSystem.resolve_culture_expression()`
+    /// Weighted Mendelian allele draw with reemergence.
+    ///
+    /// For each slot `i`:
+    ///   - Each parent independently contributes either its dominant or recessive
+    ///     value, with `DOMINANT_DRAW_BIAS` probability of contributing dominant.
+    ///   - Offspring dominant slot = average of the two drawn values.
+    ///   - If both parents carry strong recessive (≥ REEMERGENCE_THRESHOLD) for
+    ///     the same slot, the hidden culture may surface (REEMERGENCE_CHANCE).
+    ///
+    /// Replaces the old averaging formula for Sprint 5.
     pub fn resolve_culture<R: Rng>(
-        a: &CultureExpression,
-        b: &CultureExpression,
+        parent_a: &CultureAlleles,
+        parent_b: &CultureAlleles,
         rng: &mut R,
-    ) -> CultureExpression {
-        let mut raw = [0.0f32; 9];
+    ) -> CultureAlleles {
+        let mut dominant  = [0.0f32; 9];
+        let mut recessive = [0.0f32; 9];
+
         for i in 0..9 {
-            let blended  = (a.0[i] + b.0[i]) / 2.0;
-            let variance = rng.gen_range(-VARIANCE_RANGE..=VARIANCE_RANGE);
-            raw[i] = (blended + variance * blended).max(0.0);
+            // Biased draw — 75% chance of pulling dominant allele
+            let draw_a = if rng.gen::<f32>() < DOMINANT_DRAW_BIAS {
+                parent_a.dominant.0[i]
+            } else {
+                parent_a.recessive.0[i]
+            };
+            let draw_b = if rng.gen::<f32>() < DOMINANT_DRAW_BIAS {
+                parent_b.dominant.0[i]
+            } else {
+                parent_b.recessive.0[i]
+            };
+
+            dominant[i] = (draw_a + draw_b) / 2.0;
+
+            // Reemergence: both parents carry strong recessive of same slot
+            if parent_a.recessive.0[i] >= REEMERGENCE_THRESHOLD
+                && parent_b.recessive.0[i] >= REEMERGENCE_THRESHOLD
+                && rng.gen::<f32>() < REEMERGENCE_CHANCE
+            {
+                let surfaced = (parent_a.recessive.0[i] + parent_b.recessive.0[i]) / 2.0;
+                dominant[i]  += surfaced * 0.7;  // surface into dominant
+                recessive[i]  = surfaced * 0.3;  // residual stays recessive
+            }
         }
-        CultureExpression::normalise(raw)
+
+        let mut result = CultureAlleles {
+            dominant:  CultureExpression::normalise(dominant),
+            recessive: CultureExpression([recessive[0], recessive[1], recessive[2],
+                                          recessive[3], recessive[4], recessive[5],
+                                          recessive[6], recessive[7], recessive[8]]),
+        };
+        result.normalise_dominant();
+        result
     }
 
     // -----------------------------------------------------------------------
@@ -849,7 +949,7 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
 
     SlimeGenome {
         id:           Uuid::new_v4(),
-        culture_expr: expr,
+        culture_alleles: CultureAlleles::blooded(culture),
         base_hp:      params.base_hp()  * rng.gen_range(0.85..=1.15),
         base_atk:     params.base_atk() * rng.gen_range(0.85..=1.15),
         base_spd:     params.base_spd() * rng.gen_range(0.85..=1.15),
