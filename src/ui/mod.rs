@@ -290,7 +290,7 @@ impl OperatorApp {
                 });
 
                 for op in self.state.slimes.iter_mut() {
-                    if dep.operator_ids.contains(&op.id) && !newly_injured_ids.contains(&op.id) {
+                    if dep.operator_ids.contains(&op.id()) && !newly_injured_ids.contains(&op.id()) {
                         op.state = SlimeState::Idle;
                     }
                 }
@@ -323,7 +323,7 @@ impl OperatorApp {
                 crate::audio::OperatorSynth::play(audio_event);
                 
                 for op in self.state.slimes.iter_mut() {
-                    if dep.operator_ids.contains(&op.id) && !newly_injured_ids.contains(&op.id) {
+                    if dep.operator_ids.contains(&op.id()) && !newly_injured_ids.contains(&op.id()) {
                         op.state = SlimeState::Idle;
                     }
                 }
