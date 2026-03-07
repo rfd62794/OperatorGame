@@ -179,7 +179,6 @@ impl Operator {
         self.total_xp += amount;
         let old_level = self.level;
         self.level = crate::genetics::LifeStage::level_from_xp(self.total_xp);
-        println!("DEBUG: total_xp={}, level={}, old_level={}", self.total_xp, self.level, old_level);
         self.level > old_level
     }
 
@@ -1122,11 +1121,14 @@ mod tests {
         
         let genome = generate_random(Culture::Ember, "E", &mut rng); // Start L1
         let mut op = Operator::new(genome);
-        op.total_xp = 109; // Just before level up
+        op.total_xp = 195; // Level 1, near level 2
         
+        let outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![] };
+        
+        // Ember match: base 1 XP (100 / 100) + 25% = 1 XP (clamped)
+        // Wait, reward 1000 -> base 10.
+        // Let's use 1000 reward to get 12 XP.
         let outcome = AarOutcome::Victory { reward: 1000, success_rate: 1.0, rolls: vec![] };
-        
-        // Ember match: base 10 XP + 25% = 12 XP
         let results = dep.award_squad_xp(&mission, &mut [&mut op], &outcome);
         
         assert_eq!(results[0].1, 12);
