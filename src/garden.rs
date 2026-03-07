@@ -339,7 +339,7 @@ impl Garden {
 pub fn draw_garden(
     painter:  &Painter,
     rect:     Rect,
-    genomes:  &HashMap<Uuid, &SlimeGenome>,
+    operators: &std::collections::HashMap<uuid::Uuid, &crate::models::Operator>,
     garden:   &Garden,
     t:        f32,
 ) {
@@ -349,8 +349,8 @@ pub fn draw_garden(
 
     // Draw each agent
     for agent in &garden.agents {
-        let Some(&genome) = genomes.get(&agent.genome_id) else { continue };
-        let vis      = crate::render::slime::SlimeVisual::from_operator(&agent.operator, t);
+        let Some(&op) = operators.get(&agent.genome_id) else { continue };
+        let vis      = crate::render::slime::SlimeVisual::from_operator(op, t);
         let selected = garden.selected == Some(agent.genome_id);
         draw_slime(painter, agent.pos, &vis, selected);
 
