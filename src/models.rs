@@ -165,6 +165,7 @@ impl std::fmt::Display for Mission {
 pub enum AarOutcome {
     Victory {
         reward: u64,
+        success_rate: f64,
         rolls: Vec<D20Result>,
     },
     Failure {
@@ -256,6 +257,7 @@ impl Deployment {
         if successes >= 2 {
             AarOutcome::Victory {
                 reward: mission.reward,
+                success_rate: mission.calculate_success_rate(squad),
                 rolls,
             }
         } else if any_crit_fail && successes == 0 {
@@ -641,6 +643,94 @@ mod tests {
         assert_eq!(half.biomass,  10, "biomass should halve");
         assert_eq!(half.scrap,     5, "scrap should halve");
         assert_eq!(half.reagents,  2, "reagents should halve");
+    }
+
+    #[test]
+    fn test_apply_outcome_injuries_victory_no_injury() {
+        let mut rng = SmallRng::seed_from_u64(42);
+        let mut outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![] };
+        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let squad = vec![op.id];
+        let mut roster = vec![op.clone()];
+        
+        let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
+        assert!(injured.is_empty());
+        assert!(matches!(roster[0].state, SlimeState::Idle));
+    }
+
+    #[test]
+    fn test_apply_outcome_injuries_failure_10_percent_chance() {
+        let mut rng = SmallRng::seed_from_u64(1); // Seed chosen to trigger the 10%
+        let mut outcome = AarOutcome::Failure { injured_ids: vec![], rolls: vec![] };
+        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let squad = vec![op.id];
+        let mut roster = vec![op.clone()];
+        
+        // We'll run it a few times with different seeds to verify the 10% chance
+        let mut injured_count = 0;
+        for seed in 0..100 {
+            let mut trng = SmallRng::seed_from_u64(seed);
+            let mut roster_tmp = vec![op.clone()];
+            let mut outcome_tmp = outcome.clone();
+            let injured = apply_outcome_injuries(&mut outcome_tmp, &mut roster_tmp, &squad, &mut trng);
+            if !injured.is_empty() {
+                injured_count += 1;
+                assert!(matches!(roster_tmp[0].state, SlimeState::Injured(_)));
+            }
+        }
+        // Statistically ~10 out of 100 should be injured. (Seed 1 gives 13 for this RNG)
+        assert!(injured_count > 0 && injured_count < 30);
+    }
+
+    #[test]
+    fn test_apply_outcome_injuries_crit_fail_min_one() {
+        let mut rng = SmallRng::seed_from_u64(42);
+        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
+        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let squad = vec![op.id];
+        let mut roster = vec![op.clone()];
+        
+        let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
+        assert_eq!(injured.len(), 1);
+        assert!(matches!(roster[0].state, SlimeState::Injured(_)));
+    }
+
+    #[test]
+    fn test_apply_outcome_injuries_crit_fail_squad_cap() {
+        let mut rng = SmallRng::seed_from_u64(42);
+        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
+        let id1 = Uuid::new_v4();
+        let id2 = Uuid::new_v4();
+        let id3 = Uuid::new_v4();
+        let squad = vec![id1, id2, id3];
+        
+        let mut roster = vec![
+            crate::genetics::generate_random(crate::genetics::Culture::Ember, "1", &mut rng),
+            crate::genetics::generate_random(crate::genetics::Culture::Ember, "2", &mut rng),
+            crate::genetics::generate_random(crate::genetics::Culture::Ember, "3", &mut rng),
+        ];
+        roster[0].id = id1;
+        roster[1].id = id2;
+        roster[2].id = id3;
+        
+        // Crit fail should injure 1-2, but cap at squad size (which is 3 here)
+        let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
+        assert!(injured.len() >= 1 && injured.len() <= 2);
+    }
+
+    #[test]
+    fn test_is_available_cooldown() {
+        let mut rng = SmallRng::seed_from_u64(42);
+        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        
+        op.state = SlimeState::Idle;
+        assert!(op.is_available());
+        
+        op.state = SlimeState::Injured(Utc::now() + Duration::hours(1));
+        assert!(!op.is_available());
+        
+        op.state = SlimeState::Injured(Utc::now() - Duration::hours(1));
+        assert!(op.is_available());
     }
 
     #[test]

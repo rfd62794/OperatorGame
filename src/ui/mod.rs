@@ -216,22 +216,42 @@ impl OperatorApp {
             .collect();
 
         let mut rng = rand::thread_rng();
-        let outcome = dep.resolve(&mission, &squad, &mut rng);
-
+        let mut outcome = dep.resolve(&mission, &squad, &mut rng);
+        
         // Generate narrative BEFORE mutating squad state
-        let narrative = generate_narrative(&outcome, &mission, &squad, &mut rng);
+        let narrative = generate_narrative(&outcome, &mission, &squad, &mut rand::thread_rng());
         let log_entry = format_log_entry(&mission.name, &outcome, &narrative);
         self.combat_log.insert(0, log_entry); // newest first
         if self.combat_log.len() > 50 { self.combat_log.truncate(50); }
 
         self.state.deployments[dep_idx].resolved = true;
 
+        // Phase A: Apply injuries (probabilistic)
+        let newly_injured_ids = crate::models::apply_outcome_injuries(
+            &mut outcome,
+            &mut self.state.slimes,
+            &dep.operator_ids,
+            &mut rand::thread_rng(),
+        );
+
         match outcome {
-            AarOutcome::Victory { reward, .. } => {
+            AarOutcome::Victory { reward, success_rate, .. } => {
                 self.state.bank += reward;
-                self.status_msg =
-                    format!("✅ '{}' — VICTORY! +${} | Bank: ${}", mission.name, reward, self.state.bank);
                 
+                let debt_warning = if self.state.bank < 0 { 
+                    "\nNOTE: Current operational balance is negative. Deployment authorized under Emergency Continuity Protocol §4.2."
+                } else { "" };
+
+                self.status_msg = format!("✅ '{}' — VICTORY (+${}).{}", mission.name, reward, debt_warning);
+                
+                // Track "Merc War" stability metric from the ADR-014 blueprint: 
+                // Missions with high success rate stabilize more than low ones.
+                self.state.world_map.tick_stability(if success_rate > 0.8 { 
+                    0.05 // high stability 
+                } else { 
+                    0.02 // low stability 
+                });
+
                 // Play Tide Bowl (Plate Resonance) based on total Mind of squad
                 let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
                 let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
@@ -241,39 +261,35 @@ impl OperatorApp {
                 });
 
                 for op in self.state.slimes.iter_mut() {
-                    if dep.operator_ids.contains(&op.id) {
+                    if dep.operator_ids.contains(&op.id) && !newly_injured_ids.contains(&op.id) {
                         op.state = SlimeState::Idle;
                     }
                 }
             }
-            AarOutcome::Failure { injured_ids, .. } => {
-                let recovery = mission.duration_secs * 2;
-                let recover_at = Utc::now() + Duration::seconds(recovery as i64);
-                self.status_msg =
-                    format!("❌ '{}' — FAILURE. Operators injured for {}s.", mission.name, recovery);
+            AarOutcome::Failure { .. } | AarOutcome::CriticalFailure { .. } => {
+                let is_crit = matches!(outcome, AarOutcome::CriticalFailure { .. });
+                let symbol = if is_crit { "☠" } else { "❌" };
+                let label = if is_crit { "CRITICAL FAILURE" } else { "FAILURE" };
+
+                if !newly_injured_ids.is_empty() {
+                    let name = self.state.slimes.iter().find(|s| s.id == newly_injured_ids[0]).map(|s| s.name.as_str()).unwrap_or("Operator");
+                    self.status_msg = format!("{} '{}' — {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved.", symbol, mission.name, label, name);
+                } else {
+                    self.status_msg = format!("{} '{}' — {}. The squad retreated intact.", symbol, mission.name, label);
+                }
                 
-                crate::audio::OperatorSynth::play(crate::audio::PlayEvent::Failure { base_freq: 200.0 });
+                let audio_event = if is_crit {
+                    crate::audio::PlayEvent::Startled { base_freq: 100.0 }
+                } else {
+                    crate::audio::PlayEvent::Failure { base_freq: 200.0 }
+                };
+                crate::audio::OperatorSynth::play(audio_event);
                 
                 for op in self.state.slimes.iter_mut() {
-                    if injured_ids.contains(&op.id) {
-                        op.state = SlimeState::Injured(recover_at);
+                    if dep.operator_ids.contains(&op.id) && !newly_injured_ids.contains(&op.id) {
+                        op.state = SlimeState::Idle;
                     }
                 }
-            }
-            AarOutcome::CriticalFailure { killed_id, .. } => {
-                let name = self
-                    .state
-                    .slimes
-                    .iter()
-                    .find(|o| o.id == killed_id)
-                    .map(|o| o.name.clone())
-                    .unwrap_or_default();
-                self.status_msg =
-                    format!("☠ '{}' — CRITICAL FAILURE! {} is KIA.", mission.name, name);
-                
-                crate::audio::OperatorSynth::play(crate::audio::PlayEvent::Startled { base_freq: 100.0 });
-
-                self.state.slimes.retain(|o| o.id != killed_id);
             }
         }
 
