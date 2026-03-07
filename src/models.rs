@@ -322,6 +322,7 @@ pub fn apply_outcome_injuries(
                     if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
                         op.state = SlimeState::Injured(until);
                         injured.push((id, until));
+                        will_be_available -= 1;
                     }
                 }
             }
@@ -337,6 +338,7 @@ pub fn apply_outcome_injuries(
                     if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
                         op.state = SlimeState::Injured(until);
                         injured.push((id, until));
+                        will_be_available -= 1;
                     }
                 }
             }
@@ -344,6 +346,7 @@ pub fn apply_outcome_injuries(
         }
     }
 
+    let _ = will_be_available;
     injured
 }
 
@@ -711,7 +714,7 @@ mod tests {
         let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
         // Should NOT injure the last operator
         assert_eq!(injured.len(), 0);
-        assert!(matches!(roster[0].state, SlimeState::Idle));
+        assert!(matches!(roster[0].state, SlimeState::Deployed(_)));
     }
 
     #[test]
