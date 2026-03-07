@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 
 $Keystore = "operatorgame-release.jks"
 $Alias = "operatorgame"
-$ApkUnsigned = "target/release/apk/operator.apk"
+$ApkUnsigned = "target/release/apk/operatorgame.apk"
 
 if ($GenerateKeys) {
     Write-Host "Generating release keystore..." -ForegroundColor Cyan
@@ -70,16 +70,9 @@ if (-not (Test-Path $ApkUnsigned)) {
     exit 1
 }
 
-# 3.5 Patch AndroidManifest.xml for API 35
-Write-Host "Patching AndroidManifest.xml API targets (cargo-apk hardcodes 30)..." -ForegroundColor Cyan
-$ManifestPath = "target\release\apk\AndroidManifest.xml"
-$ManifestContent = [System.IO.File]::ReadAllText($ManifestPath)
-$ManifestContent = $ManifestContent -replace 'android:targetSdkVersion="\d+"', 'android:targetSdkVersion="35"'
-$ManifestContent = $ManifestContent -replace 'android:minSdkVersion="\d+"', 'android:minSdkVersion="26"'
-[System.IO.File]::WriteAllText($ManifestPath, $ManifestContent, [System.Text.Encoding]::UTF8)
-
 # 4. Extract Proto APK and Inject Fixed Manifest
-$ManifestPath = "target\release\apk\AndroidManifest.xml"
+# We use the root AndroidManifest.xml as the source of truth for the AAB injection
+$ManifestPath = "AndroidManifest.xml"
 $ProtoApk = "target\proto.zip"
 $BaseZip = "target\base.zip"
 $AabBase = "target\aab_base"
