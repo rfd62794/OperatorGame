@@ -44,6 +44,7 @@ impl From<serde_json::Error> for PersistenceError {
 
 /// A genome currently being synthesised in the Bio-Incubator (ADR-010).
 /// Collected by `operator incubate` once `completes_at` has passed.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IncubatingGenome {
     /// The operator-in-progress.
     pub operator:     crate::models::Operator,
