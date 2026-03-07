@@ -396,9 +396,14 @@ impl LifeStage {
         }
     }
 
+    /// Derived from total_xp // 100 (Sprint 9 §2).
+    pub fn level_from_xp(xp: u32) -> u8 {
+        ((xp / 100).min(10)) as u8
+    }
+
     pub fn can_dispatch(self) -> bool { self != LifeStage::Hatchling }
     pub fn can_breed(self)   -> bool { !matches!(self, LifeStage::Hatchling | LifeStage::Juvenile) }
-    pub fn can_mentor(self)  -> bool { matches!(self, LifeStage::Standard | LifeStage::Veteran | LifeStage::Elder) }
+    pub fn can_mentor(self)  -> bool { matches!(self, LifeStage::Veteran | LifeStage::Elder) }
 
     /// Multiplier on base stats (Sprint 9 §2).
     pub fn stat_multiplier(self) -> f32 {
@@ -412,7 +417,7 @@ impl LifeStage {
         }
     }
 
-    /// XP needed to level up from `level`.
+    /// XP needed to level up from `level` (Sprint 9 §2).
     pub fn xp_to_next(level: u8) -> u32 {
         if level >= 10 { 0 } else { (level as u32 + 1) * 100 }
     }
