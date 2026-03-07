@@ -453,7 +453,7 @@ mod tests {
     #[test]
     fn crit_flag_set_on_max_value() {
         let mut die = DieAnimState::new(DieSides::D20);
-        let mut r   = rng();
+        // let mut r   = rng();
         die.result  = 20;
         die.display = 20;
         die.phase   = DiePhase::Settled;

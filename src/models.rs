@@ -322,7 +322,6 @@ pub fn apply_outcome_injuries(
                     if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
                         op.state = SlimeState::Injured(until);
                         injured.push((id, until));
-                        will_be_available -= 1;
                     }
                 }
             }
@@ -338,7 +337,6 @@ pub fn apply_outcome_injuries(
                     if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
                         op.state = SlimeState::Injured(until);
                         injured.push((id, until));
-                        will_be_available -= 1;
                     }
                 }
             }
