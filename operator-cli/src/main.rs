@@ -19,7 +19,7 @@ static DOCS_DIR: Dir = include_dir!("docs");
 #[tokio::main]
 async fn main() {
     let path = save_path();
-    let mut state = match load(&path) {
+    let mut state: operator::persistence::GameState = match load(&path) {
         Ok(s) => s,
         Err(e) => {
             eprintln!("FATAL: Could not load save file: {e}");
@@ -88,8 +88,8 @@ async fn main() {
                     }
                     Some(op) => {
                         op.state = SlimeState::Deployed(mission.id);
-                        operator_ids.push(op.id);
-                        squad_display.push(op.name.clone());
+                        operator_ids.push(op.id());
+                        squad_display.push(op.name().to_string());
                     }
                 }
             }
@@ -325,9 +325,9 @@ async fn main() {
             let mut ready = Vec::new();
             
             // Retain incubating slimes that are NOT ready, collect the ready ones
-            state.incubating.retain(|inc| {
+            state.incubating.retain(|inc: &operator::persistence::IncubatingGenome| {
                 if inc.is_ready() {
-                    ready.push(inc.genome.clone());
+                    ready.push(inc.operator.genome.clone());
                     false
                 } else {
                     true
