@@ -71,8 +71,30 @@ if (-not (Test-Path $ApkUnsigned)) {
 }
 
 # 4. Extract Proto APK and Inject Fixed Manifest
-# We use the root AndroidManifest.xml as the source of truth for the AAB injection
-$ManifestPath = "AndroidManifest.xml"
+# We use the root AndroidManifest.xml as the base but inject version info
+$BaseManifest = "AndroidManifest.xml"
+$TempManifest = "target/AndroidManifest.xml.tmp"
+
+$CargoContent = Get-Content "Cargo.toml" -Raw
+$VersionMatch = [regex]::Match($CargoContent, '(?m)^version\s*=\s*"([^"]+)"')
+$VersionName = if ($VersionMatch.Success) { $VersionMatch.Groups[1].Value } else { "0.0.1" }
+
+# Convert version "0.1.10" to integer 100110 (Major * 1000000 + Minor * 1000 + Patch)
+# Or just use the patch count or simple increment. Let's do a simple parse:
+$vParts = $VersionName.Split(".")
+$vCode = 0
+if ($vParts.Count -eq 3) {
+    $vCode = [int]$vParts[0] * 1000000 + [int]$vParts[1] * 1000 + [int]$vParts[2]
+}
+else {
+    $vCode = 1 # Fallback
+}
+
+Write-Host "Injecting VersionCode $vCode and VersionName $VersionName..." -ForegroundColor Cyan
+$ManifestText = Get-Content $BaseManifest -Raw
+$ManifestText = $ManifestText -replace '<manifest', "<manifest android:versionCode=""$vCode"" android:versionName=""$VersionName"""
+Set-Content -Path $TempManifest -Value $ManifestText -Encoding UTF8
+
 $ProtoApk = "target\proto.zip"
 $BaseZip = "target\base.zip"
 $AabBase = "target\aab_base"
@@ -80,7 +102,7 @@ $AabBase = "target\aab_base"
 Write-Host "Converting APK resources to protobuf format..." -ForegroundColor Cyan
 & $Aapt2 convert --output-format proto -o $ProtoApk $ApkUnsigned
 
-& $Aapt2 link -I $AndroidJar.FullName --manifest $ManifestPath --proto-format -o "target\manifest_proto.zip"
+& $Aapt2 link -I $AndroidJar.FullName --manifest $TempManifest --proto-format -o "target\manifest_proto.zip"
 
 Write-Host "Assembling AAB module structure..." -ForegroundColor Cyan
 if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
@@ -104,13 +126,11 @@ jar cMf "..\base.zip" *
 Pop-Location
 
 # 6. Build final AAB
-$VersionLine = Select-String -Path "Cargo.toml" -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1
-$Version = if ($VersionLine) { $VersionLine.Matches.Groups[1].Value } else { "unknown" }
-
 $OutputDir = "target\googleplay"
 if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir | Out-Null }
 
-$AabFinal = "$OutputDir\operatorgame-release-v$Version.aab"
+# Use the $VersionName parsed earlier
+$AabFinal = "$OutputDir\operatorgame-release-v$VersionName.aab"
 if (Test-Path $AabFinal) { Remove-Item -Force $AabFinal }
 
 Write-Host "Building Android App Bundle ($AabFinal)..." -ForegroundColor Cyan
