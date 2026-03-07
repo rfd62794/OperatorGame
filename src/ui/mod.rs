@@ -148,14 +148,19 @@ impl OperatorApp {
     // -----------------------------------------------------------------------
 
     fn launch_mission(&mut self, mission: Mission) {
-        // Validate all staged operators are still available
+        // Validate and check for emergency
         let staged_ids: Vec<Uuid> = self.staged_operators.iter().cloned().collect();
+        let mut is_emergency = false;
         for id in &staged_ids {
             let op = self.state.slimes.iter().find(|o| o.id == *id);
             if let Some(op) = op {
-                if !op.is_available() {
-                    self.status_msg = format!("{} is no longer available.", op.name);
+                if matches!(op.state, SlimeState::Deployed(_)) {
+                    self.status_msg = format!("{} is currently deployed elsewhere.", op.name);
                     return;
+                }
+                // If it's an Injured slime, it's an emergency deployment.
+                if let SlimeState::Injured(_) = op.state {
+                    is_emergency = true;
                 }
             }
         }
@@ -167,12 +172,17 @@ impl OperatorApp {
             }
         }
 
-        let deployment = Deployment::start(&mission, staged_ids);
+        let deployment = Deployment::start(&mission, staged_ids, is_emergency);
+        let emergency_note = if is_emergency {
+            " EMERGENCY DEPLOYMENT AUTHORIZED: Personnel operating outside approved medical clearance."
+        } else { "" };
+
         self.status_msg = format!(
-            "Deployed {} operator(s) on '{}'. ETA: {}s.",
+            "Deployed {} operator(s) on '{}'. ETA: {}s.{}",
             deployment.operator_ids.len(),
             mission.name,
             mission.duration_secs,
+            emergency_note
         );
 
         self.state.world_map.startled_level += 0.05; // ADR-015: Hoot & Holler resonance
@@ -220,7 +230,10 @@ impl OperatorApp {
         
         // Calculate stats needed for audio/UI before we drop the immutable borrow (squad)
         let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
-        let narrative = generate_narrative(&outcome, &mission, &squad, &mut rand::thread_rng());
+        let mut narrative = generate_narrative(&outcome, &mission, &squad, &mut rand::thread_rng());
+        if dep.is_emergency {
+            narrative.push_str("\nFIELD OPS PROTOCOL §7 ACTIVE: Personnel operating outside approved medical clearance. Deployment authorized with +15 Critical Stress Penalty.");
+        }
         
         // Drop the immutable borrow by finishing use of squad
         let log_entry = format_log_entry(&mission.name, &outcome, &narrative);

@@ -90,8 +90,8 @@ impl IncubatingGenome {
 // ---------------------------------------------------------------------------
 
 /// Current save format version. Increment with every breaking schema change.
-/// v5 (Sprint 7): GameState.bank u64 -> i64, added last_upkeep_at
-pub const SAVE_VERSION: u32 = 5;
+/// v6 (Sprint 7): Deployment.is_emergency
+pub const SAVE_VERSION: u32 = 6;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -175,9 +175,10 @@ impl GameState {
             .count() as i64;
 
         let cost = (days * idle_count as f64 * UPKEEP_PER_DAY as f64) as i64;
+        let floor = -(UPKEEP_PER_DAY * 3);
         
-        if cost > 0 {
-            self.bank -= cost;
+        if cost > 0 && self.bank > floor {
+            self.bank = (self.bank - cost).max(floor);
             self.last_upkeep_at = now;
         }
 
@@ -326,5 +327,28 @@ mod tests {
             "Corrupt file should return Json error"
         );
         let _ = std::fs::remove_file(&p);
+    }
+
+    #[test]
+    fn test_apply_daily_upkeep_debt_floor() {
+        let mut state = GameState::default();
+        state.bank = -140;
+        state.last_upkeep_at = Utc::now() - chrono::Duration::days(1);
+        
+        let mut rng = rand::thread_rng();
+        let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "T", &mut rng);
+        state.slimes.push(genome); // 1 idle operator -> $50 upkeep
+        
+        // We only care about cost and total_ops
+        let (cost, idle_count) = state.apply_daily_upkeep(Utc::now());
+        assert_eq!(idle_count, 1);
+        assert_eq!(cost, 10); // Only deducts $10 to hit floor of -150
+        assert_eq!(state.bank, -150);
+        
+        // Second run should deduct nothing
+        state.last_upkeep_at = Utc::now() - chrono::Duration::days(1);
+        let (cost2, _) = state.apply_daily_upkeep(Utc::now());
+        assert_eq!(cost2, 0);
+        assert_eq!(state.bank, -150);
     }
 }

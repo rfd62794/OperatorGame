@@ -30,6 +30,7 @@ impl OperatorApp {
 
                 let mut equip_action: Option<(uuid::Uuid, usize)> = None;
                 let mut unequip_action: Option<(uuid::Uuid, usize)> = None;
+                let mut restore_action: Option<uuid::Uuid> = None;
 
                 for genome in &self.state.slimes {
                     let is_staged = staged.contains(&genome.id);
@@ -119,13 +120,35 @@ impl OperatorApp {
                             }
                         }
                         
+                        let any_available = self.state.slimes.iter().any(|s| s.is_available());
+
                         if is_injured {
-                            ui.add_enabled(false, egui::Button::new("INJURED"));
+                            if !any_available && selected_mission_id.is_some() {
+                                let label = if is_staged { "✓ STAGED" } else { "EMERGENCY" };
+                                if ui.button(label).on_hover_text("Personnel injured. Protocol §7 authorized.").clicked() {
+                                    if is_staged {
+                                        self.staged_operators.remove(&genome.id);
+                                    } else if self.staged_operators.len() < 3 {
+                                        self.staged_operators.insert(genome.id);
+                                    } else {
+                                        self.status_msg = "Max squad size is 3 slimes.".to_string();
+                                    }
+                                }
+                            } else {
+                                ui.add_enabled(false, egui::Button::new("INJURED"));
+                            }
+
+                            // Recovery Acceleration
+                            if ui.button("RESTORE").on_hover_text("Spend 1 Reagent to halve remaining recovery time.").clicked() {
+                                if self.state.inventory.reagents > 0 {
+                                    restore_action = Some(genome.id);
+                                } else {
+                                    self.status_msg = "Insufficient Reagents.".to_string();
+                                }
+                            }
                         } else if is_dispatched {
                             ui.add_enabled(false, egui::Button::new("DISPATCHED"));
                         } else if on_cooldown {
-                            // Already handled by the cooldown timer label above, 
-                            // but let's show a disabled button for consistency.
                             ui.add_enabled(false, egui::Button::new("COOLDOWN"));
                         } else if selected_mission_id.is_some() {
                             let label = if is_staged { "✓ STAGED" } else { "DISPATCH" };
@@ -156,6 +179,23 @@ impl OperatorApp {
                         });
                     });
                     ui.end_row();
+                }
+
+                if let Some(op_id) = restore_action {
+                    if self.state.inventory.reagents > 0 {
+                        self.state.inventory.reagents -= 1;
+                        if let Some(op) = self.state.slimes.iter_mut().find(|s| s.id == op_id) {
+                            if let crate::models::SlimeState::Injured(until) = &mut op.state {
+                                let now = Utc::now();
+                                if *until > now {
+                                    let remaining = *until - now;
+                                    *until = now + chrono::Duration::milliseconds(remaining.num_milliseconds() / 2);
+                                    self.status_msg = format!("Reagent administered. {} recovery time halved.", op.name);
+                                }
+                            }
+                        }
+                        self.persist();
+                    }
                 }
 
                 if let Some((slime_id, eq_idx)) = unequip_action {
