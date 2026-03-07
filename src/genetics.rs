@@ -535,17 +535,13 @@ impl SlimeGenome {
     }
 }
 
-
-}
-
 impl std::fmt::Display for SlimeGenome {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} [{}] {} | HP:{:.0} ATK:{:.0} SPD:{:.0} | Gen:{} | Tier: {} {} | {}",
+            "{} [{}] | HP:{:.0} ATK:{:.0} SPD:{:.0} | Gen:{} | Tier: {} {} | {}",
             self.name,
             &self.id.to_string()[..8],
-            self.life_stage(),
             self.base_hp,
             self.base_atk,
             self.base_spd,
