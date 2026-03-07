@@ -163,10 +163,18 @@ async fn main() {
                     deployment.resolved = true;
 
                     println!("=== AAR: {} ===", mission.name);
+                    let stat_labels = ["STR", "AGI", "INT"];
                     match &outcome {
-                        AarOutcome::Victory { reward } => {
+                        AarOutcome::Victory { reward, rolls } => {
+                            // Print per-stat D20 roll results
+                            for (label, roll) in stat_labels.iter().zip(rolls.iter()) {
+                                println!("  {} check: {}", label, roll.narrative());
+                            }
+                            let pass = rolls.iter().filter(|r| r.success).count();
+                            println!("  Result: VICTORY ({}/3 checks passed)", pass);
+
                             state.bank += reward;
-                            println!("  ✅ VICTORY! +${reward} | Bank: ${}", state.bank);
+                            println!("  ✅ +${reward} | Bank: ${}", state.bank);
                             
                             // Play Tide Bowl (Plate Resonance) based on total Mind of squad
                             let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
@@ -183,11 +191,17 @@ async fn main() {
                                 }
                             }
                         }
-                        AarOutcome::Failure { injured_ids } => {
+                        AarOutcome::Failure { injured_ids, rolls } => {
+                            for (label, roll) in stat_labels.iter().zip(rolls.iter()) {
+                                println!("  {} check: {}", label, roll.narrative());
+                            }
+                            let pass = rolls.iter().filter(|r| r.success).count();
+                            println!("  Result: FAILURE ({}/3 checks passed)", pass);
+
                             let recovery = mission.duration_secs * 2;
                             let recover_at = chrono::Utc::now()
                                 + chrono::Duration::seconds(recovery as i64);
-                            println!("  ❌ FAILURE. Operators injured for {}s.", recovery);
+                            println!("  ❌ Operators injured for {}s.", recovery);
                             
                             operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Failure { base_freq: 200.0 });
 
@@ -198,8 +212,12 @@ async fn main() {
                                 }
                             }
                         }
-                        AarOutcome::CriticalFailure { killed_id } => {
-                            println!("  ☠ CRITICAL FAILURE! One operator did not make it out.");
+                        AarOutcome::CriticalFailure { killed_id, rolls } => {
+                            for (label, roll) in stat_labels.iter().zip(rolls.iter()) {
+                                println!("  {} check: {}", label, roll.narrative());
+                            }
+                            println!("  Result: CRITICAL FAILURE (0/3 checks passed)");
+                            println!("  ☠ One operator did not make it out.");
                             
                             operator::audio::OperatorSynth::play(operator::audio::PlayEvent::Startled { base_freq: 100.0 });
 
