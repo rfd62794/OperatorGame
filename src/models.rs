@@ -158,7 +158,11 @@ impl Operator {
     }
 
     pub fn is_available(&self) -> bool {
-        !self.is_dispatched() && !self.is_injured()
+        if self.is_dispatched() { return false; }
+        if let SlimeState::Injured(until) = self.state {
+            if until > Utc::now() { return false; }
+        }
+        true
     }
 
     pub fn can_synthesize(&self) -> bool {
@@ -209,13 +213,6 @@ impl Operator {
         (fs, fa, fi, m, se, t)
     }
 
-    pub fn is_available(&self) -> bool {
-        match self.state {
-            SlimeState::Idle => true,
-            SlimeState::Injured(until) => Utc::now() >= until,
-            _ => false,
-        }
-    }
 
     /// Tick: clear Injured state if recovery timestamp has passed.
     pub fn tick_recovery(&mut self) -> Option<String> {
@@ -1012,7 +1009,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_roster_guard_prevents_zero_available() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
+        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
         let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let mut op = Operator::new(genome);
         op.state = SlimeState::Deployed(Uuid::new_v4());
