@@ -90,43 +90,63 @@ impl IncubatingGenome {
 // ---------------------------------------------------------------------------
 
 /// Current save format version. Increment with every breaking schema change.
-/// v4 (Sprint 5): SlimeGenome.culture_expr → culture_alleles {dominant, recessive}
-pub const SAVE_VERSION: u32 = 4;
+/// v5 (Sprint 7): GameState.bank u64 -> i64, added last_upkeep_at
+pub const SAVE_VERSION: u32 = 5;
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
-    /// Player currency.
-    pub bank: u64,
+    /// Player currency. Can be negative (Debt).
+    pub bank: i64,
     /// Active or unresolved deployments.
     pub deployments: Vec<Deployment>,
     /// Static mission pool. Populated from seed data if absent.
     pub missions: Vec<Mission>,
-    /// Slime stable — persists across sessions (fixes the Python persistence gap).
+    /// Slime stable — persists across sessions.
     #[serde(default)]
     pub slimes: Vec<SlimeGenome>,
-    /// Genomes currently incubating in the Bio-Incubator (ADR-010).
+    /// Genomes currently incubating.
     #[serde(default)]
     pub incubating: Vec<IncubatingGenome>,
-    /// Crashed Ship repair tier (0–8). Gates demo unlock (ADR-013).
-    /// 0 = emergency power only; 8 = ship fully restored (endgame).
+    /// Crashed Ship repair tier (0–8).
     #[serde(default)]
-    pub tech_tier: u8,
-    /// The living planet map — 19 nodes, faction influence, expedition sites.
-    /// Populated with a fresh fixed-seed map when absent from save (ADR-014).
+    pub tech_tier: u32,
+    /// Lens unlocked flag for Bio-Manifest recessive alleles.
+    #[serde(default)]
+    pub lens_unlocked: bool,
+    /// World map node wars (ADR-014).
     #[serde(default)]
     pub world_map: WorldMap,
+    /// Last time daily upkeep was deducted.
+    #[serde(default = "Utc::now")]
+    pub last_upkeep_at: DateTime<Utc>,
     /// Cross-session Cargo Bay (Biomass, Scrap, Reagents). ADR-030.
     #[serde(default)]
     pub inventory: Inventory,
     /// Active or resolved island expeditions (Sprint 3). ADR-002 wall-clock.
     #[serde(default)]
     pub active_expeditions: Vec<Expedition>,
-    /// Lens unlock: reveals the recessive allele array in Bio-Manifest.
-    /// Defaults to false for all existing saves. Set by in-game Lens upgrade.
-    /// Sprint 6: gate for Bio-Manifest recessive display.
-    #[serde(default)]
-    pub lens_unlocked: bool,
 }
+
+impl Default for GameState {
+    fn default() -> Self {
+        Self {
+            bank: 500,
+            deployments: Vec::new(),
+            missions: Vec::new(),
+            slimes: Vec::new(),
+            incubating: Vec::new(),
+            tech_tier: 0,
+            lens_unlocked: false,
+            world_map: WorldMap::default(),
+            last_upkeep_at: Utc::now(),
+            inventory: Inventory::default(),
+            active_expeditions: Vec::new(),
+        }
+    }
+}
+
+/// Constant for daily upkeep per idle operator.
+pub const UPKEEP_PER_DAY: i64 = 50;
 
 impl GameState {
     pub fn new_with_seed_missions() -> Self {
@@ -135,6 +155,33 @@ impl GameState {
             bank: 100,
             ..Default::default()
         }
+    }
+
+    /// Sprint 7B: Maintenance Pressure
+    /// Deducts $50 per idle operator per day.
+    /// Returns (cost_deducted, idle_count).
+    pub fn apply_daily_upkeep(&mut self) -> (i64, i64) {
+        let now = Utc::now();
+        let elapsed = now - self.last_upkeep_at;
+        let days = elapsed.num_seconds() as f64 / 86400.0;
+        
+        if days < 0.001 { // Tick every ~1.5 minutes or so
+            return (0, 0);
+        }
+
+        // Only IDLE operators cost maintenance.
+        let idle_count = self.slimes.iter()
+            .filter(|s| matches!(s.state, crate::models::SlimeState::Idle))
+            .count() as i64;
+
+        let cost = (days * idle_count as f64 * UPKEEP_PER_DAY as f64) as i64;
+        
+        if cost > 0 {
+            self.bank -= cost;
+            self.last_upkeep_at = now;
+        }
+
+        (cost, idle_count)
     }
 }
 
@@ -249,7 +296,7 @@ mod tests {
         // File does not exist → should get default state
         let state = load(&p).expect("load should succeed for absent file");
         // assert!(state.roster.is_empty()); // Removed as per instruction
-        assert_eq!(state.bank, 100); // New default bank is 100
+        assert_eq!(state.bank, 100); // new_with_seed_missions sets this to 100
         assert!(!state.missions.is_empty(), "Seed missions should be populated");
     }
 

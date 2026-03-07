@@ -278,19 +278,18 @@ impl Deployment {
 /// Applies injuries to the roster based on the deployment outcome.
 /// - Critical Failure: 1-2 operators (capped at squad size), 4-8 hours recovery.
 /// - Failure: 10% chance for 1 operator, 2-4 hours recovery.
-/// - Returns the IDs of operators who were newly injured for logging.
+/// - Returns the IDs and recovery timestamps of operators who were newly injured.
 pub fn apply_outcome_injuries(
     outcome: &mut AarOutcome,
     roster: &mut [crate::genetics::SlimeGenome],
     squad_ids: &[Uuid],
     rng: &mut impl Rng,
-) -> Vec<Uuid> {
+) -> Vec<(Uuid, DateTime<Utc>)> {
     let mut injured = Vec::new();
 
     match outcome {
         AarOutcome::Victory { .. } => {}
         AarOutcome::CriticalFailure { injured_ids, .. } => {
-            // min(rng.gen_range(1..=2), squad_size)
             let mut pool = squad_ids.to_vec();
             use rand::seq::SliceRandom;
             pool.shuffle(rng);
@@ -307,10 +306,10 @@ pub fn apply_outcome_injuries(
             for id in pool.into_iter().take(count) {
                 if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
                     op.state = SlimeState::Injured(until);
-                    injured.push(id);
+                    injured.push((id, until));
                 }
             }
-            *injured_ids = injured.clone();
+            *injured_ids = injured.iter().map(|(id, _)| *id).collect();
         }
         AarOutcome::Failure { injured_ids, .. } => {
             if rng.gen_bool(0.1) && !squad_ids.is_empty() {
@@ -320,10 +319,10 @@ pub fn apply_outcome_injuries(
 
                 if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
                     op.state = SlimeState::Injured(until);
-                    injured.push(id);
+                    injured.push((id, until));
                 }
             }
-            *injured_ids = injured.clone();
+            *injured_ids = injured.iter().map(|(id, _)| *id).collect();
         }
     }
 
@@ -673,11 +672,11 @@ mod tests {
             let mut roster_tmp = vec![op.clone()];
             let mut outcome_tmp = outcome.clone();
             let injured = apply_outcome_injuries(&mut outcome_tmp, &mut roster_tmp, &squad, &mut trng);
-            if !injured.is_empty() {
-                injured_count += 1;
-                assert!(matches!(roster_tmp[0].state, SlimeState::Injured(_)));
-            }
-        }
+        if !injured.is_empty() {
+            injured_count += 1;
+            assert!(matches!(roster_tmp[0].state, SlimeState::Injured(_)));
+            assert_eq!(injured[0].0, op.id);
+        }    }
         // Statistically ~10 out of 100 should be injured. (Seed 1 gives 13 for this RNG)
         assert!(injured_count > 0 && injured_count < 30);
     }
@@ -716,6 +715,10 @@ mod tests {
         // Crit fail should injure 1-2, but cap at squad size (which is 3 here)
         let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
         assert!(injured.len() >= 1 && injured.len() <= 2);
+        for (id, until) in injured {
+            assert!(squad.contains(&id));
+            assert!(until > Utc::now());
+        }
     }
 
     #[test]

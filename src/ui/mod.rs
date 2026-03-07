@@ -231,16 +231,17 @@ impl OperatorApp {
 
         // Phase A: Apply injuries (probabilistic)
         // This requires &mut self.state.slimes
-        let newly_injured_ids = crate::models::apply_outcome_injuries(
+        let newly_injured = crate::models::apply_outcome_injuries(
             &mut outcome,
             &mut self.state.slimes,
             &dep.operator_ids,
             &mut rand::thread_rng(),
         );
+        let newly_injured_ids: Vec<Uuid> = newly_injured.iter().map(|(id, _)| *id).collect();
 
         match outcome {
             AarOutcome::Victory { reward, success_rate, .. } => {
-                self.state.bank += reward;
+                self.state.bank += reward as i64;
                 
                 let debt_warning = if self.state.bank < 0 { 
                     "\nNOTE: Current operational balance is negative. Deployment authorized under Emergency Continuity Protocol §4.2."
@@ -266,9 +267,17 @@ impl OperatorApp {
                 let symbol = if is_crit { "☠" } else { "❌" };
                 let label = if is_crit { "CRITICAL FAILURE" } else { "FAILURE" };
 
-                if !newly_injured_ids.is_empty() {
-                    let name = self.state.slimes.iter().find(|s| s.id == newly_injured_ids[0]).map(|s| s.name.as_str()).unwrap_or("Operator");
-                    self.status_msg = format!("{} '{}' — {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved.", symbol, mission.name, label, name);
+                if !newly_injured.is_empty() {
+                    let (id, until) = newly_injured[0];
+                    let op = self.state.slimes.iter().find(|s| s.id == id);
+                    let name = op.map(|s| s.name.as_str()).unwrap_or("Operator");
+                    
+                    let remaining = until - Utc::now();
+                    let h = remaining.num_hours();
+                    let m = remaining.num_minutes() % 60;
+                    
+                    self.status_msg = format!("{} '{}' — {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved. RTD estimated {}h {}m.", 
+                        symbol, mission.name, label, name, h, m);
                 } else {
                     self.status_msg = format!("{} '{}' — {}. The squad retreated intact.", symbol, mission.name, label);
                 }
@@ -330,6 +339,27 @@ impl eframe::App for OperatorApp {
             ctx.set_pixels_per_point(2.0); // Mobile default density
         }
 
+        // Phase C: Tick operator recovery & clearance notifications
+        let mut cleared_names = Vec::new();
+        for op in self.state.slimes.iter_mut() {
+            if let Some(name) = op.tick_recovery() {
+                cleared_names.push(name);
+            }
+        }
+        for name in cleared_names {
+            let msg = format!("{} has been cleared for deployment by Medical.", name);
+            self.combat_log.insert(0, msg);
+            self.status_msg = format!("{} cleared for duty.", name);
+        }
+
+        // Sprint 7B: Tick daily upkeep
+        let (deducted, idle_count) = self.state.apply_daily_upkeep();
+        if deducted > 0 {
+            let msg = format!("Deducted ${} in maintenance costs for {} idle operator(s).", deducted, idle_count);
+            self.combat_log.insert(0, msg);
+            self.persist();
+        }
+
         // Background Garden
         let _t = ctx.input(|i| i.time as f32);
         let _cursor = ctx.input(|i| i.pointer.hover_pos());
@@ -372,7 +402,19 @@ impl eframe::App for OperatorApp {
                         .size(16.0),
                 );
                 ui.separator();
-                ui.label(format!("Bank: ${}", self.state.bank));
+                ui.separator();
+                let idle_count = self.state.slimes.iter()
+                    .filter(|s| matches!(s.state, crate::models::SlimeState::Idle))
+                    .count() as i64;
+                let forecast = idle_count * crate::persistence::UPKEEP_PER_DAY;
+                ui.vertical(|ui| {
+                    ui.label(format!("Bank: ${}", self.state.bank));
+                    if forecast > 0 {
+                        ui.label(egui::RichText::new(format!("Est. Upkeep: -${}/day", forecast))
+                            .small()
+                            .color(egui::Color32::from_gray(140)));
+                    }
+                });
                 ui.separator();
                 ui.label(format!("GEL: {}L", self.state.inventory.biomass));
                 ui.separator();

@@ -28,12 +28,12 @@ pub fn generate_recruit(culture: Option<Culture>, name: &str) -> SlimeGenome {
 
 /// Attempts to purchase a standard recruit for $25.
 /// Returns Ok(genome_id) on success, Err if lacking funds.
-pub fn purchase_recruit(state: &mut GameState, name: &str) -> Result<uuid::Uuid, &'static str> {
-    if state.bank < STANDARD_RECRUIT_COST {
-        return Err("Insufficient funds ($25 required).");
+pub fn purchase_recruit(state: &mut GameState, name: &str) -> Result<uuid::Uuid, String> {
+    if state.bank < STANDARD_RECRUIT_COST as i64 {
+        return Err("Insufficient credits to hire a new operator.".to_string());
     }
 
-    state.bank -= STANDARD_RECRUIT_COST;
+    state.bank -= STANDARD_RECRUIT_COST as i64;
     let genome = generate_recruit(None, name);
     let id = genome.id;
     state.slimes.push(genome);
@@ -48,7 +48,8 @@ pub fn claim_elders_gift(state: &mut GameState) -> Result<uuid::Uuid, &'static s
     if !state.slimes.is_empty() {
         return Err("The Elder's Gift is only available when you have no slimes.");
     }
-    if state.bank >= STANDARD_RECRUIT_COST {
+    let cost = STANDARD_RECRUIT_COST as i64;
+    if state.bank >= cost {
         return Err("You have enough funds to draft a standard recruit.");
     }
 

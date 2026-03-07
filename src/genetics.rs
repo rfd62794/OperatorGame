@@ -584,12 +584,15 @@ impl SlimeGenome {
     }
 
     /// Tick: clear Injured state if recovery timestamp has passed.
-    pub fn tick_recovery(&mut self) {
+    /// Returns the name of the operator if they were just cleared.
+    pub fn tick_recovery(&mut self) -> Option<String> {
         if let crate::models::SlimeState::Injured(until) = self.state {
             if Utc::now() >= until {
                 self.state = crate::models::SlimeState::Idle;
+                return Some(self.name.clone());
             }
         }
+        None
     }
 
     /// Race stats from the exact rpgCore formula.

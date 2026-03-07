@@ -40,9 +40,10 @@ impl OperatorApp {
                 let txt = if s > 0 { format!("+{} STR", s) } else if a > 0 { format!("+{} AGI", a) } else { format!("+{} INT", i) };
                 ui.small(txt);
 
-                if state.bank >= cost {
+                let cost_i64 = cost as i64;
+                if state.bank >= cost_i64 {
                     if ui.button("BUY").clicked() {
-                        state.bank -= cost;
+                        state.bank -= cost_i64;
                         state.inventory.gear_pool.push(gear);
                     }
                 } else {

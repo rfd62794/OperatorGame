@@ -34,19 +34,44 @@ impl OperatorApp {
                 for genome in &self.state.slimes {
                     let is_staged = staged.contains(&genome.id);
                     let is_dispatched = matches!(genome.state, crate::models::SlimeState::Deployed(_));
-                    let can_stage = !is_dispatched && selected_mission_id.is_some();
+                    
+                    let mut is_injured = false;
+                    let mut rtd_msg = String::new();
+                    if let crate::models::SlimeState::Injured(until) = genome.state {
+                        let remaining = until - Utc::now();
+                        if remaining > chrono::Duration::zero() {
+                            is_injured = true;
+                            let h = remaining.num_hours();
+                            let m = remaining.num_minutes() % 60;
+                            rtd_msg = format!(" [INJURED — RTD {}h {}m]", h, m);
+                        }
+                    }
+
+                    let can_stage = !is_dispatched && !is_injured && selected_mission_id.is_some();
 
                     let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
-                    let color = egui::Color32::from_rgb(cr, cg, cb);
+                    let mut color = egui::Color32::from_rgb(cr, cg, cb);
+                    
+                    if is_injured {
+                        // Desaturate for injured slimes
+                        color = egui::Color32::from_gray(120);
+                    }
 
                     ui.label(format!("#{}", &genome.id.to_string()[..5]));
                     
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
                             ui.colored_label(color, egui::RichText::new(&genome.name).strong());
-                            ui.label(egui::RichText::new(genome.genetic_tier().name())
-                                .small()
-                                .color(egui::Color32::from_gray(160)));
+                            
+                            if is_injured {
+                                ui.label(egui::RichText::new(&rtd_msg)
+                                    .small()
+                                    .color(egui::Color32::from_rgb(255, 100, 100)));
+                            } else {
+                                ui.label(egui::RichText::new(genome.genetic_tier().name())
+                                    .small()
+                                    .color(egui::Color32::from_gray(160)));
+                            }
                         });
                         
                         // Culture Tier and Name
@@ -94,7 +119,15 @@ impl OperatorApp {
                             }
                         }
                         
-                        if !on_cooldown && can_stage {
+                        if is_injured {
+                            ui.add_enabled(false, egui::Button::new("INJURED"));
+                        } else if is_dispatched {
+                            ui.add_enabled(false, egui::Button::new("DISPATCHED"));
+                        } else if on_cooldown {
+                            // Already handled by the cooldown timer label above, 
+                            // but let's show a disabled button for consistency.
+                            ui.add_enabled(false, egui::Button::new("COOLDOWN"));
+                        } else if selected_mission_id.is_some() {
                             let label = if is_staged { "✓ STAGED" } else { "DISPATCH" };
                             if ui.button(label).clicked() {
                                 if is_staged {
@@ -105,6 +138,8 @@ impl OperatorApp {
                                     self.status_msg = "Max squad size is 3 slimes.".to_string();
                                 }
                             }
+                        } else {
+                            ui.add_enabled(false, egui::Button::new("SELECT MISSION"));
                         }
 
                         ui.menu_button("EQUIP", |ui| {
@@ -201,7 +236,12 @@ impl OperatorApp {
         ui.add_space(8.0);
         
         // Anti-Softlock (ADR-034): Elder's Gift
-        if self.state.slimes.is_empty() && self.state.bank < crate::recruitment::STANDARD_RECRUIT_COST {
+        if self.state.slimes.is_empty() && self.state.bank < crate::recruitment::STANDARD_RECRUIT_COST as i64 {
+            ui.label(egui::RichText::new("CRITICAL DEBT: Bio-Alliance Emergency Funding granted (+$500)").color(egui::Color32::LIGHT_BLUE));
+            if ui.button("ACCEPT BA-GRANTS").clicked() {
+                self.state.bank += 500;
+            }
+            ui.add_space(8.0);
             ui.group(|ui| {
                 ui.heading(egui::RichText::new("EMERGENCY DIRECTIVE").color(egui::Color32::RED));
                 ui.label("Roster empty. Insufficient funds. The Union cannot deploy.");
@@ -230,7 +270,7 @@ impl OperatorApp {
             ui.add_space(8.0);
 
             ui.horizontal(|ui| {
-                let cost = crate::recruitment::STANDARD_RECRUIT_COST;
+                let cost = crate::recruitment::STANDARD_RECRUIT_COST as i64;
                 if self.state.bank >= cost {
                     if ui.button(format!("DRAFT NEW RECRUIT (${})", cost)).clicked() {
                         let name_pool = ["Rookie", "Spark", "Dusty", "Echo", "Jumper", "Mute"];
