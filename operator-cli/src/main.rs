@@ -75,7 +75,7 @@ async fn main() {
                 let maybe = state
                     .slimes
                     .iter_mut()
-                    .find(|o| o.id.to_string().starts_with(prefix.as_str()));
+                    .find(|o| o.id().to_string().starts_with(prefix.as_str()));
 
                 match maybe {
                     None => {
