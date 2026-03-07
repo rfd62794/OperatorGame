@@ -910,21 +910,21 @@ mod tests {
 
     #[test]
     fn test_genetic_tier_bordered() {
-        // Ember and Gale are hex-adjacent
-        let mut arr = [0.0f32; 6];
-        arr[0] = 0.5; // Ember
-        arr[1] = 0.5; // Gale
-        let expr = CultureExpression(arr);
+        // Ember(0) and Tide(1) are adjacent on the nonagon wheel
+        let mut arr = [0.0f32; 9];
+        arr[0] = 0.5; // Ember  (WHEEL pos 0)
+        arr[1] = 0.5; // Tide   (WHEEL pos 1) — adjacent to Ember
+        let expr = CultureExpression::normalise(arr);
         assert_eq!(GeneticTier::from_expression(&expr), GeneticTier::Bordered);
     }
 
     #[test]
     fn test_genetic_tier_sundered() {
-        // Ember and Crystal are hex-opposites
-        let mut arr = [0.0f32; 6];
-        arr[0] = 0.5; // Ember
-        arr[3] = 0.5; // Crystal
-        let expr = CultureExpression(arr);
+        // Ember(0) and Crystal(5) are near-opposites on the nonagon (dist=5, min=4)
+        let mut arr = [0.0f32; 9];
+        arr[0] = 0.5; // Ember   (WHEEL pos 0)
+        arr[5] = 0.5; // Crystal (WHEEL pos 5) — near-opposite of Ember
+        let expr = CultureExpression::normalise(arr);
         assert_eq!(GeneticTier::from_expression(&expr), GeneticTier::Sundered);
     }
 
