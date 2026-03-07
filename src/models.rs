@@ -669,7 +669,7 @@ mod tests {
     fn test_apply_outcome_injuries_victory_no_injury() {
         let mut rng = SmallRng::seed_from_u64(42);
         let mut outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![] };
-        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let squad = vec![op.id];
         let mut roster = vec![op.clone()];
         
@@ -682,7 +682,7 @@ mod tests {
     fn test_apply_outcome_injuries_failure_10_percent_chance() {
         let mut rng = SmallRng::seed_from_u64(1); // Seed chosen to trigger the 10%
         let mut outcome = AarOutcome::Failure { injured_ids: vec![], rolls: vec![] };
-        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let squad = vec![op.id];
         let mut roster = vec![op.clone()];
         
