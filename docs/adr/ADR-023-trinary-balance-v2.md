@@ -109,19 +109,32 @@ Color-theory primary/secondary/tertiary model governs. The three true primary co
 
 ## Opposite Pairs (9-point, across-centre)
 
-With 9 points, each culture has one directly opposite and one near-opposite:
+> [!IMPORTANT]
+> **9-point odd-wheel geometry: no culture has a single exact true opposite.**
+>
+> On an odd-count polygon, the across-centre position always falls **between** two adjacent
+> cultures. For culture at position `n`, near-opposites are at `(n+4) mod 9` and `(n+5) mod 9`.
+> The `is_opposite()` function must treat **both** as valid Sundered pairs for any given culture.
+>
+> Before implementing `is_opposite()`, decide whether `Sundered` requires the *shorter arc*
+> near-opposite, the *longer arc*, or **either**. Recommend: **either** (both fire Sundered)
+> — this is the more permissive and player-friendly interpretation.
 
-| Culture | True Opposite | Near-Opposite L | Near-Opposite R |
+**Nonagon near-opposite pairs (positions 0–8 clockwise: 0=Ember, 1=Tide, 2=Orange, 3=Marsh, 4=Teal, 5=Crystal, 6=Gale, 7=Tundra, 8=Frost):**
+
+| Culture | Position | Near-Opp A (+4 mod 9) | Near-Opp B (+5 mod 9) |
 |---|---|---|---|
-| Ember   | Teal    | Crystal | Gale |
-| Tide    | Gale    | Tundra  | Frost |
-| Orange  | Tundra  | Frost   | Gale |
-| Marsh   | Frost   | Ember   | Tundra (near) |
-| Teal    | Ember   | Tide    | Orange |
-| Crystal | Orange  | Tide    | Marsh |
-| Gale    | Tide    | Orange  | Crystal |
-| Tundra  | Orange  | Gale    | Frost |
-| Frost   | Marsh   | Tundra  | Ember |
+| Ember   | 0 | Teal (4)    | Crystal (5) |
+| Tide    | 1 | Crystal (5) | Gale (6)    |
+| Orange  | 2 | Gale (6)    | Tundra (7)  |
+| Marsh   | 3 | Tundra (7)  | Frost (8)   |
+| Teal    | 4 | Frost (8)   | Ember (0)   |
+| Crystal | 5 | Ember (0)   | Tide (1)    |
+| Gale    | 6 | Tide (1)    | Orange (2)  |
+| Tundra  | 7 | Orange (2)  | Marsh (3)   |
+| Frost   | 8 | Marsh (3)   | Teal (4)    |
+
+**Tundra reconciliation:** Tundra's near-opposites are **Orange** and **Marsh** — both equally valid for Sundered detection. The previous table incorrectly listed a single "true opposite"; now corrected.
 
 ---
 
@@ -207,24 +220,32 @@ The hexagon GeneticTier geometry is replaced by nonagon geometry. Thresholds and
 | Tier | Active Cultures | Condition (9-culture wheel) |
 |---|---|---|
 | Blooded    | 1 | Single dominant (unchanged) |
-| Bordered   | 2 | Adjacent on nonagon |
-| Sundered   | 2 | True opposite (across centre) |
-| Drifted    | 2 | Skip-one (not adjacent, not opposite) |
+| Bordered   | 2 | Adjacent on nonagon (wheel neighbours) |
+| Sundered   | 2 | Near-opposite pair — either `(n+4) mod 9` or `(n+5) mod 9` |
+| Drifted    | 2 | Two active, skip-one (not adjacent, not near-opposite) |
 | Threaded   | 3 | Any three active |
 | Convergent | 4–5 | Four or five active (expanded from 4 only) |
 | Liminal    | 6–7 | Six or seven active (expanded) |
 | Void       | 8–9 | All or near-all active (expanded from 6) |
 
-### New Opposite Pairs for Sundered Detection
+### Updated Opposite Pairs for Sundered Detection
 
-```
-Ember   ↔ Teal     (new — was Ember↔Crystal on hex wheel)
-Marsh   ↔ Frost    (new)
-Crystal ↔ Orange   (new)
-Tide    ↔ Gale     (new — was Marsh↔Tide on hex wheel)
-Orange  ↔ Crystal  (same as Crystal↔Orange)
-Tundra  ↔ Orange   (new near-true-opposite)
-Frost   ↔ Marsh    (same as Marsh↔Frost)
+**Decision: `Sundered` fires when either near-opposite is active** — the permissive interpretation.
+Do NOT implement the restrictive "only shorter arc" variant without a design review.
+
+See the corrected opposite table above. Key: every culture has exactly **two** near-opposites
+on the 9-point wheel (none has a single exact one).
+
+```rust
+// Sprint 4 implementation contract for is_opposite()
+// Returns true if `other` is at position (self_pos + 4) mod 9 OR (self_pos + 5) mod 9
+pub fn is_near_opposite(self, other: Culture) -> bool {
+    // Use Culture::WHEEL index positions 0-8 after 9-culture expansion
+    // Both near-opposite slots trigger GeneticTier::Sundered
+    let Some(a) = self.wheel_index()  else { return false }; // Void → never opposite
+    let Some(b) = other.wheel_index() else { return false };
+    b == (a + 4) % 9 || b == (a + 5) % 9
+}
 ```
 
 ---
