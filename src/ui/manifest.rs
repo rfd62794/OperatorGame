@@ -32,13 +32,14 @@ impl OperatorApp {
                 let mut unequip_action: Option<(uuid::Uuid, usize)> = None;
                 let mut restore_action: Option<uuid::Uuid> = None;
 
-                for genome in &self.state.slimes {
+                for op in &self.state.slimes {
+                    let genome = &op.genome;
                     let is_staged = staged.contains(&genome.id);
-                    let is_dispatched = matches!(genome.state, crate::models::SlimeState::Deployed(_));
+                    let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
                     
                     let mut is_injured = false;
                     let mut rtd_msg = String::new();
-                    if let crate::models::SlimeState::Injured(until) = genome.state {
+                    if let crate::models::SlimeState::Injured(until) = op.state {
                         let remaining = until - Utc::now();
                         if remaining > chrono::Duration::zero() {
                             is_injured = true;
@@ -68,7 +69,7 @@ impl OperatorApp {
                                     .small()
                                     .color(egui::Color32::from_rgb(255, 100, 100)));
                             } else {
-                                ui.label(egui::RichText::new(genome.genetic_tier().name())
+                                ui.label(egui::RichText::new(format!("{} | LVL {}", op.life_stage().name(), op.level))
                                     .small()
                                     .color(egui::Color32::from_gray(160)));
                             }
@@ -91,13 +92,13 @@ impl OperatorApp {
                     ui.label(format!("{:.0} Hz", genome.frequency));
 
                     ui.vertical(|ui| {
-                        let (s, a, i, m, se, t) = genome.total_stats();
+                        let (s, a, i, m, se, t) = op.total_stats();
                         ui.label(format!("STR: {} | AGI: {} | INT: {}", s, a, i));
                         ui.label(format!("MND: {} | SEN: {} | TEN: {}", m, se, t));
                         
                         ui.horizontal(|ui| {
-                            if !genome.equipped_gear.is_empty() {
-                                for (idx, gear) in genome.equipped_gear.iter().enumerate() {
+                            if !op.equipped_gear.is_empty() {
+                                for (idx, gear) in op.equipped_gear.iter().enumerate() {
                                     if ui.button(format!("[-] {}", gear.name())).on_hover_text("Unequip to Cargo").clicked() {
                                         unequip_action = Some((genome.id, idx));
                                     }
@@ -111,7 +112,7 @@ impl OperatorApp {
                     // Actions
                     ui.horizontal(|ui| {
                         let mut on_cooldown = false;
-                        if let Some(cooldown) = genome.synthesis_cooldown_until {
+                        if let Some(cooldown) = op.synthesis_cooldown_until {
                             let secs = (cooldown - Utc::now()).num_seconds().max(0);
                             if secs > 0 {
                                 ui.label(egui::RichText::new(format!("{}s", secs)).color(egui::Color32::RED));
@@ -183,13 +184,13 @@ impl OperatorApp {
                 if let Some(op_id) = restore_action {
                     if self.state.inventory.reagents > 0 {
                         self.state.inventory.reagents -= 1;
-                        if let Some(op) = self.state.slimes.iter_mut().find(|s| s.id == op_id) {
+                        if let Some(op) = self.state.slimes.iter_mut().find(|s| s.genome.id == op_id) {
                             if let crate::models::SlimeState::Injured(until) = &mut op.state {
                                 let now = Utc::now();
                                 if *until > now {
                                     let remaining = *until - now;
                                     *until = now + chrono::Duration::milliseconds(remaining.num_milliseconds() / 2);
-                                    self.status_msg = format!("Reagent administered. {} recovery time halved.", op.name);
+                                    self.status_msg = format!("Reagent administered. {} recovery time halved.", op.name());
                                 }
                             }
                         }
@@ -198,15 +199,15 @@ impl OperatorApp {
                 }
 
                 if let Some((slime_id, eq_idx)) = unequip_action {
-                    if let Some(slime) = self.state.slimes.iter_mut().find(|s| s.id == slime_id) {
-                        let removed = slime.equipped_gear.remove(eq_idx);
+                    if let Some(op) = self.state.slimes.iter_mut().find(|s| s.genome.id == slime_id) {
+                        let removed = op.equipped_gear.remove(eq_idx);
                         self.state.inventory.gear_pool.push(removed);
                     }
                 }
                 if let Some((slime_id, inv_idx)) = equip_action {
-                    if let Some(slime) = self.state.slimes.iter_mut().find(|s| s.id == slime_id) {
+                    if let Some(op) = self.state.slimes.iter_mut().find(|s| s.genome.id == slime_id) {
                         let gear = self.state.inventory.gear_pool.remove(inv_idx);
-                        slime.equipped_gear.push(gear);
+                        op.equipped_gear.push(gear);
                     }
                 }
             });
@@ -235,7 +236,7 @@ impl OperatorApp {
                     ui.horizontal(|ui| {
                         ui.label(egui::RichText::new("🧪").size(24.0));
                         ui.vertical(|ui| {
-                            ui.label(egui::RichText::new(format!("Synthesizing: {}", inc.genome.name)).strong());
+                            ui.label(egui::RichText::new(format!("Synthesizing: {}", inc.operator.name())).strong());
                             if ready {
                                 ui.colored_label(egui::Color32::from_rgb(100, 255, 100), "READY FOR HARVEST");
                                 if ui.button("Harvest").clicked() {
@@ -254,8 +255,8 @@ impl OperatorApp {
             // Move genomes from incubating to slimes
             let mut new_slimes = Vec::new();
             self.state.incubating.retain(|inc| {
-                if harvested.contains(&inc.genome.id) {
-                    new_slimes.push(inc.genome.clone());
+                if harvested.contains(&inc.operator.genome.id) {
+                    new_slimes.push(inc.operator.clone());
                     false
                 } else {
                     true
