@@ -151,6 +151,117 @@ pub fn read_window_insets() -> SafeArea {
 }
 
 // ---------------------------------------------------------------------------
+// Responsive Layout
+// ---------------------------------------------------------------------------
+
+/// Breakpoint-driven layout mode. Determines column count and interaction scale.
+///
+/// Mobile-first: `Compact` is the Android default. `Standard` activates when
+/// the safe area width meets the 600dp threshold for tablet/desktop.
+///
+/// Sprint 4: drives whether the bottom tab bar or the 3-column side-panel
+/// layout is rendered.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResponsiveLayout {
+    /// width < 600dp — mobile single-column + bottom tab bar.
+    Compact,
+    /// width ≥ 600dp — desktop/tablet 3-column layout.
+    Standard,
+}
+
+impl ResponsiveLayout {
+    /// Derive layout from the safe-area usable width.
+    pub fn from_width(width: f32) -> Self {
+        if width < 600.0 { Self::Compact } else { Self::Standard }
+    }
+}
+
+/// Apply platform-appropriate egui interaction sizes to the current frame.
+///
+/// **Compact (mobile)**: 44dp minimum touch targets (fat-finger safe, WCAG 2.5.5).
+/// **Standard (desktop)**: 28dp — precision mouse-work.
+///
+/// Call once per frame before rendering any panels.
+pub fn apply_interaction_scale(ctx: &egui::Context, layout: ResponsiveLayout) {
+    ctx.style_mut(|s| {
+        s.spacing.interact_size = match layout {
+            ResponsiveLayout::Compact  => egui::Vec2::splat(44.0),
+            ResponsiveLayout::Standard => egui::Vec2::splat(28.0),
+        };
+        // Item spacing — breathe on mobile, tighter on desktop
+        s.spacing.item_spacing = match layout {
+            ResponsiveLayout::Compact  => egui::Vec2::new(8.0, 6.0),
+            ResponsiveLayout::Standard => egui::Vec2::new(8.0, 4.0),
+        };
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Bottom Tab Bar (Compact / Mobile)
+// ---------------------------------------------------------------------------
+
+/// Tab bar height in logical pixels for the Compact layout.
+///
+/// Sits immediately above the `safe_area.bottom` boundary:
+/// `tab_bar_top_y = safe_height - BOTTOM_TAB_BAR_HEIGHT`
+pub const BOTTOM_TAB_BAR_HEIGHT: f32 = 56.0;
+
+/// The four primary navigation destinations in Compact (mobile) layout.
+///
+/// Sprint 4: rendered as an icon + label bar pinned to the safe-area bottom.
+/// Sprint 3.5: constants defined only — no rendering yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BottomTab {
+    /// 🧬 Bio-Manifest — slime roster and genome browser.
+    Roster,
+    /// 🚀 Deploy — mission and expedition dispatch.
+    Missions,
+    /// 🗺️ Planet — world map and expedition targets.
+    Map,
+    /// 📜 AAR — after action reports and log history.
+    Logs,
+}
+
+impl BottomTab {
+    /// Display label for the tab bar button.
+    pub fn label(self) -> &'static str {
+        match self {
+            BottomTab::Roster   => "🧬 Roster",
+            BottomTab::Missions => "🚀 Missions",
+            BottomTab::Map      => "🗺️ Map",
+            BottomTab::Logs     => "📜 Logs",
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Asset Provider — forward-looking abstraction
+// ---------------------------------------------------------------------------
+
+/// Abstraction over asset loading for Web (HTTP/WASM), Mobile (APK assets),
+/// and Desktop (filesystem).
+///
+/// **Sprint 3.5**: stub only. Required when cymatics/audio assets land.
+/// **Future sprint**: filesystem, HTTP, and APK implementations.
+pub trait AssetProvider: Send + Sync {
+    /// Load raw bytes for the given asset path.
+    ///
+    /// Path is relative and cross-platform (e.g. `"sounds/ember.wav"`).
+    fn load_bytes(&self, path: &str) -> Result<Vec<u8>, String>;
+}
+
+/// Fully procedural provider — no file I/O, no assets required.
+///
+/// Used when everything is generated at runtime (e.g. procedural cymatics).
+pub struct ProcAssetProvider;
+
+impl AssetProvider for ProcAssetProvider {
+    fn load_bytes(&self, _path: &str) -> Result<Vec<u8>, String> {
+        Err("Procedural engine: no file assets required".into())
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -197,5 +308,50 @@ mod tests {
     #[test]
     fn primary_action_guard_is_positive() {
         assert!(PRIMARY_ACTION_BOTTOM_GUARD > 0.0);
+    }
+
+    // Phase D — Sprint 3.5 tests -------------------------------------------
+
+    #[test]
+    fn test_responsive_layout_compact_below_600() {
+        assert_eq!(ResponsiveLayout::from_width(599.9), ResponsiveLayout::Compact);
+        assert_eq!(ResponsiveLayout::from_width(0.0),   ResponsiveLayout::Compact);
+        assert_eq!(ResponsiveLayout::from_width(375.0), ResponsiveLayout::Compact,
+            "375dp (iPhone SE width) must be Compact");
+    }
+
+    #[test]
+    fn test_responsive_layout_standard_at_600() {
+        assert_eq!(ResponsiveLayout::from_width(600.0), ResponsiveLayout::Standard);
+        assert_eq!(ResponsiveLayout::from_width(1280.0), ResponsiveLayout::Standard,
+            "Desktop width must be Standard");
+    }
+
+    #[test]
+    fn test_bottom_tab_labels_non_empty() {
+        let tabs = [
+            BottomTab::Roster,
+            BottomTab::Missions,
+            BottomTab::Map,
+            BottomTab::Logs,
+        ];
+        for tab in tabs {
+            let label = tab.label();
+            assert!(!label.is_empty(), "{:?} must have a non-empty label", tab);
+            // Ensure the label has a unicode icon (first char above ASCII)
+            assert!(
+                label.chars().next().map(|c| c as u32 > 127).unwrap_or(false),
+                "{:?} label should start with an emoji icon", tab
+            );
+        }
+    }
+
+    #[test]
+    fn test_asset_provider_stub_returns_err() {
+        let provider = ProcAssetProvider;
+        let result   = provider.load_bytes("sounds/ember.wav");
+        assert!(result.is_err(), "ProcAssetProvider must always return Err");
+        let msg = result.unwrap_err();
+        assert!(!msg.is_empty(), "Error message must not be empty");
     }
 }
