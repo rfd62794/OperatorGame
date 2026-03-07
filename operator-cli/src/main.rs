@@ -290,7 +290,7 @@ async fn main() {
         Commands::Hatch { name, culture } => {
             let slime = generate_random(culture, &name, &mut rng);
             println!("Hatched: {slime}");
-            state.slimes.push(slime);
+            state.slimes.push(operator::models::Operator::new(slime));
         }
 
         Commands::Splice { parent_a_prefix, parent_b_prefix, offspring_name } => {
@@ -315,7 +315,7 @@ async fn main() {
                     println!("  Parent A: {a}");
                     println!("  Parent B: {b}");
                     println!("  Offspring: {child}");
-                    state.slimes.push(child);
+                    state.slimes.push(operator::models::Operator::new(child));
                 }
                 Err(reason) => {
                     eprintln!("Splice failed: {reason}");
@@ -345,7 +345,7 @@ async fn main() {
                     println!("  - {} ({:?} / {:?})", g.name, g.dominant_culture(), g.genetic_tier());
                 }
                 state.world_map.startled_level += 0.10 * ready.len() as f32; // ADR-015: Hoot & Holler resonance
-                state.slimes.extend(ready);
+                state.slimes.extend(ready.into_iter().map(operator::models::Operator::new));
             }
         }
 
@@ -509,7 +509,6 @@ async fn main() {
                         state.active_expeditions[idx].resolved = true;
                     }
                 }
-            }
             }
         }
     }
