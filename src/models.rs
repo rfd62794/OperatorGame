@@ -773,10 +773,9 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_failure_10_percent_chance() {
         let mut rng = SmallRng::seed_from_u64(1); // Seed chosen to trigger the 10%
-        let mut outcome = AarOutcome::Failure { injured_ids: vec![], rolls: vec![] };
+        let outcome = AarOutcome::Failure { injured_ids: vec![], rolls: vec![] };
         let op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let squad = vec![op.id];
-        let mut roster = vec![op.clone()];
         
         // We'll run it a few times with different seeds to verify the 10% chance
         let mut injured_count = 0;
@@ -797,7 +796,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_roster_guard_prevents_zero_available() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
+        let outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
         let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         op.state = SlimeState::Deployed(Uuid::new_v4());
         let squad = vec![op.id];
