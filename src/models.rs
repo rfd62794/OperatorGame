@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Utc};
+use chrono::Duration;
 use rand::Rng;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -917,7 +917,7 @@ mod tests {
         // Run several seeds to guarantee a Success or BonusHaul path is reachable
         for seed in 0u64..20 {
             let mut rng2 = SmallRng::seed_from_u64(seed);
-            let outcome  = exp.resolve(&[&slime], &mut rng2);
+            let outcome  = exp.resolve(&[&op], &mut rng2);
             match outcome {
                 ExpeditionOutcome::Success    { .. } |
                 ExpeditionOutcome::BonusHaul  { .. } => {
@@ -949,7 +949,7 @@ mod tests {
         let mut found_injury = false;
         for seed in 0u64..50 {
             let mut rng2 = SmallRng::seed_from_u64(seed);
-            let outcome  = exp.resolve(&[&slime], &mut rng2);
+            let outcome  = exp.resolve(&[&op], &mut rng2);
             if let ExpeditionOutcome::SlimeInjured { slime_id, .. } = outcome {
                 assert_eq!(slime_id, op.id(), "Injured slime ID must match dispatched slime");
                 found_injury = true;
