@@ -241,7 +241,7 @@ impl Deployment {
         let int_cov = coverage(total_int, mission.req_intelligence);
 
         let difficulty = if self.is_emergency {
-            mission.difficulty + 15
+            mission.difficulty + 15.0
         } else {
             mission.difficulty
         };
