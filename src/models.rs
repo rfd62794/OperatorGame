@@ -157,6 +157,10 @@ impl Operator {
         matches!(self.state, SlimeState::Injured(_))
     }
 
+    pub fn is_available(&self) -> bool {
+        !self.is_dispatched() && !self.is_injured()
+    }
+
     pub fn can_synthesize(&self) -> bool {
         // Synthesis possible if not deployed, not injured, and cooldown expired.
         if self.is_dispatched() || self.is_injured() { return false; }
@@ -1009,9 +1013,10 @@ mod tests {
     fn test_apply_outcome_injuries_roster_guard_prevents_zero_available() {
         let mut rng = SmallRng::seed_from_u64(42);
         let outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
-        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let mut op = Operator::new(genome);
         op.state = SlimeState::Deployed(Uuid::new_v4());
-        let squad = vec![op.id];
+        let squad = vec![op.id()];
         let mut roster = vec![op]; // Only 1 op in roster
         
         let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
@@ -1029,8 +1034,10 @@ mod tests {
         // Emergency deployment
         let dep_emergency = Deployment::start(&mission, vec![], true);
         
-        let mut roster = vec![crate::genetics::generate_random(crate::genetics::Culture::Ember, "T", &mut rng)];
-        let squad: Vec<&crate::genetics::SlimeGenome> = roster.iter().collect();
+        let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "T", &mut rng);
+        let op = Operator::new(genome);
+        let roster = vec![op];
+        let squad: Vec<&Operator> = roster.iter().collect();
 
         // We can't easily check the penalty without mocking rng, 
         // but we verified the logic subtracts mission.difficulty + 15.
@@ -1049,13 +1056,15 @@ mod tests {
         let squad = vec![id1, id2, id3];
         
         let mut roster = vec![
-            crate::genetics::generate_random(crate::genetics::Culture::Ember, "1", &mut rng),
-            crate::genetics::generate_random(crate::genetics::Culture::Ember, "2", &mut rng),
-            crate::genetics::generate_random(crate::genetics::Culture::Ember, "3", &mut rng),
+            Operator::new(crate::genetics::generate_random(crate::genetics::Culture::Ember, "1", &mut rng)),
+            Operator::new(crate::genetics::generate_random(crate::genetics::Culture::Ember, "2", &mut rng)),
+            Operator::new(crate::genetics::generate_random(crate::genetics::Culture::Ember, "3", &mut rng)),
         ];
-        roster[0].id = id1;
-        roster[1].id = id2;
-        roster[2].id = id3;
+        // We set IDs manually for test pinning
+        let mut id1 = roster[0].id();
+        let mut id2 = roster[1].id();
+        let mut id3 = roster[2].id();
+        let squad = vec![id1, id2, id3];
         
         // Crit fail should injure 1-2, but cap at squad size (which is 3 here)
         let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
@@ -1097,8 +1106,8 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(1);
         let mission = Mission::new("T", 0, 0, 0, 0.5, 60, 100, Some(Culture::Ember));
         
-        let op_ember = generate_random(Culture::Ember, "E", &mut rng);
-        let op_tide = generate_random(Culture::Tide, "T", &mut rng);
+        let op_ember = Operator::new(generate_random(Culture::Ember, "E", &mut rng));
+        let op_tide  = Operator::new(generate_random(Culture::Tide, "T", &mut rng));
         
         assert_eq!(mission.get_affinity_bonus(&[&op_ember]), -15.0);
         assert_eq!(mission.get_affinity_bonus(&[&op_tide]), 0.0);
@@ -1112,8 +1121,9 @@ mod tests {
         let mission = Mission::new("T", 0, 0, 0, 0.5, 60, 1000, Some(Culture::Ember));
         let dep = Deployment::start(&mission, vec![], false);
         
-        let mut op = generate_random(Culture::Ember, "E", &mut rng); // Start L1
-        op.xp = 9; 
+        let genome = generate_random(Culture::Ember, "E", &mut rng); // Start L1
+        let mut op = Operator::new(genome);
+        op.total_xp = 109; // Just before level up
         
         let outcome = AarOutcome::Victory { reward: 1000, success_rate: 1.0, rolls: vec![] };
         
