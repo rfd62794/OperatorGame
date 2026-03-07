@@ -80,7 +80,9 @@ $VersionMatch = [regex]::Match($CargoContent, '(?m)^version\s*=\s*"([^"]+)"')
 $VersionName = if ($VersionMatch.Success) { $VersionMatch.Groups[1].Value } else { "0.0.1" }
 
 # Convert version "0.1.10" to integer 100110 (Major * 1000000 + Minor * 1000 + Patch)
-# Or just use the patch count or simple increment. Let's do a simple parse:
+# Note: This allows up to 999 minor and 999 patch versions per major.
+# 0.1.10 -> 0 + 1000 + 10 = 1010. 
+# 1.0.0 -> 1000000.
 $vParts = $VersionName.Split(".")
 $vCode = 0
 if ($vParts.Count -eq 3) {
