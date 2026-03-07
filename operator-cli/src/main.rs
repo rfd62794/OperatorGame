@@ -1,3 +1,4 @@
+![[operator-cli/src/main.rs]]
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
 /// main.rs — OPERATOR entry point.
@@ -7,7 +8,7 @@
 use clap::Parser;
 use operator::cli::{Cli, Commands, ExpeditionAction};
 use operator::genetics::{generate_random, BreedingResolver};
-use operator::models::{AarOutcome, Deployment, Expedition, ExpeditionOutcome, SlimeState};
+use operator::models::{AarOutcome, Deployment, Expedition, ExpeditionOutcome, SlimeState, Operator};
 use operator::persistence::{load, save, save_path};
 use operator::ui::run_gui;
 use operator::world_map::{seed_expedition_targets};
@@ -95,7 +96,7 @@ async fn main() {
             }
 
             // Preview success rate before locking in
-            let squad_refs: Vec<&operator::models::Operator> = state
+            let squad_refs: Vec<&Operator> = state
                 .slimes
                 .iter()
                 .filter(|o| operator_ids.contains(&o.id()))
@@ -154,7 +155,7 @@ async fn main() {
                     let Some(mission) = mission else { continue; };
 
                     let squad_ids = deployment.operator_ids.clone();
-                    let squad: Vec<&operator::models::Operator> = state
+                    let squad: Vec<&Operator> = state
                         .slimes
                         .iter()
                         .filter(|o| squad_ids.contains(&o.id()))
@@ -225,8 +226,6 @@ async fn main() {
                             for &id in &injured_ids {
                                 if let Some(pos) = state.slimes.iter().position(|o| o.id() == id) {
                                     println!("     ↳ {} is injured (Critical).", state.slimes[pos].name());
-                                    // Set injured state if not already handled by apply_outcome_injuries logic
-                                    // (Actually apply_outcome_injuries handles it, but let's be safe or just log)
                                 }
                             }
                         }
@@ -290,7 +289,7 @@ async fn main() {
         Commands::Hatch { name, culture } => {
             let slime = generate_random(culture, &name, &mut rng);
             println!("Hatched: {slime}");
-            state.slimes.push(operator::models::Operator::new(slime));
+            state.slimes.push(Operator::new(slime));
         }
 
         Commands::Splice { parent_a_prefix, parent_b_prefix, offspring_name } => {
@@ -315,7 +314,7 @@ async fn main() {
                     println!("  Parent A: {}", a.genome);
                     println!("  Parent B: {}", b.genome);
                     println!("  Offspring: {child}");
-                    state.slimes.push(operator::models::Operator::new(child));
+                    state.slimes.push(Operator::new(child));
                 }
                 Err(reason) => {
                     eprintln!("Splice failed: {reason}");
@@ -345,7 +344,7 @@ async fn main() {
                     println!("  - {} ({:?} / {:?})", g.name, g.dominant_culture(), g.genetic_tier());
                 }
                 state.world_map.startled_level += 0.10 * ready.len() as f32; // ADR-015: Hoot & Holler resonance
-                state.slimes.extend(ready.into_iter().map(operator::models::Operator::new));
+                state.slimes.extend(ready.into_iter().map(Operator::new));
             }
         }
 
@@ -440,7 +439,7 @@ async fn main() {
                 } else {
                     for &idx in &completed {
                         let exp = &state.active_expeditions[idx];
-                        let squad: Vec<&operator::models::Operator> = state.slimes.iter()
+                        let squad: Vec<&Operator> = state.slimes.iter()
                             .filter(|s| exp.slime_ids.contains(&s.id()))
                             .collect();
                         let outcome = exp.resolve(&squad, &mut rng);
@@ -518,5 +517,3 @@ async fn main() {
         eprintln!("WARNING: Could not save state: {e}");
     }
 }
-
-
