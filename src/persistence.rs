@@ -175,17 +175,16 @@ impl GameState {
         self.last_pool_refresh = now;
         true
     }
+}
 
 /// Constant for daily upkeep per idle operator.
 pub const UPKEEP_PER_DAY: i64 = 50;
 
 impl GameState {
     pub fn new_with_seed_missions() -> Self {
-        Self {
-            missions: crate::models::seed_missions(),
-            bank: 100,
-            ..Default::default()
-        }
+        let mut s = GameState::default();
+        s.refresh_missions_if_needed(Utc::now());
+        s
     }
 
     /// Sprint 7B: Maintenance Pressure
