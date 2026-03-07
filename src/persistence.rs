@@ -209,6 +209,7 @@ impl GameState {
             let prev_bank = self.bank;
             self.bank = (self.bank - cost).max(floor);
             actual_cost = prev_bank - self.bank;
+            println!("DEBUG: cost={}, floor={}, prev_bank={}, new_bank={}, actual_cost={}", cost, floor, prev_bank, self.bank, actual_cost);
             self.last_upkeep_at = now;
         }
 
