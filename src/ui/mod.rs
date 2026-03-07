@@ -244,14 +244,6 @@ impl OperatorApp {
 
                 self.status_msg = format!("✅ '{}' — VICTORY (+${}).{}", mission.name, reward, debt_warning);
                 
-                // Track "Merc War" stability metric from the ADR-014 blueprint: 
-                // Missions with high success rate stabilize more than low ones.
-                self.state.world_map.tick_stability(if success_rate > 0.8 { 
-                    0.05 // high stability 
-                } else { 
-                    0.02 // low stability 
-                });
-
                 // Play Tide Bowl (Plate Resonance) based on total Mind of squad
                 let avg_mnd: f32 = squad.iter().map(|s| s.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
                 let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
