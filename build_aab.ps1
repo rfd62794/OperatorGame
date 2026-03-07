@@ -1,0 +1,101 @@
+<#
+.SYNOPSIS
+Builds, packages, aligns, and signs the Android App Bundle (AAB) for Play Store.
+
+.EXAMPLE
+.\build_aab.ps1 -GenerateKeys
+.\build_aab.ps1
+#>
+
+param (
+    [switch]$GenerateKeys
+)
+
+$ErrorActionPreference = "Stop"
+
+$Keystore = "operatorgame-release.jks"
+$Alias = "operatorgame"
+$ApkUnsigned = "target/release/apk/operator.apk"
+
+if ($GenerateKeys) {
+    Write-Host "Generating release keystore..." -ForegroundColor Cyan
+    keytool -genkey -v `
+        -keystore $Keystore `
+        -alias $Alias `
+        -keyalg RSA -keysize 2048 `
+        -validity 10000
+    
+    Write-Host "⚠️ IMPORTANT: Backup $Keystore securely in 2+ locations! ⚠️" -ForegroundColor Yellow
+    exit 0
+}
+
+if (-not (Test-Path $Keystore)) {
+    Write-Host "Error: Keystore not found at $Keystore" -ForegroundColor Red
+    Write-Host "Run '.\build_aab.ps1 -GenerateKeys' first to create one." -ForegroundColor Yellow
+    exit 1
+}
+
+# 1. Download bundletool if needed
+$BundleTool = "bundletool.jar"
+if (-not (Test-Path $BundleTool)) {
+    Write-Host "⬇️ Downloading bundletool.jar..." -ForegroundColor Cyan
+    Invoke-WebRequest -Uri "https://github.com/google/bundletool/releases/download/1.17.1/bundletool-all-1.17.1.jar" -OutFile $BundleTool
+}
+
+# 2. Locate Android SDK tools
+$AndroidHome = $env:LOCALAPPDATA + "\Android\Sdk"
+if (-not (Test-Path $AndroidHome)) {
+    Write-Host "Could not find Android SDK at $AndroidHome." -ForegroundColor Red
+    exit 1
+}
+
+$BuildToolsDir = Get-ChildItem -Path "$AndroidHome\build-tools" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+$Aapt2 = "$($BuildToolsDir.FullName)\aapt2.exe"
+
+# 3. Build APK
+Write-Host "📦 Building Rust payload with cargo apk..." -ForegroundColor Cyan
+cargo apk build --release
+
+if (-not (Test-Path $ApkUnsigned)) {
+    Write-Host "Error: Could not find output APK at $ApkUnsigned." -ForegroundColor Red
+    exit 1
+}
+
+# 4. Convert APK to Protobuf format
+$ProtoApk = "target\proto.apk"
+$BaseZip = "target\base.zip"
+$AabBase = "target\aab_base"
+
+Write-Host "🔄 Converting APK resources to protobuf format..." -ForegroundColor Cyan
+& $Aapt2 convert --output-format proto -o $ProtoApk $ApkUnsigned
+
+# 5. Extract and format as base.zip module
+Write-Host "📂 Assembling AAB module structure..." -ForegroundColor Cyan
+if (Test-Path $AabBase) { Remove-Item -Recurse -Force $AabBase }
+if (Test-Path $BaseZip) { Remove-Item -Force $BaseZip }
+
+Expand-Archive -Path $ProtoApk -DestinationPath $AabBase -Force
+New-Item -ItemType Directory -Path "$AabBase\manifest" | Out-Null
+Move-Item -Path "$AabBase\AndroidManifest.xml" -Destination "$AabBase\manifest\AndroidManifest.xml" -Force
+
+if (Test-Path "$AabBase\META-INF") { Remove-Item -Recurse -Force "$AabBase\META-INF" }
+
+Compress-Archive -Path "$AabBase\*" -DestinationPath $BaseZip -Force
+
+# 6. Build final AAB
+$AabFinal = "operatorgame-release.aab"
+if (Test-Path $AabFinal) { Remove-Item -Force $AabFinal }
+
+Write-Host "🧱 Building Android App Bundle ($AabFinal)..." -ForegroundColor Cyan
+java -jar $BundleTool build-bundle --modules=$BaseZip --output=$AabFinal
+
+# 7. Sign AAB
+Write-Host "✍️ Signing AAB with jarsigner..." -ForegroundColor Cyan
+jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore $Keystore $AabFinal $Alias
+
+# Cleanup
+Remove-Item $ProtoApk -ErrorAction SilentlyContinue
+Remove-Item $BaseZip -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force $AabBase -ErrorAction SilentlyContinue
+
+Write-Host "✅ Success! Signed App Bundle ready for Play Store: $AabFinal" -ForegroundColor Green
