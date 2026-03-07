@@ -406,29 +406,33 @@ mod tests {
     fn agent_spawns_within_rect() {
         let mut r = rng();
         let g    = generate_random(Culture::Ember, "Test", &mut r);
+        let op   = crate::models::Operator::new(g);
         let rect = test_rect();
-        let agent = GardenAgent::new(&g, rect.center(), 1, false);
+        let agent = GardenAgent::new(&op, rect.center());
         assert!(rect.contains(agent.pos));
     }
 
     #[test]
     fn mood_sleepy_when_low_energy() {
         let g = test_genome_with_personality(0.1, 0.3, 0.3, 0.3);
-        let a = GardenAgent::new(&g, test_rect().center(), 1, false);
+        let op = crate::models::Operator::new(g);
+        let a = GardenAgent::new(&op, test_rect().center());
         assert_eq!(a.mood, SlimeMood::Sleepy, "energy=0.1 should be Sleepy");
     }
 
     #[test]
     fn mood_shy_when_high_shyness() {
         let g = test_genome_with_personality(0.5, 0.9, 0.3, 0.3);
-        let a = GardenAgent::new(&g, test_rect().center(), 1, false);
+        let op = crate::models::Operator::new(g);
+        let a = GardenAgent::new(&op, test_rect().center());
         assert_eq!(a.mood, SlimeMood::Shy, "shyness=0.9 should be Shy");
     }
 
     #[test]
     fn mood_playful_when_high_affection() {
         let g = test_genome_with_personality(0.5, 0.3, 0.9, 0.3);
-        let a = GardenAgent::new(&g, test_rect().center(), 1, false);
+        let op = crate::models::Operator::new(g);
+        let a = GardenAgent::new(&op, test_rect().center());
         assert_eq!(a.mood, SlimeMood::Playful, "affection=0.9 should be Playful");
     }
 
@@ -436,8 +440,9 @@ mod tests {
     fn tick_keeps_agent_in_bounds() {
         let mut r = rng();
         let g    = generate_random(Culture::Gale, "SpeedTest", &mut r);
+        let op   = crate::models::Operator::new(g);
         let rect = test_rect();
-        let mut garden = Garden::from_genomes(&[g], rect);
+        let mut garden = Garden::from_operators(&[op], rect);
         for _ in 0..120 { garden.tick(0.016, None, rect); }
         assert!(rect.contains(garden.agents[0].pos),
             "Agent escaped bounds: {:?}", garden.agents[0].pos);
@@ -446,11 +451,11 @@ mod tests {
     #[test]
     fn garden_from_genomes_populates_all() {
         let mut r  = rng();
-        let gs: Vec<SlimeGenome> = (0..6).map(|i| {
-            generate_random(Culture::Crystal, &format!("Slime{i}"), &mut r)
+        let gs: Vec<crate::models::Operator> = (0..6).map(|i| {
+            crate::models::Operator::new(generate_random(Culture::Crystal, &format!("Slime{i}"), &mut r))
         }).collect();
         let rect = test_rect();
-        let g = Garden::from_genomes(&gs, rect);
+        let g = Garden::from_operators(&gs, rect);
         assert_eq!(g.agents.len(), 6);
         for a in &g.agents { assert!(rect.contains(a.pos)); }
     }
@@ -459,8 +464,9 @@ mod tests {
     fn click_hit_selects_agent() {
         let mut r = rng();
         let g = generate_random(Culture::Ember, "Clicky", &mut r);
+        let op = crate::models::Operator::new(g);
         let rect = test_rect();
-        let mut garden = Garden::from_genomes(&[g], rect);
+        let mut garden = Garden::from_operators(&[op], rect);
         let pos = garden.agents[0].pos;
         let hit = garden.handle_click(pos);
         assert!(hit.is_some(), "Click on slime centre should select it");
@@ -471,8 +477,9 @@ mod tests {
     fn click_miss_deselects() {
         let mut r = rng();
         let g = generate_random(Culture::Ember, "Miss", &mut r);
+        let op = crate::models::Operator::new(g);
         let rect = test_rect();
-        let mut garden = Garden::from_genomes(&[g], rect);
+        let mut garden = Garden::from_operators(&[op], rect);
         garden.selected = Some(garden.agents[0].genome_id);
         // Click far corner — should miss
         let hit = garden.handle_click(Pos2::new(395.0, 295.0));
