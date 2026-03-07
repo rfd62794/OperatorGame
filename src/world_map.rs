@@ -783,7 +783,7 @@ mod tests {
     fn rng() -> SmallRng { SmallRng::seed_from_u64(55) }
 
     #[test]
-    fn map_has_15_nodes() {
+    fn map_has_19_nodes() {
         let map = WorldMap::generate(&mut rng());
         assert_eq!(map.nodes.len(), 19);
     }

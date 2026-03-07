@@ -473,4 +473,116 @@ mod tests {
         };
         assert_eq!(rolls.len(), 3, "resolve() must produce exactly 3 D20 rolls (STR/AGI/INT)");
     }
+
+    // ------------------------------------------------------------------
+    // Expedition tests (Phase D, Sprint 3)
+    // ------------------------------------------------------------------
+
+    fn marsh_target() -> crate::world_map::ExpeditionTarget {
+        crate::world_map::seed_expedition_targets()
+            .into_iter()
+            .find(|t| t.name == "Marsh Delta")
+            .expect("Marsh Delta must be in seed targets")
+    }
+
+    #[test]
+    fn test_expedition_launch_sets_returns_at() {
+        let target = marsh_target(); // distance_secs = 90, round-trip = 180
+        let exp    = Expedition::launch(vec![], target);
+        let elapsed = (exp.returns_at - exp.departed_at).num_seconds();
+        assert_eq!(elapsed, 180, "returns_at must be exactly 2×distance_secs from departed_at");
+    }
+
+    #[test]
+    fn test_expedition_complete_future() {
+        let target = marsh_target();
+        let exp    = Expedition::launch(vec![], target);
+        assert!(!exp.is_complete(), "Freshly launched expedition should not be complete");
+    }
+
+    #[test]
+    fn test_expedition_complete_past() {
+        let target = marsh_target();
+        let mut exp = Expedition::launch(vec![], target);
+        // Backdate so it's already due
+        exp.returns_at = Utc::now() - Duration::seconds(1);
+        assert!(exp.is_complete(), "Expedition past returns_at should be complete");
+    }
+
+    #[test]
+    fn test_expedition_resolve_success_yields_resources() {
+        use crate::genetics::{generate_random, Culture};
+        let mut rng   = SmallRng::seed_from_u64(42);
+        let slime     = generate_random(Culture::Marsh, "Boggy", &mut rng);
+        let target    = marsh_target();
+        let exp       = Expedition::launch(vec![slime.id], target.clone());
+        let mut found_yield = false;
+        // Run several seeds to guarantee a Success or BonusHaul path is reachable
+        for seed in 0u64..20 {
+            let mut rng2 = SmallRng::seed_from_u64(seed);
+            let outcome  = exp.resolve(&[&slime], &mut rng2);
+            match outcome {
+                ExpeditionOutcome::Success    { yield_, .. } |
+                ExpeditionOutcome::BonusHaul  { yield_: _, .. } => {
+                    let _ = yield_; // success path reached
+                    found_yield = true;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        assert!(found_yield, "resolve() should produce a Success/BonusHaul on at least one seed");
+    }
+
+    #[test]
+    fn test_expedition_resolve_crit_injures_slime() {
+        use crate::genetics::{generate_random, Culture};
+        let mut rng  = SmallRng::seed_from_u64(1);
+        let slime    = generate_random(Culture::Tundra, "IceBoy", &mut rng);
+        // Use a very high danger target to maximise crit-fail probability
+        let target   = crate::world_map::ExpeditionTarget {
+            id:             uuid::Uuid::from_u128(0xFF),
+            name:           "Death Zone".into(),
+            culture:        Culture::Tundra,
+            distance_secs:  60,
+            danger_level:   1.0, // guaranteed nat-1 fails at DC Moderate+
+            resource_yield: crate::world_map::ResourceYield { biomass: 0, scrap: 0, reagents: 0 },
+        };
+        let exp = Expedition::launch(vec![slime.id], target);
+        let mut found_injury = false;
+        for seed in 0u64..50 {
+            let mut rng2 = SmallRng::seed_from_u64(seed);
+            let outcome  = exp.resolve(&[&slime], &mut rng2);
+            if let ExpeditionOutcome::SlimeInjured { slime_id, .. } = outcome {
+                assert_eq!(slime_id, slime.id, "Injured slime ID must match dispatched slime");
+                found_injury = true;
+                break;
+            }
+        }
+        assert!(found_injury, "SlimeInjured must be reachable on a danger_level=1.0 target");
+    }
+
+    #[test]
+    fn test_resource_yield_scaled_halved() {
+        let base = crate::world_map::ResourceYield { biomass: 20, scrap: 10, reagents: 4 };
+        let half = base.scaled(0.5);
+        assert_eq!(half.biomass,  10, "biomass should halve");
+        assert_eq!(half.scrap,     5, "scrap should halve");
+        assert_eq!(half.reagents,  2, "reagents should halve");
+    }
+
+    #[test]
+    fn test_cargo_apply_increments_inventory() {
+        let yield_ = crate::world_map::ResourceYield { biomass: 10, scrap: 5, reagents: 3 };
+        let mut inv = crate::inventory::Inventory::default();
+        yield_.apply_to_inventory(&mut inv);
+        assert_eq!(inv.biomass,   10);
+        assert_eq!(inv.scrap,      5);
+        assert_eq!(inv.reagents,   3);
+        // Apply again — verify accumulation
+        yield_.apply_to_inventory(&mut inv);
+        assert_eq!(inv.biomass,   20);
+        assert_eq!(inv.scrap,     10);
+        assert_eq!(inv.reagents,   6);
+    }
 }
