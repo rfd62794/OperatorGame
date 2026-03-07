@@ -218,6 +218,7 @@ impl std::fmt::Display for SlimeState {
                 let remaining = (*until - Utc::now()).num_seconds().max(0);
                 write!(f, "Injured (recovers in {}s)", remaining)
             }
+            SlimeState::Training(_) => write!(f, "Training"),
         }
     }
 }
@@ -555,7 +556,7 @@ impl Deployment {
             }
             
             let leveled = op.award_xp(op_xp);
-            results.push((op.id, op_xp, leveled));
+            results.push((op.id(), op_xp, leveled));
         }
         results
     }

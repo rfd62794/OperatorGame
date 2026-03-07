@@ -858,8 +858,6 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
         base_spd:     params.base_spd() * rng.gen_range(0.85..=1.15),
         generation:   1,
         parent_ids:   None,
-        level:        0,
-        xp:           0,
         curiosity:    rng.gen(),
         energy:       rng.gen(),
         affection:    rng.gen(),
@@ -872,15 +870,12 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
         pattern_color: [rng.gen_range(50..=255), rng.gen_range(50..=255), rng.gen_range(50..=255)],
         frequency:     culture.frequency(),
         name:          name.to_string(),
-        synthesis_cooldown_until: None,
         base_strength: rng.gen_range(5..=8),
         base_agility:  rng.gen_range(5..=8),
         base_intelligence: rng.gen_range(5..=8),
         base_mind: rng.gen_range(5..=8),
         base_sensory: rng.gen_range(5..=8),
         base_tenacity: rng.gen_range(5..=8),
-        equipped_gear: Vec::new(),
-        state: crate::models::SlimeState::Idle,
     }
 }
 
