@@ -1078,7 +1078,8 @@ mod tests {
     #[test]
     fn test_is_available_cooldown() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mut op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let mut op = Operator::new(genome);
         
         op.state = SlimeState::Idle;
         assert!(op.is_available());

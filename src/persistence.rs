@@ -367,7 +367,7 @@ mod tests {
         
         let mut rng = rand::thread_rng();
         let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "T", &mut rng);
-        state.slimes.push(genome); // 1 idle operator -> $50 upkeep
+        state.slimes.push(crate::models::Operator::new(genome)); // 1 idle operator -> $50 upkeep
         
         // We only care about cost and total_ops
         let (cost, idle_count) = state.apply_daily_upkeep(Utc::now());
