@@ -522,9 +522,8 @@ mod tests {
             let mut rng2 = SmallRng::seed_from_u64(seed);
             let outcome  = exp.resolve(&[&slime], &mut rng2);
             match outcome {
-                ExpeditionOutcome::Success    { yield_, .. } |
-                ExpeditionOutcome::BonusHaul  { yield_: _, .. } => {
-                    let _ = yield_; // success path reached
+                ExpeditionOutcome::Success    { .. } |
+                ExpeditionOutcome::BonusHaul  { .. } => {
                     found_yield = true;
                     break;
                 }
