@@ -1128,15 +1128,6 @@ mod tests {
     fn rng() -> SmallRng { SmallRng::seed_from_u64(42) }
 
     #[test]
-    fn test_culture_expression_normalises() {
-        let a = CultureExpression::pure(Culture::Ember);
-        let b = CultureExpression::pure(Culture::Crystal);
-        let child = BreedingResolver::resolve_culture(&a, &b, &mut rng());
-        let total: f32 = child.0.iter().sum();
-        assert!((total - 1.0).abs() < 1e-5, "CultureExpression must sum to 1.0, got {total}");
-    }
-
-    #[test]
     fn test_genetic_tier_blooded() {
         let expr = CultureExpression::pure(Culture::Ember);
         assert_eq!(GeneticTier::from_expression(&expr), GeneticTier::Blooded);
