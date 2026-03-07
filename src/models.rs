@@ -600,7 +600,7 @@ pub fn apply_outcome_injuries(
 
             for id in pool.into_iter().take(count) {
                 if will_be_available > 1 {
-                    if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
+                    if let Some(op) = roster.iter_mut().find(|s| s.genome.id == id) {
                         op.state = SlimeState::Injured(until);
                         injured.push((id, until));
                         will_be_available -= 1;
@@ -616,7 +616,7 @@ pub fn apply_outcome_injuries(
                 let until = Utc::now() + Duration::hours(hours);
 
                 if will_be_available > 1 {
-                    if let Some(op) = roster.iter_mut().find(|s| s.id == id) {
+                    if let Some(op) = roster.iter_mut().find(|s| s.genome.id == id) {
                         op.state = SlimeState::Injured(until);
                         injured.push((id, until));
                         will_be_available -= 1;

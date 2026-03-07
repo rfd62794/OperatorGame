@@ -384,6 +384,19 @@ pub enum LifeStage {
     Elder,     // level 10
 }
 
+impl std::fmt::Display for LifeStage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LifeStage::Hatchling => write!(f, "Hatchling"),
+            LifeStage::Juvenile  => write!(f, "Juvenile"),
+            LifeStage::Young     => write!(f, "Young"),
+            LifeStage::Prime     => write!(f, "Prime"),
+            LifeStage::Veteran   => write!(f, "Veteran"),
+            LifeStage::Elder     => write!(f, "Elder"),
+        }
+    }
+}
+
 impl LifeStage {
     pub fn from_level(level: u8) -> Self {
         match level {
