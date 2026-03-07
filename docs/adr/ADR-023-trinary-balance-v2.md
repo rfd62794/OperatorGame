@@ -236,16 +236,25 @@ Do NOT implement the restrictive "only shorter arc" variant without a design rev
 See the corrected opposite table above. Key: every culture has exactly **two** near-opposites
 on the 9-point wheel (none has a single exact one).
 
+> [!NOTE]
+> **Why odd-n polygons have no single true opposite:** On any odd-count polygon, `n/2` is not
+> an integer, so the across-centre position always falls between two adjacent vertices. Even-polygon
+> assumptions ("each vertex has exactly one opposite") produce bugs on odd wheels. This note
+> is kept explicit here so future implementers don't inadvertently revert to even-polygon logic.
+
 ```rust
-// Sprint 4 implementation contract for is_opposite()
-// Returns true if `other` is at position (self_pos + 4) mod 9 OR (self_pos + 5) mod 9
-pub fn is_near_opposite(self, other: Culture) -> bool {
-    // Use Culture::WHEEL index positions 0-8 after 9-culture expansion
-    // Both near-opposite slots trigger GeneticTier::Sundered
-    let Some(a) = self.wheel_index()  else { return false }; // Void → never opposite
-    let Some(b) = other.wheel_index() else { return false };
-    b == (a + 4) % 9 || b == (a + 5) % 9
+// Sprint 4 implementation contract for is_near_opposite()
+// Arc-symmetric: measures the shortest arc distance on the 9-point wheel.
+// Both arc distances 4 and 5 are Sundered-qualifying (no special-casing needed).
+pub fn is_near_opposite(a: Culture, b: Culture, wheel: &[Culture; 9]) -> bool {
+    let pos_a = wheel.iter().position(|&c| c == a).unwrap();
+    let pos_b = wheel.iter().position(|&c| c == b).unwrap();
+    let dist     = (pos_a as i32 - pos_b as i32).unsigned_abs() as usize;
+    let min_dist = dist.min(9 - dist);   // shorter arc
+    min_dist == 4 || min_dist == 5       // both arcs fire Sundered
 }
+// Coverage: 9 pairs × 2 directions = 18 ordered pairs trigger Sundered.
+// No special-casing. No asymmetry. Arc distance is commutative.
 ```
 
 ---
@@ -255,19 +264,40 @@ pub fn is_near_opposite(self, other: Culture) -> bool {
 ```
 [ ] src/genetics.rs
     - Add Orange, Teal, Frost to Culture enum
-    - Update WHEEL: [Culture; 9]  (3 new entries)
+    - Update WHEEL: [Culture; 9]  (3 new entries, exact order: Ember=0, Tide=1, Orange=2,
+      Marsh=3, Teal=4, Crystal=5, Gale=6, Tundra=7, Frost=8)
     - Update CultureExpression: [f32; 9]
     - Update all match arms (+3 arms throughout file)
-    - Update is_adjacent() for 9-point nonagon
-    - Update is_opposite() for new opposite pairs
-    - Update frequency() for 3 new cultures
+    - Replace is_adjacent() with 9-point nonagon adjacency (each culture touches pos±1)
+    - Replace is_opposite() with is_near_opposite() using min_dist arc formula above
+    - Update frequency() for 3 new cultures (Orange=336Hz, Teal=407Hz, Frost=480Hz)
     - Update params() for 3 new cultures
     - Update name() for 3 new cultures
     - BreedingResolver::resolve_culture() loop: 6 → 9
+    - GeneticTier::from_expression(): update Sundered arm to call is_near_opposite()
+
+[ ] TRINITY BONUS SCOPE — LOCKED DECISION:
+    ADR-022 Trinity bonus was written for 6-culture squads (any 1 primary + 1 secondary +
+    1 tertiary). With 9 cultures and 3 loop-completing triads, two options exist:
+
+    Option A — INNER LOOP ONLY: Trinity fires only when squad contains
+      Ember + Marsh + Crystal (the three inner-loop primaries).
+      More exclusive, meaningful as a skill-expression mechanic.
+
+    Option B — ANY COMPLETE LOOP: Trinity fires when squad completes any
+      of the three loops (Inner, Middle, or Outer triad).
+      More accessible, rewards diverse squad building.
+
+    **Sprint 4 decision: OPTION B (any complete loop).** Reasoning: restricting
+    Trinity to the inner loop alone makes it effectively a high-tier gate (all three
+    cultures must be Inner primaries). Option B rewards the full ecosystem of loop
+    strategies and keeps Trinity achievable at any tier level. Three distinct Trinity
+    bonus thresholds may be added in Sprint 5 (inner > middle > outer strength).
 
 [ ] src/combat.rs
     - Implement get_rps_modifier(attacker, defender) -> f32
-    - Use 27-entry advantage lookup from this ADR
+    - Implement has_trinity_bonus(squad) using Option B (any complete loop)
+    - Apply apply_trinity_bonus() as +2 flat modifier to all D20 rolls for that squad
     - Update culture_zone_mode() for 9-culture adjacency
 
 [ ] src/world_map.rs
@@ -278,9 +308,11 @@ pub fn is_near_opposite(self, other: Culture) -> bool {
     - Expedition::resolve(): wire culture_zone_mode() (see TODO Sprint 4 comment)
 
 [ ] Tests
-    - Update test_culture_expression_normalises (array size)
-    - Update test_genetic_tier_* (new thresholds)
-    - Add get_rps_modifier tests (6 cases minimum)
+    - Update test_culture_expression_normalises (array size 6→9)
+    - Update test_genetic_tier_* (new thresholds and Sundered using min_dist)
+    - Add get_rps_modifier tests (6 cases minimum, one per relationship class)
+    - Add is_near_opposite tests (verify symmetry, all 9 Sundered pairs)
+    - Add has_trinity_bonus tests (Inner loop, Middle loop, Outer loop)
 ```
 
 ---
