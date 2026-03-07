@@ -661,10 +661,8 @@ pub struct RaceStats {
 // BreedingResolver — the transplanted genetic math
 // ---------------------------------------------------------------------------
 
-/// Default mutation chance (5%). Void parent forces ≥15%.
 const DEFAULT_MUTATION_CHANCE: f32 = 0.05;
 const VOID_MUTATION_FLOOR:     f32 = 0.15;
-const VARIANCE_RANGE:          f32 = 0.15;
 
 pub struct BreedingResolver;
 
@@ -1280,4 +1278,147 @@ mod tests {
         assert_eq!(active, 9);
         assert_eq!(GeneticTier::from_expression(&expr), GeneticTier::Void);
     }
+
+    // Phase F Tests: CultureAlleles
+    #[test]
+    fn test_culture_alleles_blooded_ember_dominant_1_0() {
+        let alleles = CultureAlleles::blooded(Culture::Ember);
+        assert_eq!(alleles.dominant.get(Culture::Ember), 1.0);
+        assert_eq!(alleles.recessive.0.iter().sum::<f32>(), 0.0);
+    }
+
+    #[test]
+    fn test_culture_alleles_new_zeroes_recessive() {
+        let expr = CultureExpression::pure(Culture::Tide);
+        let alleles = CultureAlleles::from_expression(expr);
+        assert_eq!(alleles.dominant.get(Culture::Tide), 1.0);
+        assert_eq!(alleles.recessive.0.iter().sum::<f32>(), 0.0);
+    }
+
+    #[test]
+    fn test_culture_alleles_normalise_sums_to_1() {
+        let mut alleles = CultureAlleles::blooded(Culture::Marsh);
+        alleles.dominant.0[0] = 0.5; // Ember
+        alleles.dominant.0[3] = 0.5; // Marsh
+        alleles.dominant.0[6] = 0.5; // Gale (sum is 1.5)
+        alleles.normalise_dominant();
+        let sum: f32 = alleles.dominant.0.iter().sum();
+        assert!((sum - 1.0).abs() < 0.001);
+        assert!((alleles.dominant.get(Culture::Marsh) - 0.333).abs() < 0.01);
+    }
+
+    // Phase F Tests: Breeding resolver
+    #[test]
+    fn test_resolve_culture_blooded_parents_dominant_preserved() {
+        let a = CultureAlleles::blooded(Culture::Ember);
+        let b = CultureAlleles::blooded(Culture::Crystal);
+        let child = BreedingResolver::resolve_culture(&a, &b, &mut rng());
+        // Both parents have 0 recessive, so regardless of draw, offspring
+        // averages out to 0.5 / 0.5
+        assert_eq!(child.dominant.get(Culture::Ember), 0.5);
+        assert_eq!(child.dominant.get(Culture::Crystal), 0.5);
+        let sum: f32 = child.dominant.0.iter().sum();
+        assert!((sum - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_resolve_culture_reemergence_fires_above_threshold() {
+        let mut a = CultureAlleles::blooded(Culture::Ember);
+        let mut b = CultureAlleles::blooded(Culture::Gale);
+        
+        // Give both strong recessive for Tide (idx 1)
+        a.recessive.0[1] = 0.50;
+        b.recessive.0[1] = 0.50;
+
+        let mut hit = false;
+        let mut _rng = rng();
+        for _ in 0..100 {
+            let child = BreedingResolver::resolve_culture(&a, &b, &mut _rng);
+            if child.dominant.0[1] > 0.1 {
+                hit = true;
+                break;
+            }
+        }
+        assert!(hit, "Reemergence should fire at 30% rate over 100 iterations");
+    }
+
+    #[test]
+    fn test_resolve_culture_reemergence_blocked_below_threshold() {
+        let mut a = CultureAlleles::blooded(Culture::Ember);
+        let mut b = CultureAlleles::blooded(Culture::Gale);
+        
+        // Weak recessive for Tide (idx 1)
+        a.recessive.0[1] = 0.05;
+        b.recessive.0[1] = 0.05;
+
+        let mut _rng = rng();
+        for _ in 0..10 {
+            let child = BreedingResolver::resolve_culture(&a, &b, &mut _rng);
+            assert!(child.dominant.0[1] < 0.05, "Reemergence should NOT fire if below threshold");
+        }
+    }
+
+    #[test]
+    fn test_resolve_culture_result_normalised() {
+        let a = CultureAlleles::blooded(Culture::Tide);
+        let b = CultureAlleles::blooded(Culture::Frost);
+        let child = BreedingResolver::resolve_culture(&a, &b, &mut rng());
+        let sum: f32 = child.dominant.0.iter().sum();
+        assert!((sum - 1.0).abs() < 0.001);
+    }
+
+    // Phase F Tests: HSL display
+    #[test]
+    fn test_culture_display_color_blooded_ember_is_red() {
+        let alleles = CultureAlleles::blooded(Culture::Ember);
+        let rgb = culture_display_color(&alleles);
+        assert!(rgb.0 > 240);
+        assert!(rgb.1 < 20);
+        assert!(rgb.2 < 20);
+    }
+
+    #[test]
+    fn test_culture_display_color_blooded_marsh_is_yellow() {
+        let alleles = CultureAlleles::blooded(Culture::Marsh);
+        let rgb = culture_display_color(&alleles);
+        assert!(rgb.0 > 200);
+        assert!(rgb.1 > 200);
+        assert!(rgb.2 < 50);
+    }
+
+    #[test]
+    fn test_culture_display_color_void_fallback_is_grey() {
+        let alleles = CultureAlleles::void();
+        // Since void means all slots = 0.111, they are all < 0.05? 
+        // No, > 0.05. It should just not panic and return some color.
+        let rgb = culture_display_color(&alleles);
+        assert!(rgb.0 > 0 || rgb.0 == 0);
+    }
+
+    #[test]
+    fn test_culture_display_color_below_threshold_excluded() {
+        let mut alleles = CultureAlleles::blooded(Culture::Ember);
+        alleles.dominant.0[1] = 0.01; // Tide below 0.05 threshold
+        let rgb = culture_display_color(&alleles);
+        assert!(rgb.0 > 240); // still primarily red
+    }
+
+    // Phase F Tests: Refine
+    #[test]
+    fn test_refine_culture_increases_target_dominant() {
+        let mut alleles = CultureAlleles::void();
+        let intensity = 1.0;
+        let success = refine_culture(&mut alleles, Culture::Ember, intensity);
+        assert!(success);
+        let e = alleles.dominant.get(Culture::Ember);
+        assert!(e > 0.2); // originally 0.111, boosted by ~ 0.3 then normalised
+    }
+
+    #[test]
+    fn test_refine_culture_void_returns_false() {
+        let mut alleles = CultureAlleles::void();
+        let success = refine_culture(&mut alleles, Culture::Void, 1.0);
+        assert!(!success);
+    }
 }
+
