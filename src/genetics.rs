@@ -1035,6 +1035,22 @@ pub const CULTURE_SATURATIONS: [f32; 9] = [
 /// Saturation scaling: `base_sat × (0.4 + 0.6 × max_weight)`
 /// - max_weight = 1.0 (Blooded): full saturation — unmistakable hue.
 /// - max_weight ≈ 0.11 (all 9 equal): heavily muted — readable blend.
+/// Standalone color lookup for a specific culture (Sprint 8).
+pub fn culture_display_color_standalone(c: Culture) -> (u8, u8, u8) {
+    match c {
+        Culture::Ember   => (220, 80, 80),   // RED
+        Culture::Tide    => (240, 140, 60),  // ORANGE
+        Culture::Orange  => (255, 191, 0),   // AMBER
+        Culture::Marsh   => (240, 220, 80),  // YELLOW
+        Culture::Teal    => (0, 128, 128),   // TEAL
+        Culture::Crystal => (100, 150, 240), // BLUE
+        Culture::Gale    => (120, 200, 100), // GREEN
+        Culture::Tundra  => (155, 89, 182),  // VIOLET
+        Culture::Frost   => (173, 216, 230), // ICE BLUE
+        Culture::Void    => (255, 255, 255), // WHITE
+    }
+}
+
 pub fn culture_display_color(alleles: &CultureAlleles) -> (u8, u8, u8) {
     // Sprint 6: Void Slime Prismatic Shift
     // If the dominant array indicates a Tier 8/9 (Void), bypass muddy grey for Prismatic White.

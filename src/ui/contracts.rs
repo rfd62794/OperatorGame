@@ -32,6 +32,10 @@ impl OperatorApp {
                     ui.label(egui::RichText::new(&mission.name).strong());
 
                     ui.horizontal(|ui| {
+                        if let Some(aff) = mission.affinity {
+                            let (r, g, b) = crate::genetics::culture_display_color_standalone(aff);
+                            ui.colored_label(egui::Color32::from_rgb(r, g, b), format!("[{aff:?}]"));
+                        }
                         ui.small(format!("STR:{}", mission.req_strength));
                         ui.small(format!("AGI:{}", mission.req_agility));
                         ui.small(format!("INT:{}", mission.req_intelligence));
@@ -49,6 +53,16 @@ impl OperatorApp {
                             diff_color,
                             format!("Diff: {:.0}%", mission.difficulty * 100.0),
                         );
+
+                        // Show affinity bonus if applicable
+                        let staged_ops: Vec<&crate::genetics::SlimeGenome> = self.state.slimes.iter()
+                            .filter(|s| self.staged_operators.contains(&s.id))
+                            .collect();
+                        let bonus = mission.get_affinity_bonus(&staged_ops);
+                        if bonus < 0.0 {
+                            ui.colored_label(egui::Color32::GREEN, "(-15% SYNERGY)");
+                        }
+
                         ui.small(format!("| {}s | ${}", mission.duration_secs, mission.reward));
                     });
 

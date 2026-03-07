@@ -242,6 +242,26 @@ impl OperatorApp {
 
         self.state.deployments[dep_idx].resolved = true;
 
+        // Sprint 8: Award XP to the squad
+        {
+            let mut mut_squad: Vec<&mut crate::genetics::SlimeGenome> = self
+                .state
+                .slimes
+                .iter_mut()
+                .filter(|o| dep.operator_ids.contains(&o.id))
+                .collect();
+                
+            let xp_results = dep.award_squad_xp(&mission, &mut mut_squad, &outcome);
+            for (id, _xp, leveled) in xp_results {
+                if leveled {
+                    if let Some(op) = self.state.slimes.iter().find(|s| s.id == id) {
+                        let msg = format!(">> EXCELLENCE RECOGNIZED: {} has reached Level {}!", op.name, op.level);
+                        self.combat_log.insert(0, msg);
+                    }
+                }
+            }
+        }
+
         // Phase A: Apply injuries (probabilistic)
         // This requires &mut self.state.slimes
         let newly_injured = crate::models::apply_outcome_injuries(
@@ -369,6 +389,13 @@ impl eframe::App for OperatorApp {
         let (deducted, idle_count) = self.state.apply_daily_upkeep(Utc::now());
         if deducted > 0 {
             let msg = format!("Deducted ${} in maintenance costs for {} idle operator(s).", deducted, idle_count);
+            self.combat_log.insert(0, msg);
+            self.persist();
+        }
+
+        // Sprint 8: Refresh mission pool
+        if self.state.refresh_missions_if_needed(Utc::now()) {
+            let msg = format!("MISSION POOL REFRESHED: New contracts available for {} UTC.", Utc::now().date_naive());
             self.combat_log.insert(0, msg);
             self.persist();
         }

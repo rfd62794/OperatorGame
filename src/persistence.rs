@@ -145,7 +145,6 @@ impl Default for GameState {
             last_pool_refresh: Utc::now(),
             inventory: Inventory::default(),
             active_expeditions: Vec::new(),
-            mission_pool: Vec::new(),
         }
     }
 }
@@ -155,22 +154,23 @@ impl GameState {
     pub fn refresh_missions_if_needed(&mut self, now: DateTime<Utc>) -> bool {
         let is_same_day = self.last_pool_refresh.date_naive() == now.date_naive();
         
-        if is_same_day && !self.mission_pool.is_empty() {
+        if is_same_day && !self.missions.is_empty() {
             return false;
         }
 
         use rand::SeedableRng;
         use rand::rngs::SmallRng;
+        use crate::models::{Mission, DifficultyBand};
         // Seed from the date (days since unix epoch) to ensure consistent daily pool.
         let days = now.timestamp() / 86400;
         let mut rng = SmallRng::seed_from_u64(days as u64);
 
-        self.mission_pool.clear();
-        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Trivial));
-        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Moderate));
-        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Moderate));
-        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Hard));
-        self.mission_pool.push(Mission::generate(&mut rng, DifficultyBand::Extreme));
+        self.missions.clear();
+        self.missions.push(Mission::generate(&mut rng, DifficultyBand::Trivial));
+        self.missions.push(Mission::generate(&mut rng, DifficultyBand::Moderate));
+        self.missions.push(Mission::generate(&mut rng, DifficultyBand::Moderate));
+        self.missions.push(Mission::generate(&mut rng, DifficultyBand::Hard));
+        self.missions.push(Mission::generate(&mut rng, DifficultyBand::Extreme));
 
         self.last_pool_refresh = now;
         true

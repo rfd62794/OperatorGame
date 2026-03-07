@@ -1,5 +1,6 @@
 use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
+use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::combat::{D20Result, D20, RollMode};
@@ -447,11 +448,11 @@ pub fn apply_outcome_injuries(
 
 pub fn seed_missions() -> Vec<Mission> {
     vec![
-        Mission::new("Bank Heist Recon",    20, 30, 10, 0.10, 60,  500),
-        Mission::new("Corporate Espionage", 10, 20, 50, 0.25, 120, 1200),
-        Mission::new("Harbour Extraction",  40, 20, 10, 0.20, 90,  800),
-        Mission::new("Zero-Day Exploit",    10, 10, 70, 0.40, 180, 2500),
-        Mission::new("Black Site Breach",   60, 40, 20, 0.50, 300, 5000),
+        Mission::new("Bank Heist Recon",    20, 30, 10, 0.10, 60,  500,  Some(crate::genetics::Culture::Teal)),
+        Mission::new("Corporate Espionage", 10, 20, 50, 0.25, 120, 1200, Some(crate::genetics::Culture::Tide)),
+        Mission::new("Harbour Extraction",  40, 20, 10, 0.20, 90,  800,  Some(crate::genetics::Culture::Marsh)),
+        Mission::new("Zero-Day Exploit",    10, 10, 70, 0.40, 180, 2500, Some(crate::genetics::Culture::Orange)),
+        Mission::new("Black Site Breach",   60, 40, 20, 0.50, 300, 5000, Some(crate::genetics::Culture::Ember)),
     ]
 }
 
@@ -600,7 +601,7 @@ mod tests {
     use rand::rngs::SmallRng;
 
     fn make_mission(rs: u32, ra: u32, ri: u32, diff: f64) -> Mission {
-        Mission::new("Test Mission", rs, ra, ri, diff, 60, 100)
+        Mission::new("Test Mission", rs, ra, ri, diff, 60, 100, None)
     }
 
     #[test]
@@ -613,7 +614,7 @@ mod tests {
 
     #[test]
     fn test_deployment_is_complete_future() {
-        let m = Mission::new("Far Future", 10, 10, 10, 0.0, 9999, 0);
+        let m = Mission::new("Far Future", 10, 10, 10, 0.0, 9999, 0, None);
         let d = Deployment::start(&m, vec![], false);
         assert!(!d.is_complete(), "Should not be complete for future timestamp");
     }
@@ -811,7 +812,7 @@ mod tests {
     #[test]
     fn test_deployment_resolve_emergency_penalty() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mission = Mission::new("Hard", 50, 50, 50, 0.0, 60, 100);
+        let mission = Mission::new("Hard", 50, 50, 50, 0.0, 60, 100, None);
         // Normal deployment
         let dep_normal = Deployment::start(&mission, vec![], false);
         // Emergency deployment
