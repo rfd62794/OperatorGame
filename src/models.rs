@@ -833,13 +833,14 @@ mod tests {
         // should win 2-of-3 D20 checks with high probability (seeded for determinism).
         let mut rng = SmallRng::seed_from_u64(99);
         let slime = generate_random(Culture::Ember, "TestSlime", &mut rng);
+        let op = Operator::new(slime);
         // req = 1 so coverage ≈ slime's total stat → +modifier well above Trivial DC 5
         let m = make_mission(1, 1, 1, 0.0);
-        let mut d = Deployment::start(&m, vec![slime.id], false);
+        let mut d = Deployment::start(&m, vec![op.id()], false);
         d.completes_at = Utc::now() - Duration::seconds(1);
 
         let mut rng2 = SmallRng::seed_from_u64(99);
-        let outcome = d.resolve(&m, &[&slime], &mut rng2);
+        let outcome = d.resolve(&m, &[&op], &mut rng2);
         // With DC 5 and a very high coverage modifier, should always succeed
         assert!(
             matches!(outcome, AarOutcome::Victory { .. }),
@@ -853,12 +854,13 @@ mod tests {
         use crate::genetics::Culture;
         let mut rng = SmallRng::seed_from_u64(7);
         let slime = generate_random(Culture::Gale, "RollsTest", &mut rng);
+        let op = Operator::new(slime);
         let m = make_mission(50, 50, 50, 0.5);
-        let mut d = Deployment::start(&m, vec![slime.id], false);
+        let mut d = Deployment::start(&m, vec![op.id()], false);
         d.completes_at = Utc::now() - Duration::seconds(1);
 
         let mut rng2 = SmallRng::seed_from_u64(7);
-        let outcome = d.resolve(&m, &[&slime], &mut rng2);
+        let outcome = d.resolve(&m, &[&op], &mut rng2);
         let rolls = match outcome {
             AarOutcome::Victory        { rolls, .. } => rolls,
             AarOutcome::Failure        { rolls, .. } => rolls,
@@ -907,8 +909,9 @@ mod tests {
         use crate::genetics::{generate_random, Culture};
         let mut rng   = SmallRng::seed_from_u64(42);
         let slime     = generate_random(Culture::Marsh, "Boggy", &mut rng);
+        let op        = Operator::new(slime);
         let target    = marsh_target();
-        let exp       = Expedition::launch(vec![slime.id], target.clone());
+        let exp       = Expedition::launch(vec![op.id()], target.clone());
         let mut found_yield = false;
         // Run several seeds to guarantee a Success or BonusHaul path is reachable
         for seed in 0u64..20 {
@@ -931,6 +934,7 @@ mod tests {
         use crate::genetics::{generate_random, Culture};
         let mut rng  = SmallRng::seed_from_u64(1);
         let slime    = generate_random(Culture::Tundra, "IceBoy", &mut rng);
+        let op       = Operator::new(slime);
         // Use a very high danger target to maximise crit-fail probability
         let target   = crate::world_map::ExpeditionTarget {
             id:             uuid::Uuid::from_u128(0xFF),
@@ -940,13 +944,13 @@ mod tests {
             danger_level:   1.0, // guaranteed nat-1 fails at DC Moderate+
             resource_yield: crate::world_map::ResourceYield { biomass: 0, scrap: 0, reagents: 0 },
         };
-        let exp = Expedition::launch(vec![slime.id], target);
+        let exp = Expedition::launch(vec![op.id()], target);
         let mut found_injury = false;
         for seed in 0u64..50 {
             let mut rng2 = SmallRng::seed_from_u64(seed);
             let outcome  = exp.resolve(&[&slime], &mut rng2);
             if let ExpeditionOutcome::SlimeInjured { slime_id, .. } = outcome {
-                assert_eq!(slime_id, slime.id, "Injured slime ID must match dispatched slime");
+                assert_eq!(slime_id, op.id(), "Injured slime ID must match dispatched slime");
                 found_injury = true;
                 break;
             }
@@ -967,9 +971,10 @@ mod tests {
     fn test_apply_outcome_injuries_victory_no_injury() {
         let mut rng = SmallRng::seed_from_u64(42);
         let mut outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![] };
-        let op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
-        let squad = vec![op.id];
-        let mut roster = vec![op.clone()];
+        let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let op = Operator::new(genome);
+        let squad = vec![op.id()];
+        let mut roster = vec![op];
         
         let injured = apply_outcome_injuries(&mut outcome, &mut roster, &squad, &mut rng);
         assert!(injured.is_empty());
@@ -980,8 +985,9 @@ mod tests {
     fn test_apply_outcome_injuries_failure_10_percent_chance() {
         let mut rng = SmallRng::seed_from_u64(1); // Seed chosen to trigger the 10%
         let outcome = AarOutcome::Failure { injured_ids: vec![], rolls: vec![] };
-        let op = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
-        let squad = vec![op.id];
+        let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
+        let op = Operator::new(genome);
+        let squad = vec![op.id()];
         
         // We'll run it a few times with different seeds to verify the 10% chance
         let mut injured_count = 0;
@@ -993,7 +999,7 @@ mod tests {
         if !injured.is_empty() {
             injured_count += 1;
             assert!(matches!(roster_tmp[0].state, SlimeState::Injured(_)));
-            assert_eq!(injured[0].0, op.id);
+            assert_eq!(injured[0].0, op.id());
         }    }
         // Statistically ~10 out of 100 should be injured. (Seed 1 gives 13 for this RNG)
         assert!(injured_count > 0 && injured_count < 30);
