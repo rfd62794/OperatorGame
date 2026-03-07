@@ -485,18 +485,18 @@ pub struct SlimeGenome {
     pub base_spd:     f32,
     pub generation:   u32,
     pub parent_ids:   Option<[Uuid; 2]>,
-    // Lifecycle
-    pub level:        u8,
-    pub xp:           u32,
-    /// Per-stat XP pools (ATK, HP, DEF, CHM, SPD, RES, MND, AGI, END).
-    /// Indices match Culture::WHEEL order.
-    #[serde(default)]
-    pub stat_xp:      [u32; 9],
     // Personality (0.0–1.0)
     pub curiosity:    f32,
     pub energy:       f32,
     pub affection:    f32,
     pub shyness:      f32,
+    // Base Stats (Biological Identity)
+    pub base_strength: u32,
+    pub base_agility:  u32,
+    pub base_intelligence: u32,
+    pub base_mind:     u32,
+    pub base_sensory:  u32,
+    pub base_tenacity: u32,
     // Visuals
     pub shape:         Shape,
     pub body_size:     BodySize,
@@ -508,39 +508,9 @@ pub struct SlimeGenome {
     pub frequency:     f32,
     // Name (cosmetic)
     pub name:          String,
-    /// Cellular Exhaustion — set after Genetic Synthesis (ADR-010).
-    /// None = available. Some(t) = exhausted until t.
-    #[serde(default)]
-    pub synthesis_cooldown_until: Option<DateTime<Utc>>,
-    // Stats for Missions (ADR-037)
-    #[serde(default)]
-    pub base_strength: u32,
-    #[serde(default)]
-    pub base_agility: u32,
-    #[serde(default)]
-    pub base_intelligence: u32,
-    // Soft Stats (Garden/Repair)
-    #[serde(default)]
-    pub base_mind: u32,
-    #[serde(default)]
-    pub base_sensory: u32,
-    #[serde(default)]
-    pub base_tenacity: u32,
-    #[serde(default)]
-    pub equipped_gear: Vec<crate::models::Gear>,
-    #[serde(default = "default_slime_state")]
-    pub state: crate::models::SlimeState,
-}
-
-fn default_slime_state() -> crate::models::SlimeState {
-    crate::models::SlimeState::Idle
 }
 
 impl SlimeGenome {
-    pub fn life_stage(&self) -> LifeStage {
-        LifeStage::from_level(self.level)
-    }
-
     pub fn genetic_tier(&self) -> GeneticTier {
         GeneticTier::from_expression(&self.culture_alleles.dominant)
     }
@@ -549,74 +519,6 @@ impl SlimeGenome {
         self.culture_alleles.dominant.dominant()
     }
 
-    /// Returns true if this slime is available as a synthesis donor.
-    /// False while in Cellular Exhaustion cooldown (ADR-010).
-    pub fn can_synthesize(&self) -> bool {
-        match self.synthesis_cooldown_until {
-            None    => self.life_stage().can_breed(),
-            Some(t) => Utc::now() >= t && self.life_stage().can_breed(),
-        }
-    }
-
-    /// Remaining Cellular Exhaustion duration, or None if available.
-    pub fn exhaustion_remaining(&self) -> Option<Duration> {
-        self.synthesis_cooldown_until.and_then(|t| {
-            let remaining = t - Utc::now();
-            if remaining > Duration::zero() { Some(remaining) } else { None }
-        })
-    }
-
-    /// Mark this slime as exhausted for `seconds` seconds. Idempotent — only
-    /// extends cooldown if a longer one isn't already running.
-    pub fn apply_exhaustion(&mut self, seconds: i64) {
-        let new_end = Utc::now() + Duration::seconds(seconds);
-        self.synthesis_cooldown_until = Some(
-            self.synthesis_cooldown_until
-                .map(|existing| existing.max(new_end))
-                .unwrap_or(new_end)
-        );
-    }
-
-    /// Total stats including base and equipped gear (ADR-036).
-    pub fn total_stats(&self) -> (u32, u32, u32, u32, u32, u32) {
-        let mut s = self.base_strength;
-        let mut a = self.base_agility;
-        let mut i = self.base_intelligence;
-        let m = self.base_mind;
-        let se = self.base_sensory;
-        let t = self.base_tenacity;
-
-        for gear in &self.equipped_gear {
-            let (gs, ga, gi) = gear.stat_bonus();
-            s += gs;
-            a += ga;
-            i += gi;
-        }
-        (s, a, i, m, se, t)
-    }
-
-    /// A slime is deployable only when fully Idle and not recovering from injury.
-    pub fn is_available(&self) -> bool {
-        match self.state {
-            crate::models::SlimeState::Idle => true,
-            crate::models::SlimeState::Injured(until) => Utc::now() >= until,
-            _ => false,
-        }
-    }
-
-    /// Tick: clear Injured state if recovery timestamp has passed.
-    /// Returns the name of the operator if they were just cleared.
-    pub fn tick_recovery(&mut self) -> Option<String> {
-        if let crate::models::SlimeState::Injured(until) = self.state {
-            if Utc::now() >= until {
-                self.state = crate::models::SlimeState::Idle;
-                return Some(self.name.clone());
-            }
-        }
-        None
-    }
-
-    /// Race stats from the exact rpgCore formula.
     pub fn race_stats(&self) -> RaceStats {
         let size  = self.body_size.scalar();
         let mass  = size.powf(1.5);
@@ -631,26 +533,9 @@ impl SlimeGenome {
             body_size:     size,
         }
     }
+}
 
-    /// XP needed to reach next level.
-    pub fn xp_to_next(&self) -> u32 {
-        LifeStage::xp_to_next(self.level)
-    }
 
-    /// Add XP and return true if levelled up (Sprint 9 §2).
-    pub fn award_xp(&mut self, amount: u32) -> bool {
-        self.xp += amount;
-        let old_level = self.level;
-        self.level = LifeStage::level_from_xp(self.xp);
-        self.level > old_level
-    }
-
-    /// Awards specific stat XP (Sprint 9 §4.2).
-    pub fn award_stat_xp(&mut self, culture: Culture, amount: u32) {
-        if let Some(idx) = culture.wheel_index() {
-            self.stat_xp[idx] += amount;
-        }
-    }
 }
 
 impl std::fmt::Display for SlimeGenome {
