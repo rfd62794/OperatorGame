@@ -54,6 +54,8 @@ panic         = "abort"
 [package.metadata.android]
 package        = "com.rfditservices.operatorgame"
 label          = "OPERATOR"
+target_sdk_version = 35
+min_sdk_version = 26
 stl            = "c++_shared"
 assets         = "assets"
 build_targets  = ["aarch64-linux-android", "armv7-linux-androideabi"]
