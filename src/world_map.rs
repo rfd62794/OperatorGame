@@ -567,7 +567,120 @@ impl Default for WorldMap {
 
 
 // ---------------------------------------------------------------------------
-// Profile Card — pure-data display helper (no egui dependency)
+// Expedition Targets — Island dispatch sites (Sprint 3)
+// ---------------------------------------------------------------------------
+
+/// The resource payload returned by a completed expedition.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceYield {
+    pub biomass:  u32,
+    pub scrap:    u32,
+    pub reagents: u32,
+}
+
+impl ResourceYield {
+    /// Scale all yields by `factor`, rounding down.
+    ///
+    /// Used for BonusHaul (×1.5) and partial SlimeInjured returns (×0.25).
+    pub fn scaled(&self, factor: f32) -> Self {
+        Self {
+            biomass:  (self.biomass  as f32 * factor) as u32,
+            scrap:    (self.scrap    as f32 * factor) as u32,
+            reagents: (self.reagents as f32 * factor) as u32,
+        }
+    }
+
+    /// Add this yield to the player's Cargo Bay via the shared Inventory.
+    ///
+    /// Uses `Inventory::add()` to keep a single resource store — avoids
+    /// split-brain between top-level GameState cargo fields and inventory.
+    pub fn apply_to_inventory(&self, inv: &mut crate::inventory::Inventory) {
+        inv.add(crate::inventory::Resource::Biomass,  self.biomass  as u64);
+        inv.add(crate::inventory::Resource::Scrap,    self.scrap    as u64);
+        inv.add(crate::inventory::Resource::Reagents, self.reagents as u64);
+    }
+}
+
+/// A named location on the 19-node planet map that slimes can be dispatched to.
+///
+/// Each target maps to a Culture zone, carrying resource yields and a danger
+/// level that feeds the D20 DC. One target per culture for Sprint 3.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExpeditionTarget {
+    /// Unique stable identifier (deterministic — generated at seed time).
+    pub id:             uuid::Uuid,
+    /// Human-readable name shown in CLI and GUI.
+    pub name:           String,
+    /// Cultural zone affinity.
+    ///
+    /// Sprint 4: slime whose `dominant_culture() == target.culture` gets
+    /// `RollMode::Advantage` on the D20 check via `culture_zone_mode()`.
+    pub culture:        Culture,
+    /// One-way travel time in seconds. Round-trip = `distance_secs * 2`.
+    pub distance_secs:  u64,
+    /// Mission danger 0.0–1.0, maps to `DifficultyClass::from_f64()`.
+    pub danger_level:   f64,
+    /// Full resource payload on a clean success.
+    pub resource_yield: ResourceYield,
+}
+
+/// Six canonical expedition sites — one per non-Void culture.
+///
+/// Targets are deterministic so they can be matched by name from CLI input.
+pub fn seed_expedition_targets() -> Vec<ExpeditionTarget> {
+    use uuid::Uuid;
+    vec![
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE01),
+            name:           "Ember Flats".into(),
+            culture:        Culture::Ember,
+            distance_secs:  120,
+            danger_level:   0.20,
+            resource_yield: ResourceYield { biomass: 15, scrap: 5,  reagents: 2 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE02),
+            name:           "Gale Ridge".into(),
+            culture:        Culture::Gale,
+            distance_secs:  180,
+            danger_level:   0.35,
+            resource_yield: ResourceYield { biomass: 8,  scrap: 3,  reagents: 8 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE03),
+            name:           "Marsh Delta".into(),
+            culture:        Culture::Marsh,
+            distance_secs:  90,
+            danger_level:   0.15,
+            resource_yield: ResourceYield { biomass: 25, scrap: 2,  reagents: 3 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE04),
+            name:           "Crystal Spire".into(),
+            culture:        Culture::Crystal,
+            distance_secs:  240,
+            danger_level:   0.50,
+            resource_yield: ResourceYield { biomass: 5,  scrap: 8,  reagents: 15 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE05),
+            name:           "Tundra Shelf".into(),
+            culture:        Culture::Tundra,
+            distance_secs:  300,
+            danger_level:   0.55,
+            resource_yield: ResourceYield { biomass: 10, scrap: 20, reagents: 5 },
+        },
+        ExpeditionTarget {
+            id:             Uuid::from_u128(0xE06),
+            name:           "Tide Basin".into(),
+            culture:        Culture::Tide,
+            distance_secs:  150,
+            danger_level:   0.30,
+            resource_yield: ResourceYield { biomass: 12, scrap: 10, reagents: 6 },
+        },
+    ]
+}
+
 // ---------------------------------------------------------------------------
 
 /// Text-mode profile card for a slime. Rendered by ui.rs into an egui frame.

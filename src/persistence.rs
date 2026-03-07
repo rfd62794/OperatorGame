@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::genetics::{GeneticTier, SlimeGenome};
 use crate::inventory::Inventory;
-use crate::models::{Deployment, Mission};
+use crate::models::{Deployment, Expedition, Mission};
 use crate::world_map::WorldMap;
 
 // ---------------------------------------------------------------------------
@@ -107,13 +107,16 @@ pub struct GameState {
     /// 0 = emergency power only; 8 = ship fully restored (endgame).
     #[serde(default)]
     pub tech_tier: u8,
-    /// The living planet map — 15 nodes, faction influence, expedition sites.
+    /// The living planet map — 19 nodes, faction influence, expedition sites.
     /// Populated with a fresh fixed-seed map when absent from save (ADR-014).
     #[serde(default)]
     pub world_map: WorldMap,
     /// Cross-session Cargo Bay (Biomass, Scrap, Reagents). ADR-030.
     #[serde(default)]
     pub inventory: Inventory,
+    /// Active or resolved island expeditions (Sprint 3). ADR-002 wall-clock.
+    #[serde(default)]
+    pub active_expeditions: Vec<Expedition>,
 }
 
 impl GameState {

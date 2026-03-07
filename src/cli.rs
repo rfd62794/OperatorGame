@@ -63,6 +63,32 @@ pub enum Commands {
 
     /// Collect finished genomes from the Bio-Incubator.
     Incubate,
+
+    // ── Island Expedition (Sprint 3) ──────────────────────────────────────────
+
+    /// Dispatch slimes to the planet surface to gather resources.
+    Expedition {
+        #[command(subcommand)]
+        action: ExpeditionAction,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ExpeditionAction {
+    /// List all available expedition targets and any active expeditions.
+    List,
+
+    /// Dispatch slimes to an expedition target.
+    Launch {
+        /// Target name (case-insensitive prefix match, e.g. "marsh" or "Marsh Delta").
+        target_name: String,
+        /// Slime ID prefix(es) to dispatch (≥4 chars each).
+        #[arg(required = true, num_args = 1..=6)]
+        slime_id_prefixes: Vec<String>,
+    },
+
+    /// Resolve all completed expeditions and collect resources.
+    Return,
 }
 
 fn parse_culture(s: &str) -> Result<crate::genetics::Culture, String> {

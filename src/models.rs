@@ -276,8 +276,136 @@ pub fn seed_missions() -> Vec<Mission> {
 }
 
 // ---------------------------------------------------------------------------
-// Unit tests removed to accommodate Operator refactor into SlimeGenome
+// Expedition — slime dispatch to the 19-node planet map (Sprint 3)
 // ---------------------------------------------------------------------------
+
+/// An active or resolved slime expedition to an island target.
+///
+/// Follows the ADR-002 wall-clock timer pattern identical to `Deployment`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Expedition {
+    pub id:          Uuid,
+    pub slime_ids:   Vec<Uuid>,
+    pub target:      crate::world_map::ExpeditionTarget,
+    pub departed_at: DateTime<Utc>,
+    /// Wall-clock time when the expedition returns (departed_at + distance*2).
+    pub returns_at:  DateTime<Utc>,
+    pub resolved:    bool,
+}
+
+impl Expedition {
+    /// Launch an expedition. Round-trip duration = `distance_secs * 2`.
+    pub fn launch(slimes: Vec<Uuid>, target: crate::world_map::ExpeditionTarget) -> Self {
+        let now      = Utc::now();
+        let duration = chrono::Duration::seconds((target.distance_secs * 2) as i64);
+        Self {
+            id:          Uuid::new_v4(),
+            slime_ids:   slimes,
+            target,
+            departed_at: now,
+            returns_at:  now + duration,
+            resolved:    false,
+        }
+    }
+
+    /// True once the wall-clock return time has passed.
+    pub fn is_complete(&self) -> bool {
+        Utc::now() >= self.returns_at
+    }
+
+    /// Resolve the expedition outcome using a D20 check on average AGI.
+    ///
+    /// Uses `D20::mission_check()` — same pattern as `Deployment::resolve()`.
+    ///
+    /// # Sprint 4 hook
+    /// When a slime's `dominant_culture() == target.culture`, pass
+    /// `culture_zone_mode(slime_culture, target.culture)` instead of
+    /// `RollMode::Normal` to grant Advantage to matched dispatches.
+    /// This is the core gameplay hook: Tide slime → Tide Basin = Advantage.
+    pub fn resolve<R: rand::Rng>(
+        &self,
+        squad:  &[&crate::genetics::SlimeGenome],
+        rng:    &mut R,
+    ) -> ExpeditionOutcome {
+        // Average AGI coverage ratio as the primary stat for field movement.
+        let avg_agi: u32 = if squad.is_empty() {
+            0
+        } else {
+            squad.iter().map(|s| s.base_agility).sum::<u32>() / squad.len() as u32
+        };
+
+        // Treat AGI as "coverage" against a notional requirement of 20 base points.
+        // TODO Sprint 4: replace 20 with target zone's base AGI requirement.
+        let coverage = (avg_agi as f64 / 20.0).min(1.0);
+
+        // TODO Sprint 4: replace Normal with culture_zone_mode(dominant, target.culture)
+        let roll = D20::mission_check(coverage, self.target.danger_level, RollMode::Normal, rng);
+
+        let report = self.generate_report(roll.nat_twenty);
+
+        if roll.nat_twenty {
+            ExpeditionOutcome::BonusHaul {
+                yield_:  self.target.resource_yield.scaled(1.5),
+                roll,
+                report,
+            }
+        } else if roll.success {
+            ExpeditionOutcome::Success {
+                yield_:  self.target.resource_yield.clone(),
+                roll,
+                report,
+            }
+        } else if roll.nat_one {
+            // Critical fail — random slime takes the hit
+            let victim = self.slime_ids[rng.gen_range(0..self.slime_ids.len().max(1))];
+            ExpeditionOutcome::SlimeInjured {
+                slime_id:      victim,
+                partial_yield: self.target.resource_yield.scaled(0.25),
+                roll,
+                report,
+            }
+        } else {
+            ExpeditionOutcome::Failure { roll, report }
+        }
+    }
+
+    /// Per-culture flavor narrative — Sprint 3 static templates.
+    /// Sprint 5+: generative via log_engine expansion.
+    fn generate_report(&self, exceptional: bool) -> String {
+        use crate::genetics::Culture;
+        let flavor = match self.target.culture {
+            Culture::Ember   => if exceptional { "uncovered a smouldering cache no one was meant to find" }
+                                else           { "navigated the thermal vents and returned with singed margins" },
+            Culture::Gale    => if exceptional { "rode the updrafts to a ridge no survey had mapped" }
+                                else           { "outpaced the storm front and made it back before it turned" },
+            Culture::Marsh   => if exceptional { "found a submerged cache beneath the root network" }
+                                else           { "waded through the delta and surfaced intact" },
+            Culture::Crystal => if exceptional { "resonated with the spire lattice and extracted pure nodes" }
+                                else           { "navigated the refraction corridors without incident" },
+            Culture::Tundra  => if exceptional { "broke into a preserved vault beneath the permafrost" }
+                                else           { "crossed the shelf in the cold window and came back clean" },
+            Culture::Tide    => if exceptional { "caught the basin at low ebb and found what the water hides" }
+                                else           { "read the tide schedule correctly and returned on schedule" },
+            Culture::Void    => "returned. No further details.",
+        };
+        format!("The team reached {} and {}.", self.target.name, flavor)
+    }
+}
+
+/// Outcome of a resolved `Expedition`.
+#[derive(Debug, Clone)]
+pub enum ExpeditionOutcome {
+    /// Nat-20 — 1.5× resource yield.
+    BonusHaul    { yield_: crate::world_map::ResourceYield, roll: D20Result, report: String },
+    /// Clean success — full yield.
+    Success      { yield_: crate::world_map::ResourceYield, roll: D20Result, report: String },
+    /// Nat-1 — one slime injured, 0.25× partial yield.
+    SlimeInjured { slime_id: Uuid, partial_yield: crate::world_map::ResourceYield, roll: D20Result, report: String },
+    /// Failure — no yield.
+    Failure      {                                           roll: D20Result, report: String },
+}
+
+
 
 #[cfg(test)]
 mod tests {

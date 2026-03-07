@@ -5,11 +5,12 @@
 /// Loads GameState → parses CLI → dispatches command → saves state.
 /// All missions tick passively via `Deployment::is_complete()`.
 use clap::Parser;
-use operator::cli::{Cli, Commands};
+use operator::cli::{Cli, Commands, ExpeditionAction};
 use operator::genetics::{generate_random, BreedingResolver};
-use operator::models::{AarOutcome, Deployment, SlimeState};
+use operator::models::{AarOutcome, Deployment, Expedition, ExpeditionOutcome, SlimeState};
 use operator::persistence::{load, save, save_path};
 use operator::ui::run_gui;
+use operator::world_map::{seed_expedition_targets};
 use include_dir::{include_dir, Dir};
 
 #[allow(dead_code)]
@@ -344,7 +345,169 @@ async fn main() {
                 state.slimes.extend(ready);
             }
         }
-    }
+
+        // -----------------------------------------------------------------------
+        Commands::Expedition { action } => match action {
+
+            // ── LIST ─────────────────────────────────────────────────────────
+            ExpeditionAction::List => {
+                let targets = seed_expedition_targets();
+                println!("=== EXPEDITION TARGETS ({}) ===", targets.len());
+                for t in &targets {
+                    println!(
+                        "  [{:?}] {:<16} | DC {:.0}% | {}s round-trip | 🌱{}  ⚙{}  🧪{}",
+                        t.culture,
+                        t.name,
+                        t.danger_level * 100.0,
+                        t.distance_secs * 2,
+                        t.resource_yield.biomass,
+                        t.resource_yield.scrap,
+                        t.resource_yield.reagents,
+                    );
+                }
+
+                let active: Vec<_> = state.active_expeditions.iter()
+                    .filter(|e| !e.resolved)
+                    .collect();
+                if active.is_empty() {
+                    println!("\nNo active expeditions.");
+                } else {
+                    println!("\n=== ACTIVE EXPEDITIONS ({}) ===", active.len());
+                    for exp in active {
+                        let remaining = (exp.returns_at - chrono::Utc::now()).num_seconds().max(0);
+                        let status = if exp.is_complete() { "✅ READY" } else { &format!("ETA {}s", remaining) };
+                        println!(
+                            "  {} → {} | {} slime(s) | {}",
+                            exp.target.name,
+                            exp.target.name,
+                            exp.slime_ids.len(),
+                            status,
+                        );
+                    }
+                }
+            }
+
+            // ── LAUNCH ───────────────────────────────────────────────────────
+            ExpeditionAction::Launch { target_name, slime_id_prefixes } => {
+                let targets = seed_expedition_targets();
+                let target_name_lower = target_name.to_lowercase();
+                let target = targets.into_iter()
+                    .find(|t| t.name.to_lowercase().contains(&target_name_lower));
+
+                let Some(target) = target else {
+                    eprintln!("No expedition target matching '{}'. Run `operator expedition list`.", target_name);
+                    std::process::exit(1);
+                };
+
+                // Resolve slime IDs by prefix
+                let mut slime_ids = Vec::new();
+                for prefix in &slime_id_prefixes {
+                    let id = state.slimes.iter()
+                        .find(|s| s.id.to_string().starts_with(prefix.as_str()))
+                        .map(|s| s.id);
+                    match id {
+                        Some(id) => slime_ids.push(id),
+                        None => {
+                            eprintln!("Slime '{}' not found. Use `operator slimes` to list IDs.", prefix);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+
+                let exp = Expedition::launch(slime_ids, target.clone());
+                println!(
+                    "🚀 Launched {} slime(s) to {}. Returns in {}s.",
+                    exp.slime_ids.len(),
+                    exp.target.name,
+                    target.distance_secs * 2,
+                );
+                state.active_expeditions.push(exp);
+            }
+
+            // ── RETURN ───────────────────────────────────────────────────────
+            ExpeditionAction::Return => {
+                let completed: Vec<_> = state.active_expeditions.iter()
+                    .enumerate()
+                    .filter(|(_, e)| !e.resolved && e.is_complete())
+                    .map(|(i, _)| i)
+                    .collect();
+
+                if completed.is_empty() {
+                    println!("No expeditions have returned yet.");
+                } else {
+                    for &idx in &completed {
+                        let exp = &state.active_expeditions[idx];
+                        let squad: Vec<_> = state.slimes.iter()
+                            .filter(|s| exp.slime_ids.contains(&s.id))
+                            .collect();
+                        let outcome = exp.resolve(&squad, &mut rng);
+
+                        println!("\n=== EXPEDITION RETURN: {} ===", exp.target.name);
+
+                        match &outcome {
+                            ExpeditionOutcome::BonusHaul { yield_, roll, report } => {
+                                println!("  AGI check: {}", roll.narrative());
+                                println!();
+                                println!("  \"{}\"\n", report);
+                                println!("  ⚡ CRITICAL HAUL — Resources at 1.5×:");
+                                println!("    🌱 Biomass  +{}", yield_.biomass);
+                                println!("    ⚙️  Scrap    +{}", yield_.scrap);
+                                println!("    🧪 Reagents +{}", yield_.reagents);
+                                yield_.apply_to_inventory(&mut state.inventory);
+                            }
+                            ExpeditionOutcome::Success { yield_, roll, report } => {
+                                println!("  AGI check: {}", roll.narrative());
+                                println!();
+                                println!("  \"{}\"\n", report);
+                                println!("  Resources recovered:");
+                                println!("    🌱 Biomass  +{}", yield_.biomass);
+                                println!("    ⚙️  Scrap    +{}", yield_.scrap);
+                                println!("    🧪 Reagents +{}", yield_.reagents);
+                                yield_.apply_to_inventory(&mut state.inventory);
+                            }
+                            ExpeditionOutcome::SlimeInjured { slime_id, partial_yield, roll, report } => {
+                                let name = state.slimes.iter()
+                                    .find(|s| s.id == *slime_id)
+                                    .map(|s| s.name.as_str())
+                                    .unwrap_or("Unknown");
+                                println!("  AGI check: {}", roll.narrative());
+                                println!();
+                                println!("  \"{}\"\n", report);
+                                println!("  ⚠️  {} was injured — partial return (0.25×):", name);
+                                println!("    🌱 Biomass  +{}", partial_yield.biomass);
+                                println!("    ⚙️  Scrap    +{}", partial_yield.scrap);
+                                println!("    🧪 Reagents +{}", partial_yield.reagents);
+                                // Mark slime as injured (recovery = distance_secs)
+                                let recover_at = chrono::Utc::now()
+                                    + chrono::Duration::seconds(exp.target.distance_secs as i64);
+                                if let Some(s) = state.slimes.iter_mut().find(|s| s.id == *slime_id) {
+                                    s.state = SlimeState::Injured(recover_at);
+                                }
+                                partial_yield.apply_to_inventory(&mut state.inventory);
+                            }
+                            ExpeditionOutcome::Failure { roll, report } => {
+                                println!("  AGI check: {}", roll.narrative());
+                                println!();
+                                println!("  \"{}\"\n", report);
+                                println!("  ❌ FAILURE — no resources recovered.");
+                            }
+                        }
+
+                        println!(
+                            "\n  Cargo Bay: 🌱 {} | ⚙️  {} | 🧪 {}",
+                            state.inventory.biomass,
+                            state.inventory.scrap,
+                            state.inventory.reagents,
+                        );
+                    }
+
+                    // Mark resolved
+                    for &idx in &completed {
+                        state.active_expeditions[idx].resolved = true;
+                    }
+                }
+            }
+        },
 
 
     // CLI path: persist state after every command.
