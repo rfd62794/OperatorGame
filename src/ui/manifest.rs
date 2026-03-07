@@ -69,7 +69,7 @@ impl OperatorApp {
                                     .small()
                                     .color(egui::Color32::from_rgb(255, 100, 100)));
                             } else {
-                                ui.label(egui::RichText::new(format!("{} | LVL {}", op.life_stage().name(), op.level))
+                                ui.label(egui::RichText::new(format!("{} | LVL {}", op.life_stage(), op.level))
                                     .small()
                                     .color(egui::Color32::from_gray(160)));
                             }
@@ -240,7 +240,7 @@ impl OperatorApp {
                             if ready {
                                 ui.colored_label(egui::Color32::from_rgb(100, 255, 100), "READY FOR HARVEST");
                                 if ui.button("Harvest").clicked() {
-                                    harvested.push(inc.genome.id);
+                                    harvested.push(inc.operator.genome.id);
                                 }
                             } else {
                                 ui.label(format!("Time remaining: {}s", rem));
