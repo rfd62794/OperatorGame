@@ -79,6 +79,7 @@ $ManifestContent = $ManifestContent -replace 'android:minSdkVersion="\d+"', 'and
 [System.IO.File]::WriteAllText($ManifestPath, $ManifestContent, [System.Text.Encoding]::UTF8)
 
 # 4. Extract Proto APK and Inject Fixed Manifest
+$ManifestPath = "target\release\apk\AndroidManifest.xml"
 $ProtoApk = "target\proto.zip"
 $BaseZip = "target\base.zip"
 $AabBase = "target\aab_base"
