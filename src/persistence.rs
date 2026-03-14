@@ -386,7 +386,8 @@ mod tests {
     #[test]
     fn test_mission_pool_refresh_logic() {
         let mut state = GameState::default();
-        let now = Utc::now();
+        use chrono::TimeZone;
+        let now = Utc.with_ymd_and_hms(2026, 3, 14, 12, 0, 0).single().unwrap();
         
         // Initial refresh
         state.refresh_missions_if_needed(now);
