@@ -130,7 +130,7 @@ fn test_primary_action_guard_value() {
 }
 
 fn create_dummy_app() -> OperatorApp {
-    OperatorApp::dummy()
+    OperatorApp::new_dummy()
 }
 
 #[test]

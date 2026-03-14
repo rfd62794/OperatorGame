@@ -103,8 +103,7 @@ impl OperatorApp {
         }
     }
 
-    #[cfg(test)]
-    pub fn dummy() -> Self {
+    pub fn new_dummy() -> Self {
         let state = GameState::default();
         let garden = Garden::from_operators(&state.slimes, egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 1000.0)));
         Self {
