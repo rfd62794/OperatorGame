@@ -126,6 +126,21 @@ pub struct GameState {
     /// Active or resolved island expeditions (Sprint 3). ADR-002 wall-clock.
     #[serde(default)]
     pub active_expeditions: Vec<Expedition>,
+    /// UI state: Main navigation tab
+    #[serde(default)]
+    pub active_tab: crate::platform::BottomTab,
+    /// UI state: Roster sub-tab
+    #[serde(default)]
+    pub roster_sub_tab: crate::platform::RosterSubTab,
+    /// UI state: Missions sub-tab
+    #[serde(default)]
+    pub missions_sub_tab: crate::platform::MissionsSubTab,
+    /// UI state: Map sub-tab
+    #[serde(default)]
+    pub map_sub_tab: crate::platform::MapSubTab,
+    /// UI state: Logs sub-tab
+    #[serde(default)]
+    pub logs_sub_tab: crate::platform::LogsSubTab,
 }
 
 impl Default for GameState {
@@ -143,6 +158,11 @@ impl Default for GameState {
             last_pool_refresh: Utc::now(),
             inventory: Inventory::default(),
             active_expeditions: Vec::new(),
+            active_tab: crate::platform::BottomTab::Roster,
+            roster_sub_tab: crate::platform::RosterSubTab::default(),
+            missions_sub_tab: crate::platform::MissionsSubTab::default(),
+            map_sub_tab: crate::platform::MapSubTab::default(),
+            logs_sub_tab: crate::platform::LogsSubTab::default(),
         }
     }
 }

@@ -1,6 +1,8 @@
-use operator::platform::{SafeArea, LayoutCalculator, BottomTab};
+use operator::platform::{SafeArea, LayoutCalculator, BottomTab, RosterSubTab, MissionsSubTab, MapSubTab, LogsSubTab};
 use operator::ui::OperatorApp;
+use operator::persistence::GameState;
 use eframe::egui;
+use std::path::PathBuf;
 
 #[test]
 fn test_safe_area_margins_applied() {
@@ -125,4 +127,109 @@ fn test_safe_area_orientation_agnostic() {
 #[test]
 fn test_primary_action_guard_value() {
     assert_eq!(operator::platform::PRIMARY_ACTION_BOTTOM_GUARD, 8.0);
+}
+
+fn create_dummy_app() -> OperatorApp {
+    let state = GameState::default();
+    // Safety: OperatorApp::new ignores the CreationContext argument currently.
+    // We use a dummy reference.
+    let ctx_raw = 0usize as *const eframe::CreationContext;
+    let ctx_ref = unsafe { &*ctx_raw };
+    OperatorApp::new(ctx_ref, state, PathBuf::from("test_save.json"))
+}
+
+#[test]
+fn test_roster_sub_tab_default() {
+    let app = create_dummy_app();
+    assert_eq!(app.roster_sub_tab, RosterSubTab::Collection);
+}
+
+#[test]
+fn test_roster_sub_tab_switch_breeding() {
+    let mut app = create_dummy_app();
+    app.roster_sub_tab = RosterSubTab::Breeding;
+    assert_eq!(app.roster_sub_tab, RosterSubTab::Breeding);
+}
+
+#[test]
+fn test_missions_sub_tab_default() {
+    let app = create_dummy_app();
+    assert_eq!(app.missions_sub_tab, MissionsSubTab::Active);
+}
+
+#[test]
+fn test_missions_sub_tab_switch_quest_board() {
+    let mut app = create_dummy_app();
+    app.missions_sub_tab = MissionsSubTab::QuestBoard;
+    assert_eq!(app.missions_sub_tab, MissionsSubTab::QuestBoard);
+}
+
+#[test]
+fn test_map_sub_tab_default() {
+    let app = create_dummy_app();
+    assert_eq!(app.map_sub_tab, MapSubTab::Zones);
+}
+
+#[test]
+fn test_logs_sub_tab_default() {
+    let app = create_dummy_app();
+    assert_eq!(app.logs_sub_tab, LogsSubTab::MissionHistory);
+}
+
+#[test]
+fn test_logs_sub_tab_switch_culture_history() {
+    let mut app = create_dummy_app();
+    app.logs_sub_tab = LogsSubTab::CultureHistory;
+    assert_eq!(app.logs_sub_tab, LogsSubTab::CultureHistory);
+}
+
+#[test]
+fn test_sub_tab_persistence_serialize() {
+    let mut game_state = GameState::default();
+    game_state.roster_sub_tab = RosterSubTab::Breeding;
+    let json = serde_json::to_string(&game_state).unwrap();
+    let restored: GameState = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.roster_sub_tab, RosterSubTab::Breeding);
+}
+
+#[test]
+fn test_sub_tab_persistence_deserialize() {
+    let json = r#"{"roster_sub_tab": "Breeding", "active_tab": "Roster", "bank": 500, "last_upkeep_at": "2026-03-14T23:24:50Z", "last_pool_refresh": "2026-03-14T23:24:50Z"}"#;
+    let game_state: GameState = serde_json::from_str(json).unwrap();
+    assert_eq!(game_state.roster_sub_tab, RosterSubTab::Breeding);
+}
+
+#[test]
+fn test_sub_tabs_independent_per_main_tab() {
+    let mut app = create_dummy_app();
+    app.active_tab = BottomTab::Roster;
+    app.roster_sub_tab = RosterSubTab::Breeding;
+    
+    app.active_tab = BottomTab::Missions;
+    app.missions_sub_tab = MissionsSubTab::QuestBoard;
+    
+    // Switch back to Roster — sub-tab should persist
+    app.active_tab = BottomTab::Roster;
+    assert_eq!(app.roster_sub_tab, RosterSubTab::Breeding);
+}
+
+#[test]
+fn test_sub_tab_state_initialization_from_state() {
+    let mut state = GameState::default();
+    state.roster_sub_tab = RosterSubTab::Breeding;
+    
+    let ctx_raw = 0usize as *const eframe::CreationContext;
+    let ctx_ref = unsafe { &*ctx_raw };
+    let app = OperatorApp::new(ctx_ref, state, PathBuf::from("test_save.json"));
+    
+    assert_eq!(app.roster_sub_tab, RosterSubTab::Breeding);
+}
+
+#[test]
+fn test_active_tab_persistence() {
+    let mut game_state = GameState::default();
+    game_state.active_tab = BottomTab::Missions;
+    let json = serde_json::to_string(&game_state).unwrap();
+    let restored: GameState = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.active_tab, BottomTab::Missions);
 }

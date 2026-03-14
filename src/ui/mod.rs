@@ -50,6 +50,11 @@ pub struct OperatorApp {
     pub mobile_tab: MobileTab,
     /// Which bottom tab is active on Android/Compact view.
     pub active_tab: crate::platform::BottomTab,
+    // Sub-tab state
+    pub roster_sub_tab: crate::platform::RosterSubTab,
+    pub missions_sub_tab: crate::platform::MissionsSubTab,
+    pub map_sub_tab: crate::platform::MapSubTab,
+    pub logs_sub_tab: crate::platform::LogsSubTab,
 }
 
 #[derive(PartialEq)]
@@ -79,6 +84,11 @@ impl OperatorApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, state: GameState, save_path: PathBuf) -> Self {
         let garden = Garden::from_operators(&state.slimes, egui::Rect::EVERYTHING);
         Self {
+            active_tab: state.active_tab,
+            roster_sub_tab: state.roster_sub_tab,
+            missions_sub_tab: state.missions_sub_tab,
+            map_sub_tab: state.map_sub_tab,
+            logs_sub_tab: state.logs_sub_tab,
             state,
             save_path,
             selected_mission: None,
@@ -90,7 +100,6 @@ impl OperatorApp {
             left_tab: LeftTab::Manifest,
             right_tab: RightTab::Contracts,
             mobile_tab: MobileTab::Manifest,
-            active_tab: crate::platform::BottomTab::Roster,
         }
     }
 
@@ -112,7 +121,14 @@ impl OperatorApp {
         (progress, remaining)
     }
 
-    fn persist(&self) {
+    fn persist(&mut self) {
+        // Sync UI state to GameState before saving
+        self.state.active_tab = self.active_tab;
+        self.state.roster_sub_tab = self.roster_sub_tab;
+        self.state.missions_sub_tab = self.missions_sub_tab;
+        self.state.map_sub_tab = self.map_sub_tab;
+        self.state.logs_sub_tab = self.logs_sub_tab;
+
         if let Err(e) = save(&self.state, &self.save_path) {
             eprintln!("Save error: {e}");
         }
@@ -599,26 +615,50 @@ impl eframe::App for OperatorApp {
                         })
                 )
                 .show(ctx, |ui| {
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        match self.active_tab {
-                            crate::platform::BottomTab::Roster => {
-                                self.render_roster(ui);
-                            }
-                            crate::platform::BottomTab::Missions => {
-                                self.render_contracts(ui);
-                            }
-                            crate::platform::BottomTab::Map => {
-                                self.render_radar(ui);
-                            }
-                            crate::platform::BottomTab::Logs => {
-                                // Combat log is already in its own panel, 
-                                // but we show the historical scroll here.
-                                ui.heading("Operational Logs");
-                                for entry in &self.combat_log {
-                                    ui.label(entry);
+                    ui.horizontal(|ui| {
+                        // Left sidebar: sub-tab navigation
+                        ui.vertical(|ui| {
+                            ui.set_width(100.0);
+                            render_sub_tabs(ui, self.active_tab, self);
+                        });
+
+                        ui.separator();
+
+                        ui.vertical(|ui| {
+                            egui::ScrollArea::vertical().show(ui, |ui| {
+                                match self.active_tab {
+                                    crate::platform::BottomTab::Roster => match self.roster_sub_tab {
+                                        crate::platform::RosterSubTab::Collection => {
+                                            ui.label("[TODO] Roster → Collection");
+                                        }
+                                        crate::platform::RosterSubTab::Breeding => {
+                                            ui.label("[TODO] Roster → Breeding");
+                                        }
+                                    },
+                                    crate::platform::BottomTab::Missions => match self.missions_sub_tab {
+                                        crate::platform::MissionsSubTab::Active => {
+                                            ui.label("[TODO] Missions → Active");
+                                        }
+                                        crate::platform::MissionsSubTab::QuestBoard => {
+                                            ui.label("[TODO] Missions → Quest Board");
+                                        }
+                                    },
+                                    crate::platform::BottomTab::Map => match self.map_sub_tab {
+                                        crate::platform::MapSubTab::Zones => {
+                                            ui.label("[TODO] Map → Zones");
+                                        }
+                                    },
+                                    crate::platform::BottomTab::Logs => match self.logs_sub_tab {
+                                        crate::platform::LogsSubTab::MissionHistory => {
+                                            ui.label("[TODO] Logs → Mission History");
+                                        }
+                                        crate::platform::LogsSubTab::CultureHistory => {
+                                            ui.label("[TODO] Logs → Culture History");
+                                        }
+                                    },
                                 }
-                            }
-                        }
+                            });
+                        });
                     });
                 });
         } else {
@@ -670,6 +710,104 @@ impl eframe::App for OperatorApp {
 
 fn render_roster_panel(ui: &mut egui::Ui, app: &mut OperatorApp) {
     app.render_roster(ui);
+}
+
+fn render_sub_tabs(
+    ui: &mut egui::Ui,
+    active_main_tab: crate::platform::BottomTab,
+    app: &mut OperatorApp,
+) {
+    ui.vertical(|ui| {
+        ui.label("─────────────"); // Visual separator
+
+        match active_main_tab {
+            crate::platform::BottomTab::Roster => {
+                ui.label("Roster");
+
+                if ui
+                    .selectable_label(
+                        app.roster_sub_tab == crate::platform::RosterSubTab::Collection,
+                        "Collection",
+                    )
+                    .clicked()
+                {
+                    app.roster_sub_tab = crate::platform::RosterSubTab::Collection;
+                }
+
+                if ui
+                    .selectable_label(
+                        app.roster_sub_tab == crate::platform::RosterSubTab::Breeding,
+                        "Breeding",
+                    )
+                    .clicked()
+                {
+                    app.roster_sub_tab = crate::platform::RosterSubTab::Breeding;
+                }
+            }
+
+            crate::platform::BottomTab::Missions => {
+                ui.label("Missions");
+
+                if ui
+                    .selectable_label(
+                        app.missions_sub_tab == crate::platform::MissionsSubTab::Active,
+                        "Active",
+                    )
+                    .clicked()
+                {
+                    app.missions_sub_tab = crate::platform::MissionsSubTab::Active;
+                }
+
+                if ui
+                    .selectable_label(
+                        app.missions_sub_tab == crate::platform::MissionsSubTab::QuestBoard,
+                        "Quest Board",
+                    )
+                    .clicked()
+                {
+                    app.missions_sub_tab = crate::platform::MissionsSubTab::QuestBoard;
+                }
+            }
+
+            crate::platform::BottomTab::Map => {
+                ui.label("Map");
+
+                if ui
+                    .selectable_label(
+                        app.map_sub_tab == crate::platform::MapSubTab::Zones,
+                        "Zones",
+                    )
+                    .clicked()
+                {
+                    app.map_sub_tab = crate::platform::MapSubTab::Zones;
+                }
+            }
+
+            crate::platform::BottomTab::Logs => {
+                ui.label("Logs");
+
+                if ui
+                    .selectable_label(
+                        app.logs_sub_tab == crate::platform::LogsSubTab::MissionHistory,
+                        "Mission History",
+                    )
+                    .clicked()
+                {
+                    app.logs_sub_tab = crate::platform::LogsSubTab::MissionHistory;
+                }
+
+                if ui
+                    .selectable_label(
+                        app.logs_sub_tab == crate::platform::LogsSubTab::CultureHistory,
+                        "Culture History",
+                    )
+                    .clicked()
+                {
+                    app.logs_sub_tab = crate::platform::LogsSubTab::CultureHistory;
+                }
+            }
+        }
+    });
 }
 
 fn render_ops_panel(ui: &mut egui::Ui, app: &mut OperatorApp) {

@@ -227,7 +227,7 @@ pub const BOTTOM_TAB_BAR_HEIGHT: f32 = 56.0;
 ///
 /// Sprint 4: rendered as an icon + label bar pinned to the safe-area bottom.
 /// Sprint 3.5: constants defined only — no rendering yet.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BottomTab {
     /// 🧬 Bio-Manifest — slime roster and genome browser.
     Roster,
@@ -248,6 +248,61 @@ impl BottomTab {
             BottomTab::Map      => "🗺️ Map",
             BottomTab::Logs     => "📜 Logs",
         }
+    }
+}
+
+/// Roster sub-tabs: genetics, breeding, collection
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum RosterSubTab {
+    Collection,   // All slimes, genetics tree
+    Breeding,     // Pair selection, timers, hatch notifications
+    // Reserved for future expansion
+}
+
+impl Default for RosterSubTab {
+    fn default() -> Self {
+        Self::Collection
+    }
+}
+
+/// Missions sub-tabs: active expeditions, quest board
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum MissionsSubTab {
+    Active,       // Ongoing expeditions, timers, returns
+    QuestBoard,   // Available missions, target selection
+    // Reserved for future expansion
+}
+
+impl Default for MissionsSubTab {
+    fn default() -> Self {
+        Self::Active
+    }
+}
+
+/// Map sub-tabs: currently flat, reserved for expansion
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum MapSubTab {
+    Zones,        // Zone affinity, resource yields
+    // Reserved: Alliances, Trade, Procedural
+}
+
+impl Default for MapSubTab {
+    fn default() -> Self {
+        Self::Zones
+    }
+}
+
+/// Logs sub-tabs: mission history, culture/trade history, operational records
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum LogsSubTab {
+    MissionHistory,    // AAR outcomes, rolls, narrative
+    CultureHistory,    // Culture recruitment, standing changes
+    // Reserved: OpLog, CargoLog (if Ops/Cargo restore needed)
+}
+
+impl Default for LogsSubTab {
+    fn default() -> Self {
+        Self::MissionHistory
     }
 }
 
