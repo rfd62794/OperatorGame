@@ -82,7 +82,7 @@ pub enum MobileTab {
 
 impl OperatorApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, state: GameState, save_path: PathBuf) -> Self {
-        let garden = Garden::from_operators(&state.slimes, egui::Rect::EVERYTHING);
+        let garden = Garden::from_operators(&state.slimes, egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 1000.0)));
         Self {
             active_tab: state.active_tab,
             roster_sub_tab: state.roster_sub_tab,
