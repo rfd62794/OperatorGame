@@ -121,6 +121,23 @@ impl LayoutCalculator {
     pub fn primary_action_y_max(&self) -> f32 {
         self.origin.y + self.screen_height - PRIMARY_ACTION_BOTTOM_GUARD
     }
+
+    /// Calculate the rectangle for the 4-tab bottom navigation bar.
+    ///
+    /// Sits immediately above the soft button inset within the safe area.
+    pub fn bottom_tab_rect(&self, safe_area: &SafeArea) -> egui::Rect {
+        let tab_height = 48.0; // Standard Android bottom nav height
+        
+        // Position tabs above soft button area at the bottom of the safe area.
+        // Origin.y + screen_height is the bottom of the safe rect.
+        let bottom_y = self.origin.y + self.screen_height;
+        let top_y = bottom_y - tab_height;
+        
+        egui::Rect::from_min_max(
+            egui::pos2(self.origin.x, top_y),
+            egui::pos2(self.origin.x + self.screen_width, bottom_y),
+        )
+    }
 }
 
 // ---------------------------------------------------------------------------

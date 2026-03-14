@@ -48,6 +48,8 @@ pub struct OperatorApp {
     pub right_tab: RightTab,
     /// Which panel is active in mobile-view (single column).
     pub mobile_tab: MobileTab,
+    /// Which bottom tab is active on Android/Compact view.
+    pub active_tab: crate::platform::BottomTab,
 }
 
 #[derive(PartialEq)]
@@ -88,6 +90,7 @@ impl OperatorApp {
             left_tab: LeftTab::Manifest,
             right_tab: RightTab::Contracts,
             mobile_tab: MobileTab::Manifest,
+            active_tab: crate::platform::BottomTab::Roster,
         }
     }
 
@@ -356,6 +359,8 @@ impl OperatorApp {
 
 impl eframe::App for OperatorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let safe_area = crate::platform::read_window_insets();
+
         // Redraw every 100ms — animates progress bars without a background thread.
         ctx.request_repaint_after(std::time::Duration::from_millis(100));
 
@@ -434,7 +439,17 @@ impl eframe::App for OperatorApp {
         */
 
         // Top status bar
-        egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
+        egui::TopBottomPanel::top("top_bar")
+            .frame(
+                egui::Frame::none()
+                    .inner_margin(egui::Margin {
+                        left: safe_area.left,
+                        right: safe_area.right,
+                        top: safe_area.top,
+                        bottom: 0.0,
+                    })
+            )
+            .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label(
                     egui::RichText::new("OPERATOR: COMMAND DECK")
@@ -515,47 +530,109 @@ impl eframe::App for OperatorApp {
             });
 
         // Bottom launch / status bar
-        egui::TopBottomPanel::bottom("bottom_bar").show(ctx, |ui| {
-            self.render_launch_bar(ui);
-        });
+        egui::TopBottomPanel::bottom("bottom_bar")
+            .frame(
+                egui::Frame::none()
+                    .inner_margin(egui::Margin {
+                        left: safe_area.left,
+                        right: safe_area.right,
+                        top: 0.0,
+                        bottom: safe_area.bottom,
+                    })
+            )
+            .show(ctx, |ui| {
+                self.render_launch_bar(ui);
+            });
+
+        // Bottom Navigation Tab Bar (Phase B)
+        let layout = crate::platform::LayoutCalculator::new(
+            egui::vec2(ctx.screen_rect().width(), ctx.screen_rect().height()),
+            safe_area,
+        );
+        let tab_rect = layout.bottom_tab_rect(&safe_area);
+
+        egui::Area::new(egui::Id::new("bottom_tabs"))
+            .fixed_pos(tab_rect.min)
+            .show(ctx, |ui| {
+                ui.set_min_size(egui::vec2(tab_rect.width(), tab_rect.height()));
+                
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+                    let tab_width = tab_rect.width() / 4.0;
+                    
+                    let tabs = [
+                        (crate::platform::BottomTab::Roster, "🧬 Roster"),
+                        (crate::platform::BottomTab::Missions, "🚀 Missions"),
+                        (crate::platform::BottomTab::Map, "🗺️ Map"),
+                        (crate::platform::BottomTab::Logs, "📜 Logs"),
+                    ];
+
+                    for (_idx, (tab, label)) in tabs.iter().enumerate() {
+                        let is_active = self.active_tab == *tab;
+                        let button = egui::Button::new(*label)
+                            .fill(if is_active { 
+                                egui::Color32::from_rgb(100, 200, 100) 
+                            } else { 
+                                egui::Color32::from_rgb(60, 60, 60) 
+                            })
+                            .min_size(egui::vec2(tab_width, tab_rect.height()));
+                        
+                        if ui.add(button).clicked() {
+                            self.active_tab = *tab;
+                        }
+                    }
+                });
+            });
 
         // Three-column central panel (Desktop) or Tab-view (Mobile)
         let is_mobile = ctx.screen_rect().width() < 800.0 || cfg!(target_os = "android");
 
         if is_mobile {
-            egui::TopBottomPanel::top("mobile_tabs").show(ctx, |ui| {
-                ui.horizontal_centered(|ui| {
-                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Manifest, "UNIT");
-                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Ops, "OPS");
-                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Contracts, "DOCS");
-                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Radar, "RADAR");
-                    ui.selectable_value(&mut self.mobile_tab, MobileTab::Cargo, "GEAR");
+            egui::CentralPanel::default()
+                .frame(
+                    egui::Frame::none()
+                        .inner_margin(egui::Margin {
+                            left: safe_area.left,
+                            right: safe_area.right,
+                            top: 0.0,
+                            bottom: 0.0,
+                        })
+                )
+                .show(ctx, |ui| {
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        match self.active_tab {
+                            crate::platform::BottomTab::Roster => {
+                                self.render_roster(ui);
+                            }
+                            crate::platform::BottomTab::Missions => {
+                                self.render_contracts(ui);
+                            }
+                            crate::platform::BottomTab::Map => {
+                                self.render_radar(ui);
+                            }
+                            crate::platform::BottomTab::Logs => {
+                                // Combat log is already in its own panel, 
+                                // but we show the historical scroll here.
+                                ui.heading("Operational Logs");
+                                for entry in &self.combat_log {
+                                    ui.label(entry);
+                                }
+                            }
+                        }
+                    });
                 });
-            });
-
-            egui::CentralPanel::default().show(ctx, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    match self.mobile_tab {
-                        MobileTab::Manifest => {
-                            self.render_roster(ui);
-                        }
-                        MobileTab::Ops => {
-                            self.render_active_ops(ui);
-                        }
-                        MobileTab::Contracts => {
-                            self.render_contracts(ui);
-                        }
-                        MobileTab::Radar => {
-                            self.render_radar(ui);
-                        }
-                        MobileTab::Cargo => {
-                            self.render_cargo(ui);
-                        }
-                    }
-                });
-            });
         } else {
-            egui::CentralPanel::default().show(ctx, |ui| {
+            egui::CentralPanel::default()
+                .frame(
+                    egui::Frame::none()
+                        .inner_margin(egui::Margin {
+                            left: safe_area.left,
+                            right: safe_area.right,
+                            top: 0.0,
+                            bottom: 0.0,
+                        })
+                )
+                .show(ctx, |ui| {
                 // Collect the three column contents; egui columns take a closure
                 // so we must render them inside the callback.
                 egui::ScrollArea::vertical().show(ui, |ui| {
