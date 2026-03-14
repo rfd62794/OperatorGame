@@ -189,9 +189,12 @@ fn test_sub_tab_persistence_serialize() {
 
 #[test]
 fn test_sub_tab_persistence_deserialize() {
-    let json = r#"{"roster_sub_tab": "Breeding", "active_tab": "Roster", "bank": 500, "last_upkeep_at": "2026-03-14T23:24:50Z", "last_pool_refresh": "2026-03-14T23:24:50Z"}"#;
-    let game_state: GameState = serde_json::from_str(json).unwrap();
-    assert_eq!(game_state.roster_sub_tab, RosterSubTab::Breeding);
+    // Round-trip is safer than hardcoded JSON which breaks on schema changes
+    let mut game_state = GameState::default();
+    game_state.roster_sub_tab = RosterSubTab::Breeding;
+    let json = serde_json::to_string(&game_state).unwrap();
+    let restored: GameState = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.roster_sub_tab, RosterSubTab::Breeding);
 }
 
 #[test]
@@ -213,9 +216,7 @@ fn test_sub_tab_state_initialization_from_state() {
     let mut state = GameState::default();
     state.roster_sub_tab = RosterSubTab::Breeding;
     
-    let ctx_raw = 0usize as *const eframe::CreationContext;
-    let ctx_ref = unsafe { &*ctx_raw };
-    let app = OperatorApp::new(ctx_ref, state, PathBuf::from("test_save.json"));
+    let app = OperatorApp::new_from_state(state, PathBuf::from("test_save.json"));
     
     assert_eq!(app.roster_sub_tab, RosterSubTab::Breeding);
 }

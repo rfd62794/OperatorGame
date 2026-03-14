@@ -104,7 +104,10 @@ impl OperatorApp {
     }
 
     pub fn new_dummy() -> Self {
-        let state = GameState::default();
+        Self::new_from_state(GameState::default(), PathBuf::from("test_save.json"))
+    }
+
+    pub fn new_from_state(state: GameState, save_path: PathBuf) -> Self {
         let garden = Garden::from_operators(&state.slimes, egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 1000.0)));
         Self {
             active_tab: state.active_tab,
@@ -113,7 +116,7 @@ impl OperatorApp {
             map_sub_tab: state.map_sub_tab,
             logs_sub_tab: state.logs_sub_tab,
             state,
-            save_path: PathBuf::from("test_save.json"),
+            save_path,
             selected_mission: None,
             staged_operators: HashSet::new(),
             status_msg: String::new(),
