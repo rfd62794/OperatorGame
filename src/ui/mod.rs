@@ -9,6 +9,8 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use chrono::{Duration, Utc};
+use crate::geometry::{Point, Bounds};
+use crate::render::garden_bridge::{egui_pos_to_point, egui_rect_to_bounds};
 use eframe::egui;
 use uuid::Uuid;
 
@@ -82,7 +84,7 @@ pub enum MobileTab {
 
 impl OperatorApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, state: GameState, save_path: PathBuf) -> Self {
-        let garden = Garden::from_operators(&state.slimes, egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 1000.0)));
+        let garden = Garden::from_operators(&state.slimes, Bounds::new(0.0, 0.0, 1000.0, 1000.0));
         Self {
             active_tab: state.active_tab,
             roster_sub_tab: state.roster_sub_tab,
@@ -108,7 +110,7 @@ impl OperatorApp {
     }
 
     pub fn new_from_state(state: GameState, save_path: PathBuf) -> Self {
-        let garden = Garden::from_operators(&state.slimes, egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 1000.0)));
+        let garden = Garden::from_operators(&state.slimes, Bounds::new(0.0, 0.0, 1000.0, 1000.0));
         Self {
             active_tab: state.active_tab,
             roster_sub_tab: state.roster_sub_tab,

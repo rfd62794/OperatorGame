@@ -11,6 +11,10 @@ members = ["operator-cli"]
 name = "operator"
 crate-type = ["rlib", "cdylib"]
 
+[[bin]]
+name = "operatorgame"
+path = "src/main.rs"
+
 # ---------------------------------------------------------------------------
 # Shared dependencies — available on all platforms
 # ---------------------------------------------------------------------------

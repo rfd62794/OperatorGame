@@ -25,13 +25,9 @@
 ///
 /// The garden is **not serialised** — positions reset on every boot (the
 /// "Internal Habitat" reconfigures each session). Only `SlimeGenome` is
-/// persistent.
-
-use eframe::egui::{Color32, Painter, Pos2, Rect, Stroke};
-use uuid::Uuid;
-
-use crate::genetics::SlimeGenome;
+/// persistuse crate::geometry::{Point, Bounds};
 use crate::render::slime::{draw_slime, SlimeMood};
+use crate::render::garden_bridge::point_to_egui;
 
 // ---------------------------------------------------------------------------
 // Constants — ported from slime.py update logic
@@ -64,9 +60,9 @@ pub struct GardenAgent {
     /// Stable reference back to the genome's ID.
     pub genome_id: Uuid,
     /// Current position in garden-local coordinates.
-    pub pos:       Pos2,
+    pub pos:       Point,
     /// Current velocity (pts/sec).
-    pub vel:       Pos2,
+    pub vel:       Point,
     /// Seconds until next target re-roll.
     pub wander_timer: f32,
     /// The personality axes derived from genome stats (0.0–1.0).
@@ -77,7 +73,7 @@ pub struct GardenAgent {
     /// Cached mood — updated each tick.
     pub mood:      SlimeMood,
     /// Current wander target (garden-local).
-    pub target:    Option<Pos2>,
+    pub target:    Option<Point>,
     /// Level — for elder crown
     pub level:     u32,
     /// Dispatched (ghost state)
@@ -87,7 +83,7 @@ pub struct GardenAgent {
 impl GardenAgent {
     /// Build a new garden agent from an operator. `spawn` is the initial
     /// position in garden-local coordinates.
-    pub fn new(op: &crate::models::Operator, spawn: Pos2) -> Self {
+    pub fn new(op: &crate::models::Operator, spawn: Point) -> Self {
         let genome = &op.genome;
         let leveled = op.level as u32;
         let dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
@@ -102,7 +98,7 @@ impl GardenAgent {
         Self {
             genome_id:   genome.id,
             pos:         spawn,
-            vel:         Pos2::ZERO,
+            vel:         Point::ZERO,
             wander_timer: 0.0,
             energy,
             shyness,
@@ -136,7 +132,7 @@ pub struct Garden {
 impl Garden {
     /// Build a garden from the current roster. Agents are placed in a simple
     /// grid layout within the given rect.
-    pub fn from_operators(ops: &[crate::models::Operator], rect: Rect) -> Self {
+    pub fn from_operators(ops: &[crate::models::Operator], rect: Bounds) -> Self {
         let n = ops.len();
         let agents = ops.iter().enumerate().map(|(i, op)| {
             // Deterministic grid spawn — evenly placed left-to-right, row-wrapped
@@ -145,9 +141,9 @@ impl Garden {
             let row     = i / cols;
             let cell_w  = rect.width()  / (cols as f32 + 1.0);
             let cell_h  = rect.height() / ((n / cols + 1) as f32 + 1.0);
-            let x       = rect.min.x + cell_w * (col as f32 + 1.0);
-            let y       = rect.min.y + cell_h * (row as f32 + 1.0);
-            GardenAgent::new(op, Pos2::new(x, y))
+            let x       = rect.min_x + cell_w * (col as f32 + 1.0);
+            let y       = rect.min_y + cell_h * (row as f32 + 1.0);
+            GardenAgent::new(op, Point::new(x, y))
         }).collect();
         Self { agents, selected: None }
     }
@@ -162,9 +158,9 @@ impl Garden {
     /// - `rect`   — the drawable boundary of the garden UI area
     ///
     /// Ported from `slime.py::update()` + `_get_zone_target()`.
-    pub fn tick(&mut self, dt: f32, cursor: Option<Pos2>, rect: Rect) {
+    pub fn tick(&mut self, dt: f32, cursor: Option<Point>, rect: Bounds) {
         // Snapshot positions for inter-agent queries (don't borrow agents mutably yet)
-        let positions: Vec<Pos2> = self.agents.iter().map(|a| a.pos).collect();
+        let positions: Vec<Point> = self.agents.iter().map(|a| a.pos).collect();
 
         for (idx, agent) in self.agents.iter_mut().enumerate() {
             agent.wander_timer -= dt;
@@ -172,15 +168,15 @@ impl Garden {
             // --- Mood update every tick ---
             agent.mood = derive_mood(agent.energy, agent.shyness, agent.affection, agent.curiosity);
 
-            let mut force = Pos2::ZERO;
+            let mut force = Point::ZERO;
 
             // ── 1. SHYNESS force (flee cursor) ──────────────────────────────
             if let Some(cur) = cursor {
-                let dcur = dist(cur, agent.pos);
+                let dcur = agent.pos.distance_to(cur);
                 if dcur < SHYNESS_RADIUS && dcur > 0.01 {
-                    let flee = normalize(sub(agent.pos, cur));
+                    let flee = normalize(agent.pos.sub(cur));
                     let mag  = (SHYNESS_RADIUS - dcur) / SHYNESS_RADIUS * agent.shyness * 120.0;
-                    force = add(force, scale(flee, mag));
+                    force = force.add(flee.scale(mag));
                 }
             }
 
@@ -188,25 +184,25 @@ impl Garden {
             if agent.affection > 0.5 {
                 let nearest = positions.iter().enumerate()
                     .filter(|(i, _)| *i != idx)
-                    .min_by(|(_, a), (_, b)| dist(**a, agent.pos)
-                        .partial_cmp(&dist(**b, agent.pos)).unwrap());
+                    .min_by(|(_, a), (_, b)| agent.pos.distance_to(**a)
+                        .partial_cmp(&agent.pos.distance_to(**b)).unwrap());
                 if let Some((_, &nb_pos)) = nearest {
-                    let d = dist(nb_pos, agent.pos);
+                    let d = agent.pos.distance_to(nb_pos);
                     if d < CLUSTER_RADIUS && d > 15.0 {
-                        let toward = normalize(sub(nb_pos, agent.pos));
+                        let toward = normalize(nb_pos.sub(agent.pos));
                         let mag    = agent.affection * 50.0 * ((CLUSTER_RADIUS - d) / CLUSTER_RADIUS);
-                        force = add(force, scale(toward, mag));
+                        force = force.add(toward.scale(mag));
                     }
                 }
             }
 
             // ── 3. CURIOSITY force (follow cursor) ───────────────────────────
             if let Some(cur) = cursor {
-                let dcur = dist(cur, agent.pos);
+                let dcur = agent.pos.distance_to(cur);
                 if agent.shyness < 0.5 && agent.curiosity > 0.5 && dcur < CURIOUS_RADIUS && dcur > SHYNESS_RADIUS {
-                    let toward = normalize(sub(cur, agent.pos));
+                    let toward = normalize(cur.sub(agent.pos));
                     let mag    = agent.curiosity * 40.0;
-                    force = add(force, scale(toward, mag));
+                    force = force.add(toward.scale(mag));
                 }
             }
 
@@ -219,19 +215,18 @@ impl Garden {
                 let new_target = match agent.mood {
                     // Shy → flee to nearest wall
                     SlimeMood::Shy => {
-                        let cx = rect.center().x;
-                        let cy = rect.center().y;
-                        let dx = agent.pos.x - cx;
-                        let dy = agent.pos.y - cy;
-                        let edge_x = if dx > 0.0 { rect.max.x - WALL_MARGIN } else { rect.min.x + WALL_MARGIN };
-                        let edge_y = if dy > 0.0 { rect.max.y - WALL_MARGIN } else { rect.min.y + WALL_MARGIN };
-                        Some(Pos2::new(edge_x, edge_y))
+                        let center = rect.center();
+                        let dx = agent.pos.x - center.x;
+                        let dy = agent.pos.y - center.y;
+                        let edge_x = if dx > 0.0 { rect.max_x - WALL_MARGIN } else { rect.min_x + WALL_MARGIN };
+                        let edge_y = if dy > 0.0 { rect.max_y - WALL_MARGIN } else { rect.min_y + WALL_MARGIN };
+                        Some(Point::new(edge_x, edge_y))
                     }
                     // Sleepy → barely moves — target stays near current pos
                     SlimeMood::Sleepy => {
-                        let jitter_x = (agent.pos.x + 20.0).clamp(rect.min.x + WALL_MARGIN, rect.max.x - WALL_MARGIN);
-                        let jitter_y = (agent.pos.y + 10.0).clamp(rect.min.y + WALL_MARGIN, rect.max.y - WALL_MARGIN);
-                        Some(Pos2::new(jitter_x, jitter_y))
+                        let jitter_x = (agent.pos.x + 20.0).clamp(rect.min_x + WALL_MARGIN, rect.max_x - WALL_MARGIN);
+                        let jitter_y = (agent.pos.y + 10.0).clamp(rect.min_y + WALL_MARGIN, rect.max_y - WALL_MARGIN);
+                        Some(Point::new(jitter_x, jitter_y))
                     }
                     // Playful → toward center of the pack
                     SlimeMood::Playful => {
@@ -240,31 +235,33 @@ impl Garden {
                         } else {
                             let cx = positions.iter().map(|p| p.x).sum::<f32>() / positions.len() as f32;
                             let cy = positions.iter().map(|p| p.y).sum::<f32>() / positions.len() as f32;
-                            Some(Pos2::new(cx, cy))
+                            Some(Point::new(cx, cy))
                         }
                     }
                     // Curious → toward center + slight drift pattern
                     SlimeMood::Curious => {
                         let t_off = (agent.energy * 100.0) as i32 as f32;
-                        let cx = rect.center().x + (t_off * 0.05).sin() * rect.width() * 0.3;
-                        let cy = rect.center().y + (t_off * 0.07).cos() * rect.height() * 0.3;
-                        Some(Pos2::new(
-                            cx.clamp(rect.min.x + WALL_MARGIN, rect.max.x - WALL_MARGIN),
-                            cy.clamp(rect.min.y + WALL_MARGIN, rect.max.y - WALL_MARGIN),
+                        let center = rect.center();
+                        let cx = center.x + (t_off * 0.05).sin() * rect.width() * 0.3;
+                        let cy = center.y + (t_off * 0.07).cos() * rect.height() * 0.3;
+                        Some(Point::new(
+                            cx.clamp(rect.min_x + WALL_MARGIN, rect.max_x - WALL_MARGIN),
+                            cy.clamp(rect.min_y + WALL_MARGIN, rect.max_y - WALL_MARGIN),
                         ))
                     }
                     // Happy → random drift within rect (high energy → wide range)
                     SlimeMood::Happy => {
                         let range_x = rect.width()  * 0.4 * (0.3 + agent.energy);
                         let range_y = rect.height() * 0.4 * (0.3 + agent.energy);
+                        let center = rect.center();
                         // Deterministic pseudo-random from pos + timer
                         let px = agent.pos.x + agent.wander_timer * 31.7;
                         let py = agent.pos.y + agent.wander_timer * 17.3;
-                        let nx = rect.center().x + (px.sin() * range_x);
-                        let ny = rect.center().y + (py.cos() * range_y);
-                        Some(Pos2::new(
-                            nx.clamp(rect.min.x + WALL_MARGIN, rect.max.x - WALL_MARGIN),
-                            ny.clamp(rect.min.y + WALL_MARGIN, rect.max.y - WALL_MARGIN),
+                        let nx = center.x + (px.sin() * range_x);
+                        let ny = center.y + (py.cos() * range_y);
+                        Some(Point::new(
+                            nx.clamp(rect.min_x + WALL_MARGIN, rect.max_x - WALL_MARGIN),
+                            ny.clamp(rect.min_y + WALL_MARGIN, rect.max_y - WALL_MARGIN),
                         ))
                     }
                 };
@@ -273,32 +270,32 @@ impl Garden {
 
             // ── 5. Apply target-seeking force ────────────────────────────────
             if let Some(tgt) = agent.target {
-                let diff = sub(tgt, agent.pos);
+                let diff = tgt.sub(agent.pos);
                 let d    = mag(diff);
                 if d > 8.0 {
-                    let dir    = scale(diff, 1.0 / d);
+                    let dir    = diff.scale(1.0 / d);
                     let speed  = match agent.mood {
                         SlimeMood::Sleepy => 8.0,
                         SlimeMood::Shy    => 90.0,
                         _                 => 20.0 + agent.energy * 80.0,
                     };
-                    force = add(force, scale(dir, speed));
+                    force = force.add(dir.scale(speed));
                 } else {
                     agent.target = None;
                 }
             }
 
             // ── 6. Integrate velocity ─────────────────────────────────────────
-            agent.vel = add(agent.vel, scale(force, dt));
+            agent.vel = agent.vel.add(force.scale(dt));
             // Friction
-            agent.vel = scale(agent.vel, FRICTION.powf(dt * 30.0));
+            agent.vel = agent.vel.scale(FRICTION.powf(dt * 30.0));
             // Speed clamp
             let speed = mag(agent.vel);
             if speed > agent.max_speed() {
-                agent.vel = scale(agent.vel, agent.max_speed() / speed);
+                agent.vel = agent.vel.scale(agent.max_speed() / speed);
             }
             // Integrate position
-            agent.pos = add(agent.pos, scale(agent.vel, dt));
+            agent.pos = agent.pos.add(agent.vel.scale(dt));
 
             // ── 7. Wall bounce ────────────────────────────────────────────────
             handle_bounds(&mut agent.pos, &mut agent.vel, rect);
@@ -311,10 +308,10 @@ impl Garden {
 
     /// Handle a click at `click_pos` (gallery-local). Returns the `genome_id`
     /// of the agent clicked, or `None`.
-    pub fn handle_click(&mut self, click_pos: Pos2) -> Option<Uuid> {
+    pub fn handle_click(&mut self, click_pos: Point) -> Option<Uuid> {
         // Hit-radius: fixed 25pts (covers all life stages)
         for agent in &self.agents {
-            if dist(click_pos, agent.pos) < 28.0 {
+            if agent.pos.distance_to(click_pos) < 28.0 {
                 self.selected = Some(agent.genome_id);
                 return Some(agent.genome_id);
             }
@@ -336,12 +333,13 @@ impl Garden {
 /// - `garden`   — the live simulation state
 /// - `t`        — current time in seconds (from `ctx.input(|i| i.time as f32)`)
 pub fn draw_garden(
-    painter:  &Painter,
-    rect:     Rect,
+    painter:  &eframe::egui::Painter,
+    rect:     eframe::egui::Rect,
     operators: &std::collections::HashMap<uuid::Uuid, &crate::models::Operator>,
     garden:   &Garden,
     t:        f32,
 ) {
+    use eframe::egui::{Color32, Stroke, FontId, Align2};
     // Garden background
     painter.rect_filled(rect, 6.0, Color32::from_rgba_unmultiplied(10, 16, 26, 220));
     painter.rect_stroke(rect, 6.0, Stroke::new(1.0, Color32::from_rgb(30, 45, 70)));
@@ -351,25 +349,25 @@ pub fn draw_garden(
         let Some(&op) = operators.get(&agent.genome_id) else { continue };
         let vis      = crate::render::slime::SlimeVisual::from_operator(op, t);
         let selected = garden.selected == Some(agent.genome_id);
-        draw_slime(painter, agent.pos, &vis, selected);
+        draw_slime(painter, point_to_egui(agent.pos), &vis, selected);
 
         // Mood label (tiny emoji below the slime)
-        let label_pos = Pos2::new(agent.pos.x, agent.pos.y + vis.radius + 10.0);
+        let label_pos = eframe::egui::Pos2::new(agent.pos.x, agent.pos.y + vis.radius + 10.0);
         painter.text(
             label_pos,
-            eframe::egui::Align2::CENTER_CENTER,
+            Align2::CENTER_CENTER,
             agent.mood.label(),
-            eframe::egui::FontId::proportional(10.0),
+            FontId::proportional(10.0),
             Color32::from_rgba_unmultiplied(220, 220, 220, 140),
         );
     }
 
     // "INTERNAL HABITAT" watermark
     painter.text(
-        Pos2::new(rect.max.x - 8.0, rect.min.y + 6.0),
-        eframe::egui::Align2::RIGHT_TOP,
+        eframe::egui::Pos2::new(rect.max.x - 8.0, rect.min.y + 6.0),
+        Align2::RIGHT_TOP,
         "INTERNAL HABITAT",
-        eframe::egui::FontId::monospace(8.0),
+        FontId::monospace(8.0),
         Color32::from_rgba_unmultiplied(40, 80, 120, 100),
     );
 }
@@ -387,7 +385,7 @@ mod tests {
 
     fn rng() -> SmallRng { SmallRng::seed_from_u64(42) }
 
-    fn test_genome_with_personality(energy: f32, shyness: f32, affection: f32, curiosity: f32) -> SlimeGenome {
+    fn test_genome_with_personality(energy: f32, shyness: f32, affection: f32, curiosity: f32) -> crate::genetics::SlimeGenome {
         let mut r = rng();
         let mut g = generate_random(Culture::Ember, "Test", &mut r);
         g.energy    = energy;
@@ -397,8 +395,8 @@ mod tests {
         g
     }
 
-    fn test_rect() -> Rect {
-        Rect::from_min_size(Pos2::ZERO, eframe::egui::Vec2::new(400.0, 300.0))
+    fn test_rect() -> Bounds {
+        Bounds::new(0.0, 0.0, 400.0, 300.0)
     }
 
     #[test]
@@ -481,7 +479,7 @@ mod tests {
         let mut garden = Garden::from_operators(&[op], rect);
         garden.selected = Some(garden.agents[0].genome_id);
         // Click far corner — should miss
-        let hit = garden.handle_click(Pos2::new(395.0, 295.0));
+        let hit = garden.handle_click(Point::new(395.0, 295.0));
         assert!(hit.is_none());
         assert_eq!(garden.selected, None);
     }
@@ -491,14 +489,28 @@ mod tests {
 // Math helpers (no nalgebra dependency — keep it simple)
 // ---------------------------------------------------------------------------
 
-#[inline] fn add(a: Pos2, b: Pos2)  -> Pos2 { Pos2::new(a.x + b.x, a.y + b.y) }
-#[inline] fn sub(a: Pos2, b: Pos2)  -> Pos2 { Pos2::new(a.x - b.x, a.y - b.y) }
-#[inline] fn scale(a: Pos2, s: f32) -> Pos2 { Pos2::new(a.x * s, a.y * s) }
-#[inline] fn mag(a: Pos2)           -> f32  { (a.x * a.x + a.y * a.y).sqrt() }
-#[inline] fn dist(a: Pos2, b: Pos2) -> f32  { mag(sub(a, b)) }
-#[inline] fn normalize(a: Pos2)     -> Pos2 {
+#[inline] fn mag(a: Point)           -> f32  { (a.x * a.x + a.y * a.y).sqrt() }
+#[inline] fn normalize(a: Point)     -> Point {
     let m = mag(a);
-    if m > 0.001 { scale(a, 1.0 / m) } else { Pos2::ZERO }
+    if m > 0.001 { a.scale(1.0 / m) } else { Point::ZERO }
+}
+
+fn handle_bounds(pos: &mut Point, vel: &mut Point, rect: Bounds) {
+    let margin = WALL_MARGIN;
+    if pos.x < rect.min_x + margin { pos.x = rect.min_x + margin; vel.x = vel.x.abs() * 0.5; }
+    if pos.x > rect.max_x - margin { pos.x = rect.max_x - margin; vel.x = -vel.x.abs() * 0.5; }
+    if pos.y < rect.min_y + margin { pos.y = rect.min_y + margin; vel.y = vel.y.abs() * 0.5; }
+    if pos.y > rect.max_y - margin { pos.y = rect.max_y - margin; vel.y = -vel.y.abs() * 0.5; }
+}
+
+fn derive_mood(energy: f32, shyness: f32, affection: f32, curiosity: f32) -> SlimeMood {
+    if energy < 0.3       { SlimeMood::Sleepy }
+    else if shyness > 0.7 { SlimeMood::Shy }
+    else if affection > 0.7 { SlimeMood::Playful }
+    else if curiosity > 0.6 { SlimeMood::Curious }
+    else                  { SlimeMood::Happy }
+}
+:ZERO }
 }
 
 fn handle_bounds(pos: &mut Pos2, vel: &mut Pos2, rect: Rect) {
