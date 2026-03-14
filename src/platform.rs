@@ -239,6 +239,12 @@ pub enum BottomTab {
     Logs,
 }
 
+impl Default for BottomTab {
+    fn default() -> Self {
+        Self::Roster
+    }
+}
+
 impl BottomTab {
     /// Display label for the tab bar button.
     pub fn label(self) -> &'static str {
