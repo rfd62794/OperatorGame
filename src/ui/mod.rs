@@ -450,20 +450,18 @@ impl eframe::App for OperatorApp {
         }
 
         // Background Garden
-        let _t = ctx.input(|i| i.time as f32);
-        let _cursor = ctx.input(|i| i.pointer.hover_pos());
-        let _screen_rect = ctx.screen_rect();
-
-        /*
-        // --- Garden temporarily disabled for "Industrial Pivot" UI Focus ---
+        let t = ctx.input(|i| i.time as f32);
+        let dt = ctx.input(|i| i.stable_dt).min(0.1);
+        let cursor = ctx.input(|i| i.pointer.hover_pos()).map(egui_pos_to_point);
+        let screen_rect = ctx.screen_rect();
 
         // Advance garden simulation
-        self.garden.tick(0.1, cursor, screen_rect);
+        self.garden.tick(dt, cursor, egui_rect_to_bounds(screen_rect));
 
         // Intercept clicks in empty space for selecting garden slimes
         if ctx.input(|i| i.pointer.primary_clicked()) && !ctx.wants_pointer_input() {
             if let Some(pos) = ctx.input(|i| i.pointer.interact_pos()) {
-                if let Some(id) = self.garden.handle_click(pos) {
+                if let Some(id) = self.garden.handle_click(egui_pos_to_point(pos)) {
                     self.selected_slime_id = Some(id);
                     // Switch to Manifest to show the card
                     self.left_tab = LeftTab::Manifest;
@@ -480,7 +478,6 @@ impl eframe::App for OperatorApp {
                 let operator_map = self.state.slimes.iter().map(|op| (op.id(), op)).collect();
                 crate::garden::draw_garden(ui.painter(), screen_rect, &operator_map, &self.garden, t);
             });
-        */
 
         // Top status bar
         egui::TopBottomPanel::top("top_bar")

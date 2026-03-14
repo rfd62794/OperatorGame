@@ -25,7 +25,10 @@
 ///
 /// The garden is **not serialised** — positions reset on every boot (the
 /// "Internal Habitat" reconfigures each session). Only `SlimeGenome` is
-/// persistuse crate::geometry::{Point, Bounds};
+/// persistent.
+
+use uuid::Uuid;
+use crate::geometry::{Point, Bounds};
 use crate::render::slime::{draw_slime, SlimeMood};
 use crate::render::garden_bridge::point_to_egui;
 
