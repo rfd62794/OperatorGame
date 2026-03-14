@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use chrono::{Duration, Utc};
-use crate::geometry::{Point, Bounds};
+use crate::geometry::Bounds;
 use crate::render::garden_bridge::{egui_pos_to_point, egui_rect_to_bounds};
 use eframe::egui;
 use uuid::Uuid;
@@ -320,7 +320,7 @@ impl OperatorApp {
         let newly_injured_ids: Vec<Uuid> = newly_injured.iter().map(|(id, _)| *id).collect();
 
         match outcome {
-            AarOutcome::Victory { reward, success_rate, .. } => {
+            AarOutcome::Victory { reward, success_rate: _, .. } => {
                 self.state.bank += reward as i64;
                 
                 let debt_warning = if self.state.bank < 0 { 

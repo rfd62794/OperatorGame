@@ -1,8 +1,7 @@
-// src/ui/manifest.rs
+use crate::ui::OperatorApp;
+use crate::render::garden_bridge::egui_rect_to_bounds;
 use chrono::Utc;
 use eframe::egui;
-
-use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_manifest(&mut self, ui: &mut egui::Ui) {
@@ -266,7 +265,7 @@ impl OperatorApp {
             self.state.slimes.extend(new_slimes);
             
             // Re-sync garden to ensure new slimes wander immediately
-            self.garden = crate::garden::Garden::from_operators(&self.state.slimes, ui.max_rect());
+            self.garden = crate::garden::Garden::from_operators(&self.state.slimes, egui_rect_to_bounds(ui.max_rect()));
             self.persist();
         }
     }
@@ -294,7 +293,7 @@ impl OperatorApp {
                         Ok(id) => {
                             self.status_msg = format!("Granted Elder's Gift: Void Slime #{}", &id.to_string()[..5]);
                             self.persist();
-                            self.garden = crate::garden::Garden::from_operators(&self.state.slimes, ui.max_rect());
+                            self.garden = crate::garden::Garden::from_operators(&self.state.slimes, egui_rect_to_bounds(ui.max_rect()));
                         }
                         Err(e) => self.status_msg = e.to_string(),
                     }
@@ -320,7 +319,7 @@ impl OperatorApp {
                             Ok(id) => {
                                 self.status_msg = format!("Drafted new recruit: {} #{}", r_name, &id.to_string()[..5]);
                                 self.persist();
-                                self.garden = crate::garden::Garden::from_operators(&self.state.slimes, ui.max_rect());
+                                self.garden = crate::garden::Garden::from_operators(&self.state.slimes, egui_rect_to_bounds(ui.max_rect()));
                             }
                             Err(e) => self.status_msg = e.to_string(),
                         }
