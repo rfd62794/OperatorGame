@@ -103,6 +103,30 @@ impl OperatorApp {
         }
     }
 
+    #[cfg(test)]
+    pub fn dummy() -> Self {
+        let state = GameState::default();
+        let garden = Garden::from_operators(&state.slimes, egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 1000.0)));
+        Self {
+            active_tab: state.active_tab,
+            roster_sub_tab: state.roster_sub_tab,
+            missions_sub_tab: state.missions_sub_tab,
+            map_sub_tab: state.map_sub_tab,
+            logs_sub_tab: state.logs_sub_tab,
+            state,
+            save_path: PathBuf::from("test_save.json"),
+            selected_mission: None,
+            staged_operators: HashSet::new(),
+            status_msg: String::new(),
+            combat_log: Vec::new(),
+            garden,
+            selected_slime_id: None,
+            left_tab: LeftTab::Manifest,
+            right_tab: RightTab::Contracts,
+            mobile_tab: MobileTab::Manifest,
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------

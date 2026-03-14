@@ -130,12 +130,7 @@ fn test_primary_action_guard_value() {
 }
 
 fn create_dummy_app() -> OperatorApp {
-    let state = GameState::default();
-    // Safety: OperatorApp::new ignores the CreationContext argument currently.
-    // We use a dummy reference.
-    let ctx_raw = 0usize as *const eframe::CreationContext;
-    let ctx_ref = unsafe { &*ctx_raw };
-    OperatorApp::new(ctx_ref, state, PathBuf::from("test_save.json"))
+    OperatorApp::dummy()
 }
 
 #[test]
