@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod geometry;
 pub mod combat;
 pub mod dice;
 pub mod dungeon;
