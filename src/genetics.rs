@@ -7,7 +7,6 @@
 ///  - BreedingResolver: 3-rule stat inheritance + culture blending + mutation
 ///  - GeneticTier derived from nonagon adjacency (ADR-023 v2)
 ///  - LifeStage gate (Hatchling → Elder)
-use chrono::Duration;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

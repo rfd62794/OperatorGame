@@ -1,8 +1,8 @@
-use operator::{models::GameState, ui::OperatorApp, persistence::load};
+use operator::{persistence::load, ui::OperatorApp};
 use eframe::egui;
 use std::path::PathBuf;
 
-fn main() -> eframe::Result {
+fn main() -> eframe::Result<()> {
     let save_path = PathBuf::from("save.json");
     let state = load(&save_path).unwrap_or_default();
 
@@ -17,7 +17,7 @@ fn main() -> eframe::Result {
         "OPERATOR",
         options,
         Box::new(|cc| {
-            Ok(Box::new(OperatorApp::new(cc, state, save_path)))
+            Box::new(OperatorApp::new(cc, state, save_path))
         }),
     )
 }
