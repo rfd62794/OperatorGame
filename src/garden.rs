@@ -332,13 +332,13 @@ impl Garden {
 ///
 /// - `painter`  — egui Painter restricted to the garden rect
 /// - `rect`     — garden boundary (for background tint)
-/// - `genomes`  — map from genome_id → SlimeGenome (used for SlimeVisual)
+/// - `operators` — map from genome_id → Operator
 /// - `garden`   — the live simulation state
 /// - `t`        — current time in seconds (from `ctx.input(|i| i.time as f32)`)
 pub fn draw_garden(
     painter:  &eframe::egui::Painter,
     rect:     eframe::egui::Rect,
-    operators: &std::collections::HashMap<uuid::Uuid, &crate::models::Operator>,
+    operators: &std::collections::HashMap<Uuid, &crate::models::Operator>,
     garden:   &Garden,
     t:        f32,
 ) {
@@ -504,24 +504,6 @@ fn handle_bounds(pos: &mut Point, vel: &mut Point, rect: Bounds) {
     if pos.x > rect.max_x - margin { pos.x = rect.max_x - margin; vel.x = -vel.x.abs() * 0.5; }
     if pos.y < rect.min_y + margin { pos.y = rect.min_y + margin; vel.y = vel.y.abs() * 0.5; }
     if pos.y > rect.max_y - margin { pos.y = rect.max_y - margin; vel.y = -vel.y.abs() * 0.5; }
-}
-
-fn derive_mood(energy: f32, shyness: f32, affection: f32, curiosity: f32) -> SlimeMood {
-    if energy < 0.3       { SlimeMood::Sleepy }
-    else if shyness > 0.7 { SlimeMood::Shy }
-    else if affection > 0.7 { SlimeMood::Playful }
-    else if curiosity > 0.6 { SlimeMood::Curious }
-    else                  { SlimeMood::Happy }
-}
-:ZERO }
-}
-
-fn handle_bounds(pos: &mut Pos2, vel: &mut Pos2, rect: Rect) {
-    let margin = WALL_MARGIN;
-    if pos.x < rect.min.x + margin { pos.x = rect.min.x + margin; vel.x = vel.x.abs() * 0.5; }
-    if pos.x > rect.max.x - margin { pos.x = rect.max.x - margin; vel.x = -vel.x.abs() * 0.5; }
-    if pos.y < rect.min.y + margin { pos.y = rect.min.y + margin; vel.y = vel.y.abs() * 0.5; }
-    if pos.y > rect.max.y - margin { pos.y = rect.max.y - margin; vel.y = -vel.y.abs() * 0.5; }
 }
 
 fn derive_mood(energy: f32, shyness: f32, affection: f32, curiosity: f32) -> SlimeMood {
