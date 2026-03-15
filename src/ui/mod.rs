@@ -631,9 +631,7 @@ impl eframe::App for OperatorApp {
                 });
             });
 
-        // Three-column central panel (Desktop) or Tab-view (Mobile)
-        // let is_mobile = ctx.screen_rect().width() < 800.0 || cfg!(target_os = "android");
-
+        // Unified 4-tab layout with vertical sub-tab sidebar
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::none()
@@ -646,7 +644,7 @@ impl eframe::App for OperatorApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    // Left sidebar: sub-tab navigation
+                    // Left sidebar: sub-tab navigation (Pinned at 100dp)
                     ui.vertical(|ui| {
                         ui.set_width(100.0);
                         render_sub_tabs(ui, self.active_tab, self);
@@ -654,68 +652,52 @@ impl eframe::App for OperatorApp {
 
                     ui.separator();
 
+                    // Main Content Area
                     ui.vertical(|ui| {
-                        egui::ScrollArea::vertical().show(ui, |ui| {
-                            match self.active_tab {
-                                crate::platform::BottomTab::Roster => {
-                                    // If we are on desktop, show the full 3-column view for Roster
-                                    // Or if we want unified, just show Manifest for now.
-                                    if ctx.screen_rect().width() >= 800.0 && !cfg!(target_os = "android") {
-                                        ui.columns(3, |cols| {
-                                            egui::ScrollArea::vertical()
-                                                .id_source("roster_scroll")
-                                                .show(&mut cols[0], |ui| {
-                                                    render_roster_panel(ui, self);
-                                                });
-                                            egui::ScrollArea::vertical()
-                                                .id_source("ops_scroll")
-                                                .show(&mut cols[1], |ui| {
-                                                    render_ops_panel(ui, self);
-                                                });
-                                            egui::ScrollArea::vertical()
-                                                .id_source("contracts_scroll")
-                                                .show(&mut cols[2], |ui| {
-                                                    render_right_panel(ui, self);
-                                                });
-                                        });
-                                    } else {
-                                        match self.roster_sub_tab {
-                                            crate::platform::RosterSubTab::Collection => {
-                                                self.render_manifest(ui);
-                                            }
-                                            crate::platform::RosterSubTab::Breeding => {
-                                                self.render_incubator(ui);
+                        egui::ScrollArea::vertical()
+                            .id_source("main_scroll")
+                            .show(ui, |ui| {
+                                match self.active_tab {
+                                    crate::platform::BottomTab::Roster => match self.roster_sub_tab {
+                                        crate::platform::RosterSubTab::Collection => {
+                                            self.render_manifest(ui);
+                                        }
+                                        crate::platform::RosterSubTab::Breeding => {
+                                            self.render_incubator(ui);
+                                        }
+                                    },
+                                    crate::platform::BottomTab::Missions => match self.missions_sub_tab {
+                                        crate::platform::MissionsSubTab::Active => {
+                                            self.render_active_ops(ui);
+                                        }
+                                        crate::platform::MissionsSubTab::QuestBoard => {
+                                            self.render_contracts(ui);
+                                        }
+                                    },
+                                    crate::platform::BottomTab::Map => match self.map_sub_tab {
+                                        crate::platform::MapSubTab::Zones => {
+                                            self.render_radar(ui);
+                                        }
+                                    },
+                                    crate::platform::BottomTab::Logs => match self.logs_sub_tab {
+                                        crate::platform::LogsSubTab::MissionHistory => {
+                                            for entry in &self.combat_log {
+                                                let color = if entry.contains("VICTORY") {
+                                                    egui::Color32::from_rgb(80, 200, 120)
+                                                } else if entry.contains("CRITICAL") {
+                                                    egui::Color32::from_rgb(220, 80, 80)
+                                                } else {
+                                                    egui::Color32::YELLOW
+                                                };
+                                                ui.colored_label(color, entry);
                                             }
                                         }
-                                    }
+                                        crate::platform::LogsSubTab::CultureHistory => {
+                                            ui.label("[TODO] Logs → Culture History");
+                                        }
+                                    },
                                 }
-                                crate::platform::BottomTab::Missions => match self.missions_sub_tab {
-                                    crate::platform::MissionsSubTab::Active => {
-                                        ui.label("[TODO] Missions → Active");
-                                    }
-                                    crate::platform::MissionsSubTab::QuestBoard => {
-                                        self.render_contracts(ui);
-                                    }
-                                },
-                                crate::platform::BottomTab::Map => match self.map_sub_tab {
-                                    crate::platform::MapSubTab::Zones => {
-                                        self.render_radar(ui);
-                                    }
-                                },
-                                crate::platform::BottomTab::Logs => match self.logs_sub_tab {
-                                    crate::platform::LogsSubTab::MissionHistory => {
-                                        egui::ScrollArea::vertical().show(ui, |ui| {
-                                            for entry in &self.combat_log {
-                                                ui.label(entry);
-                                            }
-                                        });
-                                    }
-                                    crate::platform::LogsSubTab::CultureHistory => {
-                                        ui.label("[TODO] Logs → Culture History");
-                                    }
-                                },
-                            }
-                        });
+                            });
                     });
                 });
             });
