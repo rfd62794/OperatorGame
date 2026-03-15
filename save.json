@@ -1,5 +1,5 @@
 {
-  "bank": 499,
+  "bank": 497,
   "deployments": [
     {
       "id": "e20ce6e1-1510-468c-824b-40327bdd586f",
@@ -803,7 +803,7 @@
     "tick_accum": 0.0,
     "startled_level": 0.1
   },
-  "last_upkeep_at": "2026-03-15T00:45:39.379485400Z",
+  "last_upkeep_at": "2026-03-15T02:02:35.630894300Z",
   "last_pool_refresh": "2026-03-15T00:00:04.232764700Z",
   "inventory": {
     "gear_pool": [],
