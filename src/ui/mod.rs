@@ -166,29 +166,6 @@ impl OperatorApp {
     // Column renderers
     // -----------------------------------------------------------------------
 
-    fn render_roster(&mut self, ui: &mut egui::Ui) {
-        /*
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.left_tab, LeftTab::Manifest, "BIO-MANIFEST");
-            ui.selectable_value(&mut self.left_tab, LeftTab::Recruit, "RECRUIT");
-            
-            if self.state.tech_tier < 1 {
-                ui.add_enabled(false, egui::SelectableLabel::new(false, "INCUBATOR (Req. Tier 1)"));
-            } else {
-                ui.selectable_value(&mut self.left_tab, LeftTab::Incubator, "INCUBATOR");
-            }
-        });
-        ui.add_space(4.0);
-        ui.separator();
-        ui.add_space(4.0);
-        */
-
-        match self.left_tab {
-            LeftTab::Manifest => self.render_manifest(ui),
-            LeftTab::Incubator => self.render_incubator(ui),
-            LeftTab::Recruit => self.render_recruit(ui),
-        }
-    }
 
 
 
@@ -380,24 +357,6 @@ impl OperatorApp {
         }
 
         self.persist();
-    }
-    fn render_right_column(&mut self, ui: &mut egui::Ui) {
-        /*
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.right_tab, RightTab::Contracts, "CONTRACTS");
-            ui.selectable_value(&mut self.right_tab, RightTab::Radar, "RADAR");
-            ui.selectable_value(&mut self.right_tab, RightTab::Cargo, "CARGO BAY");
-        });
-        ui.add_space(4.0);
-        ui.separator();
-        ui.add_space(4.0);
-        */
-        
-        match self.right_tab {
-            RightTab::Contracts => self.render_contracts(ui),
-            RightTab::Radar => self.render_radar(ui),
-            RightTab::Cargo => self.render_cargo(ui),
-        }
     }
 }
 
@@ -708,9 +667,6 @@ impl eframe::App for OperatorApp {
 // Free-standing column render helpers (work around borrow-checker in columns)
 // ---------------------------------------------------------------------------
 
-fn render_roster_panel(ui: &mut egui::Ui, app: &mut OperatorApp) {
-    app.render_roster(ui);
-}
 
 fn render_sub_tabs(
     ui: &mut egui::Ui,
@@ -810,13 +766,6 @@ fn render_sub_tabs(
     });
 }
 
-fn render_ops_panel(ui: &mut egui::Ui, app: &mut OperatorApp) {
-    app.render_active_ops(ui);
-}
-
-fn render_right_panel(ui: &mut egui::Ui, app: &mut OperatorApp) {
-    app.render_right_column(ui);
-}
 
 // ---------------------------------------------------------------------------
 // Entry point helper called from main.rs

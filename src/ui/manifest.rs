@@ -12,9 +12,7 @@ impl OperatorApp {
 
         let staged = self.staged_operators.clone();
         let selected_mission_id = self.selected_mission;
-
-        let staged = self.staged_operators.clone();
-        let selected_mission_id = self.selected_mission;
+        let mut toggle_stage: Option<uuid::Uuid> = None;
 
         // Use a wrapping layout for the card grid
         ui.vertical(|ui| {
@@ -22,100 +20,22 @@ impl OperatorApp {
                 ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
                 
                 for op in &self.state.slimes {
-                    self.render_operator_card(ui, op, &staged, selected_mission_id);
+                    if render_operator_card(ui, op, &staged, selected_mission_id) {
+                        toggle_stage = Some(op.genome.id);
+                    }
                 }
             });
         });
-    }
 
-    /// Renders an individual operator as a card (Phase F.1).
-    fn render_operator_card(
-        &mut self,
-        ui: &mut egui::Ui,
-        op: &crate::models::Operator,
-        staged: &std::collections::HashSet<uuid::Uuid>,
-        selected_mission_id: Option<uuid::Uuid>,
-    ) {
-        let genome = &op.genome;
-        let is_staged = staged.contains(&genome.id);
-        let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
-        let color = egui::Color32::from_rgb(cr, cg, cb);
-        
-        // Card Frame
-        let frame_color = if is_staged {
-            egui::Color32::from_rgb(30, 50, 40) // Subtle green for staged
-        } else {
-            egui::Color32::from_rgb(26, 26, 34) // Panel background
-        };
-
-        egui::Frame::none()
-            .fill(frame_color)
-            .stroke(egui::Stroke::new(1.0, if is_staged { egui::Color32::GREEN } else { egui::Color32::from_gray(60) }))
-            .inner_margin(egui::Margin::same(8.0))
-            .rounding(egui::Rounding::same(4.0))
-            .show(ui, |ui| {
-                ui.set_width(120.0); // Card width as per scaffold
-                
-                // Header: Name and Culture
-                ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new(&genome.name).strong().color(color));
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).small().color(color));
-                    });
-                });
-
-                // Pattern
-                ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).small().color(egui::Color32::GRAY));
-
-                // Level & XP bar
-                ui.horizontal(|ui| {
-                    ui.label(format!("Lv: {}", op.level));
-                    let xp_pct = (op.total_xp % 100) as f32 / 100.0;
-                    ui.add(egui::ProgressBar::new(xp_pct).show_percentage().desired_height(4.0));
-                });
-
-                // Hard Stats
-                let (s, a, i, _, _, _) = op.total_stats();
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.small(format!("STR:{}", s));
-                        ui.add_space(4.0);
-                        ui.small(format!("AGI:{}", a));
-                    });
-                    ui.small(format!("INT:{}", i));
-                });
-
-                ui.add_space(4.0);
-
-                // HP and Stage Button
-                ui.horizontal(|ui| {
-                    let hp = 25; // Placeholder for HP math (ADR-037 logic uses current/max)
-                    ui.label(format!("HP:{}", hp));
-                    
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
-                        let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
-
-                        if is_injured {
-                            ui.add_enabled(false, egui::Button::new("INJURED").small());
-                        } else if is_dispatched {
-                            ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
-                        } else {
-                            let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
-                            let btn = ui.add(egui::Button::new(btn_label).small());
-                            if btn.clicked() {
-                                if is_staged {
-                                    self.staged_operators.remove(&genome.id);
-                                } else if self.staged_operators.len() < 3 {
-                                    self.staged_operators.insert(genome.id);
-                                } else {
-                                    self.status_msg = "Max squad size is 3 slimes.".to_string();
-                                }
-                            }
-                        }
-                    });
-                });
-            });
+        if let Some(id) = toggle_stage {
+            if self.staged_operators.contains(&id) {
+                self.staged_operators.remove(&id);
+            } else if self.staged_operators.len() < 3 {
+                self.staged_operators.insert(id);
+            } else {
+                self.status_msg = "Max squad size is 3 slimes.".to_string();
+            }
+        }
     }
 
     pub(crate) fn render_incubator(&mut self, ui: &mut egui::Ui) {
@@ -237,6 +157,92 @@ impl OperatorApp {
             });
         });
     }
+}
+
+/// Renders an individual operator as a card (Phase F.1).
+/// Returns true if the [STAGE] button was clicked.
+fn render_operator_card(
+    ui: &mut egui::Ui,
+    op: &crate::models::Operator,
+    staged: &std::collections::HashSet<uuid::Uuid>,
+    selected_mission_id: Option<uuid::Uuid>,
+) -> bool {
+    let mut clicked = false;
+    let genome = &op.genome;
+    let is_staged = staged.contains(&genome.id);
+    let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
+    let color = egui::Color32::from_rgb(cr, cg, cb);
+    
+    // Card Frame
+    let frame_color = if is_staged {
+        egui::Color32::from_rgb(30, 50, 40) // Subtle green for staged
+    } else {
+        egui::Color32::from_rgb(26, 26, 34) // Panel background
+    };
+
+    egui::Frame::none()
+        .fill(frame_color)
+        .stroke(egui::Stroke::new(1.0, if is_staged { egui::Color32::GREEN } else { egui::Color32::from_gray(60) }))
+        .inner_margin(egui::Margin::same(8.0))
+        .rounding(egui::Rounding::same(4.0))
+        .show(ui, |ui| {
+            ui.set_width(120.0); // Card width as per scaffold
+            
+            // Header: Name and Culture
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(&genome.name).strong().color(color));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).small().color(color));
+                });
+            });
+
+            // Pattern
+            ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).small().color(egui::Color32::GRAY));
+
+            // Level & XP bar
+            ui.horizontal(|ui| {
+                ui.label(format!("Lv: {}", op.level));
+                let xp_pct = (op.total_xp % 100) as f32 / 100.0;
+                ui.add(egui::ProgressBar::new(xp_pct).show_percentage().desired_height(4.0));
+            });
+
+            // Hard Stats
+            let (s, a, i, _, _, _) = op.total_stats();
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.small(format!("STR:{}", s));
+                    ui.add_space(4.0);
+                    ui.small(format!("AGI:{}", a));
+                });
+                ui.small(format!("INT:{}", i));
+            });
+
+            ui.add_space(4.0);
+
+            // HP and Stage Button
+            ui.horizontal(|ui| {
+                let hp = 25; // Placeholder for HP math (ADR-037 logic uses current/max)
+                ui.label(format!("HP:{}", hp));
+                
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
+                    let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
+
+                    if is_injured {
+                        ui.add_enabled(false, egui::Button::new("INJURED").small());
+                    } else if is_dispatched {
+                        ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
+                    } else {
+                        let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
+                        let btn = ui.add(egui::Button::new(btn_label).small());
+                        if btn.clicked() {
+                            clicked = true;
+                        }
+                    }
+                });
+            });
+        });
+    clicked
 }
 
 /// Helper for Sprint 6: Renders a segmented horizontal bar representing the Culture genome.
