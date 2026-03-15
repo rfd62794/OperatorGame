@@ -1,6 +1,5 @@
 use crate::ui::OperatorApp;
 use crate::render::garden_bridge::egui_rect_to_bounds;
-use chrono::Utc;
 use eframe::egui;
 
 impl OperatorApp {
@@ -165,7 +164,7 @@ fn render_operator_card(
     ui: &mut egui::Ui,
     op: &crate::models::Operator,
     staged: &std::collections::HashSet<uuid::Uuid>,
-    selected_mission_id: Option<uuid::Uuid>,
+    _selected_mission_id: Option<uuid::Uuid>,
 ) -> bool {
     let mut clicked = false;
     let genome = &op.genome;
