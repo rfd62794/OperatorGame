@@ -1,5 +1,5 @@
 {
-  "bank": 500,
+  "bank": 502,
   "deployments": [],
   "missions": [
     {
@@ -58,7 +58,328 @@
       "affinity": "Orange"
     }
   ],
-  "slimes": [],
+  "slimes": [
+    {
+      "genome": {
+        "id": "304d5d32-e451-4854-9467-32f6f14b15b8",
+        "culture_alleles": {
+          "dominant": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "recessive": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_hp": 16.370138,
+        "base_atk": 4.5798306,
+        "base_spd": 6.27107,
+        "generation": 1,
+        "parent_ids": null,
+        "curiosity": 0.103821635,
+        "energy": 0.5426554,
+        "affection": 0.36935174,
+        "shyness": 0.94648695,
+        "base_strength": 5,
+        "base_agility": 7,
+        "base_intelligence": 5,
+        "base_mind": 5,
+        "base_sensory": 6,
+        "base_tenacity": 8,
+        "shape": "Round",
+        "body_size": "Tiny",
+        "pattern": "Solid",
+        "accessory": "Crystals",
+        "base_color": [
+          133,
+          208,
+          141
+        ],
+        "pattern_color": [
+          68,
+          253,
+          225
+        ],
+        "frequency": 288.0,
+        "name": "Spark"
+      },
+      "level": 1,
+      "total_xp": 101,
+      "stat_xp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state": "Idle",
+      "training": {
+        "session_counts": {},
+        "last_reset": "1970-01-01T00:00:00Z"
+      },
+      "equipped_gear": [],
+      "synthesis_cooldown_until": null
+    },
+    {
+      "genome": {
+        "id": "3db6946c-9302-46a1-a395-f54088be4515",
+        "culture_alleles": {
+          "dominant": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "recessive": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_hp": 16.896322,
+        "base_atk": 6.9673715,
+        "base_spd": 5.629594,
+        "generation": 1,
+        "parent_ids": null,
+        "curiosity": 0.5390788,
+        "energy": 0.78853524,
+        "affection": 0.9987672,
+        "shyness": 0.87925863,
+        "base_strength": 8,
+        "base_agility": 5,
+        "base_intelligence": 5,
+        "base_mind": 8,
+        "base_sensory": 8,
+        "base_tenacity": 8,
+        "shape": "Amorphous",
+        "body_size": "Massive",
+        "pattern": "Marbled",
+        "accessory": "Crown",
+        "base_color": [
+          147,
+          213,
+          162
+        ],
+        "pattern_color": [
+          159,
+          183,
+          150
+        ],
+        "frequency": 256.0,
+        "name": "Echo"
+      },
+      "level": 1,
+      "total_xp": 101,
+      "stat_xp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state": "Idle",
+      "training": {
+        "session_counts": {},
+        "last_reset": "1970-01-01T00:00:00Z"
+      },
+      "equipped_gear": [],
+      "synthesis_cooldown_until": null
+    },
+    {
+      "genome": {
+        "id": "fe8108ab-c4ac-4d03-8243-eab593c85f16",
+        "culture_alleles": {
+          "dominant": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "recessive": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_hp": 15.307275,
+        "base_atk": 6.8746214,
+        "base_spd": 5.841009,
+        "generation": 1,
+        "parent_ids": null,
+        "curiosity": 0.23556226,
+        "energy": 0.91878575,
+        "affection": 0.20182765,
+        "shyness": 0.8770321,
+        "base_strength": 5,
+        "base_agility": 8,
+        "base_intelligence": 8,
+        "base_mind": 6,
+        "base_sensory": 8,
+        "base_tenacity": 5,
+        "shape": "Round",
+        "body_size": "Massive",
+        "pattern": "Striped",
+        "accessory": "Shell",
+        "base_color": [
+          152,
+          118,
+          150
+        ],
+        "pattern_color": [
+          178,
+          187,
+          103
+        ],
+        "frequency": 256.0,
+        "name": "Echo"
+      },
+      "level": 1,
+      "total_xp": 101,
+      "stat_xp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state": "Idle",
+      "training": {
+        "session_counts": {},
+        "last_reset": "1970-01-01T00:00:00Z"
+      },
+      "equipped_gear": [],
+      "synthesis_cooldown_until": null
+    },
+    {
+      "genome": {
+        "id": "c0ac10dd-3992-4e84-a0f6-bcb9eab089ce",
+        "culture_alleles": {
+          "dominant": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "recessive": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_hp": 15.871492,
+        "base_atk": 4.3649697,
+        "base_spd": 6.4774046,
+        "generation": 1,
+        "parent_ids": null,
+        "curiosity": 0.554259,
+        "energy": 0.98514014,
+        "affection": 0.29142457,
+        "shyness": 0.7647462,
+        "base_strength": 7,
+        "base_agility": 5,
+        "base_intelligence": 6,
+        "base_mind": 7,
+        "base_sensory": 6,
+        "base_tenacity": 6,
+        "shape": "Amorphous",
+        "body_size": "Small",
+        "pattern": "Marbled",
+        "accessory": "Crystals",
+        "base_color": [
+          84,
+          129,
+          242
+        ],
+        "pattern_color": [
+          200,
+          91,
+          121
+        ],
+        "frequency": 288.0,
+        "name": "Jumper"
+      },
+      "level": 1,
+      "total_xp": 100,
+      "stat_xp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state": "Idle",
+      "training": {
+        "session_counts": {},
+        "last_reset": "1970-01-01T00:00:00Z"
+      },
+      "equipped_gear": [],
+      "synthesis_cooldown_until": null
+    }
+  ],
   "incubating": [],
   "tech_tier": 0,
   "lens_unlocked": false,
@@ -461,9 +782,9 @@
       }
     ],
     "tick_accum": 0.0,
-    "startled_level": 0.0
+    "startled_level": 0.05
   },
-  "last_upkeep_at": "2026-03-15T00:00:04.061483Z",
+  "last_upkeep_at": "2026-03-15T00:12:14.343883100Z",
   "last_pool_refresh": "2026-03-15T00:00:04.232764700Z",
   "inventory": {
     "gear_pool": [],
