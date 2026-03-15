@@ -6,9 +6,10 @@ use crate::ui::OperatorApp;
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
         let frame_size = ui.available_size();
-        let scale = (frame_size.x.min(frame_size.y) / 800.0).clamp(0.4, 1.0);
+        let map_dim = frame_size.x.min(frame_size.y);
+        let scale = (map_dim / 600.0).clamp(0.4, 1.2);
         
-        let (rect, resp) = ui.allocate_exact_size(egui::vec2(frame_size.x, frame_size.x), egui::Sense::hover());
+        let (rect, resp) = ui.allocate_exact_size(egui::vec2(frame_size.x, map_dim), egui::Sense::hover());
         let painter = ui.painter();
         
         let map_center = rect.center();

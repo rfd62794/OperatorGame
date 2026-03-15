@@ -13,13 +13,20 @@ impl OperatorApp {
         let selected_mission_id = self.selected_mission;
         let mut toggle_stage: Option<uuid::Uuid> = None;
 
+        let available_width = ui.available_width();
+        let card_width = if available_width < 450.0 {
+            (available_width - 16.0) / 2.0 // Exactly 2 cards per row on mobile
+        } else {
+            160.0 // Comfort size for larger screens
+        }.max(100.0);
+
         // Use a wrapping layout for the card grid
         ui.vertical(|ui| {
             ui.horizontal_wrapped(|ui| {
                 ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
                 
                 for op in &self.state.slimes {
-                    if render_operator_card(ui, op, &staged, selected_mission_id) {
+                    if render_operator_card(ui, op, &staged, selected_mission_id, card_width) {
                         toggle_stage = Some(op.genome.id);
                     }
                 }
@@ -165,6 +172,7 @@ fn render_operator_card(
     op: &crate::models::Operator,
     staged: &std::collections::HashSet<uuid::Uuid>,
     _selected_mission_id: Option<uuid::Uuid>,
+    card_width: f32,
 ) -> bool {
     let mut clicked = false;
     let genome = &op.genome;
@@ -185,7 +193,7 @@ fn render_operator_card(
         .inner_margin(egui::Margin::same(8.0))
         .rounding(egui::Rounding::same(4.0))
         .show(ui, |ui| {
-            ui.set_width(120.0); // Card width as per scaffold
+            ui.set_width(card_width); // Card width with responsive calculation
             
             // Header: Name and Culture
             ui.horizontal(|ui| {

@@ -603,9 +603,10 @@ impl eframe::App for OperatorApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    // Left sidebar: sub-tab navigation (Pinned at 100dp)
+                    // Left sidebar: sub-tab navigation (Responsive: 80dp on narrow, 100dp standard)
+                    let sidebar_width = if ui.available_width() < 450.0 { 80.0 } else { 100.0 };
                     ui.vertical(|ui| {
-                        ui.set_width(100.0);
+                        ui.set_width(sidebar_width);
                         render_sub_tabs(ui, self.active_tab, self);
                     });
 
@@ -614,7 +615,7 @@ impl eframe::App for OperatorApp {
                     // Main Content Area
                     ui.vertical(|ui| {
                         egui::ScrollArea::vertical()
-                            .id_source("main_scroll")
+                            .id_source(format!("main_scroll_{:?}", self.active_tab))
                             .show(ui, |ui| {
                                 match self.active_tab {
                                     crate::platform::BottomTab::Roster => match self.roster_sub_tab {
