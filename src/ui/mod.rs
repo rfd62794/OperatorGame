@@ -167,6 +167,7 @@ impl OperatorApp {
     // -----------------------------------------------------------------------
 
     fn render_roster(&mut self, ui: &mut egui::Ui) {
+        /*
         ui.horizontal(|ui| {
             ui.selectable_value(&mut self.left_tab, LeftTab::Manifest, "BIO-MANIFEST");
             ui.selectable_value(&mut self.left_tab, LeftTab::Recruit, "RECRUIT");
@@ -180,6 +181,7 @@ impl OperatorApp {
         ui.add_space(4.0);
         ui.separator();
         ui.add_space(4.0);
+        */
 
         match self.left_tab {
             LeftTab::Manifest => self.render_manifest(ui),
@@ -380,6 +382,7 @@ impl OperatorApp {
         self.persist();
     }
     fn render_right_column(&mut self, ui: &mut egui::Ui) {
+        /*
         ui.horizontal(|ui| {
             ui.selectable_value(&mut self.right_tab, RightTab::Contracts, "CONTRACTS");
             ui.selectable_value(&mut self.right_tab, RightTab::Radar, "RADAR");
@@ -388,6 +391,7 @@ impl OperatorApp {
         ui.add_space(4.0);
         ui.separator();
         ui.add_space(4.0);
+        */
         
         match self.right_tab {
             RightTab::Contracts => self.render_contracts(ui),
@@ -628,106 +632,93 @@ impl eframe::App for OperatorApp {
             });
 
         // Three-column central panel (Desktop) or Tab-view (Mobile)
-        let is_mobile = ctx.screen_rect().width() < 800.0 || cfg!(target_os = "android");
+        // let is_mobile = ctx.screen_rect().width() < 800.0 || cfg!(target_os = "android");
 
-        if is_mobile {
-            egui::CentralPanel::default()
-                .frame(
-                    egui::Frame::none()
-                        .inner_margin(egui::Margin {
-                            left: safe_area.left,
-                            right: safe_area.right,
-                            top: 0.0,
-                            bottom: 0.0,
-                        })
-                )
-                .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        // Left sidebar: sub-tab navigation
-                        ui.vertical(|ui| {
-                            ui.set_width(100.0);
-                            render_sub_tabs(ui, self.active_tab, self);
-                        });
-
-                        ui.separator();
-
-                        ui.vertical(|ui| {
-                            egui::ScrollArea::vertical().show(ui, |ui| {
-                                match self.active_tab {
-                                    crate::platform::BottomTab::Roster => match self.roster_sub_tab {
-                                        crate::platform::RosterSubTab::Collection => {
-                                            ui.label("[TODO] Roster → Collection");
-                                        }
-                                        crate::platform::RosterSubTab::Breeding => {
-                                            ui.label("[TODO] Roster → Breeding");
-                                        }
-                                    },
-                                    crate::platform::BottomTab::Missions => match self.missions_sub_tab {
-                                        crate::platform::MissionsSubTab::Active => {
-                                            ui.label("[TODO] Missions → Active");
-                                        }
-                                        crate::platform::MissionsSubTab::QuestBoard => {
-                                            ui.label("[TODO] Missions → Quest Board");
-                                        }
-                                    },
-                                    crate::platform::BottomTab::Map => match self.map_sub_tab {
-                                        crate::platform::MapSubTab::Zones => {
-                                            ui.label("[TODO] Map → Zones");
-                                        }
-                                    },
-                                    crate::platform::BottomTab::Logs => match self.logs_sub_tab {
-                                        crate::platform::LogsSubTab::MissionHistory => {
-                                            ui.label("[TODO] Logs → Mission History");
-                                        }
-                                        crate::platform::LogsSubTab::CultureHistory => {
-                                            ui.label("[TODO] Logs → Culture History");
-                                        }
-                                    },
-                                }
-                            });
-                        });
+        egui::CentralPanel::default()
+            .frame(
+                egui::Frame::none()
+                    .inner_margin(egui::Margin {
+                        left: safe_area.left,
+                        right: safe_area.right,
+                        top: 0.0,
+                        bottom: 0.0,
+                    })
+            )
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    // Left sidebar: sub-tab navigation
+                    ui.vertical(|ui| {
+                        ui.set_width(100.0);
+                        render_sub_tabs(ui, self.active_tab, self);
                     });
-                });
-        } else {
-            egui::CentralPanel::default()
-                .frame(
-                    egui::Frame::none()
-                        .inner_margin(egui::Margin {
-                            left: safe_area.left,
-                            right: safe_area.right,
-                            top: 0.0,
-                            bottom: 0.0,
-                        })
-                )
-                .show(ctx, |ui| {
-                // Collect the three column contents; egui columns take a closure
-                // so we must render them inside the callback.
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.columns(3, |cols| {
-                        // We can't call &mut self methods twice in the same borrow,
-                        // so we forward rendering through standalone functions
-                        // that accept &mut OperatorApp.
-                        egui::ScrollArea::vertical()
-                            .id_source("roster_scroll")
-                            .show(&mut cols[0], |ui| {
-                                // Safety: columns are non-overlapping &mut [egui::Ui]
-                                // We render each column via a closure scope.
-                                render_roster_panel(ui, self);
-                            });
-                        egui::ScrollArea::vertical()
-                            .id_source("ops_scroll")
-                            .show(&mut cols[1], |ui| {
-                                render_ops_panel(ui, self);
-                            });
-                        egui::ScrollArea::vertical()
-                            .id_source("contracts_scroll")
-                            .show(&mut cols[2], |ui| {
-                                render_right_panel(ui, self);
-                            });
+
+                    ui.separator();
+
+                    ui.vertical(|ui| {
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            match self.active_tab {
+                                crate::platform::BottomTab::Roster => {
+                                    // If we are on desktop, show the full 3-column view for Roster
+                                    // Or if we want unified, just show Manifest for now.
+                                    if ctx.screen_rect().width() >= 800.0 && !cfg!(target_os = "android") {
+                                        ui.columns(3, |cols| {
+                                            egui::ScrollArea::vertical()
+                                                .id_source("roster_scroll")
+                                                .show(&mut cols[0], |ui| {
+                                                    render_roster_panel(ui, self);
+                                                });
+                                            egui::ScrollArea::vertical()
+                                                .id_source("ops_scroll")
+                                                .show(&mut cols[1], |ui| {
+                                                    render_ops_panel(ui, self);
+                                                });
+                                            egui::ScrollArea::vertical()
+                                                .id_source("contracts_scroll")
+                                                .show(&mut cols[2], |ui| {
+                                                    render_right_panel(ui, self);
+                                                });
+                                        });
+                                    } else {
+                                        match self.roster_sub_tab {
+                                            crate::platform::RosterSubTab::Collection => {
+                                                self.render_manifest(ui);
+                                            }
+                                            crate::platform::RosterSubTab::Breeding => {
+                                                self.render_incubator(ui);
+                                            }
+                                        }
+                                    }
+                                }
+                                crate::platform::BottomTab::Missions => match self.missions_sub_tab {
+                                    crate::platform::MissionsSubTab::Active => {
+                                        ui.label("[TODO] Missions → Active");
+                                    }
+                                    crate::platform::MissionsSubTab::QuestBoard => {
+                                        self.render_contracts(ui);
+                                    }
+                                },
+                                crate::platform::BottomTab::Map => match self.map_sub_tab {
+                                    crate::platform::MapSubTab::Zones => {
+                                        self.render_radar(ui);
+                                    }
+                                },
+                                crate::platform::BottomTab::Logs => match self.logs_sub_tab {
+                                    crate::platform::LogsSubTab::MissionHistory => {
+                                        egui::ScrollArea::vertical().show(ui, |ui| {
+                                            for entry in &self.combat_log {
+                                                ui.label(entry);
+                                            }
+                                        });
+                                    }
+                                    crate::platform::LogsSubTab::CultureHistory => {
+                                        ui.label("[TODO] Logs → Culture History");
+                                    }
+                                },
+                            }
+                        });
                     });
                 });
             });
-        }
     }
 }
 
