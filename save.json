@@ -1,84 +1,67 @@
 {
-  "roster": [
-    {
-      "id": "2d23aa2b-91dd-4dd4-ac6b-d80a63145b36",
-      "name": "Ghost",
-      "job": "Infiltrator",
-      "base_strength": 47,
-      "base_agility": 55,
-      "base_intelligence": 28,
-      "state": {
-        "Deployed": "28ec4a8a-333b-475c-90b8-1c8b330b9ef0"
-      }
-    }
-  ],
   "bank": 500,
-  "deployments": [
-    {
-      "id": "eff84a6c-a545-4d9b-afe4-ca62af02c565",
-      "mission_id": "28ec4a8a-333b-475c-90b8-1c8b330b9ef0",
-      "operator_ids": [
-        "2d23aa2b-91dd-4dd4-ac6b-d80a63145b36"
-      ],
-      "completes_at": "2026-03-05T00:53:20.764789300Z",
-      "resolved": false
-    }
-  ],
+  "deployments": [],
   "missions": [
     {
-      "id": "28ec4a8a-333b-475c-90b8-1c8b330b9ef0",
-      "name": "Bank Heist Recon",
-      "req_strength": 20,
-      "req_agility": 30,
-      "req_intelligence": 10,
-      "difficulty": 0.1,
-      "duration_secs": 60,
-      "reward": 500
+      "id": "4b2cb846-1a88-4a0f-978b-f4d3d7aa00a8",
+      "name": "Stealth Espionage",
+      "req_strength": 1,
+      "req_agility": 6,
+      "req_intelligence": 1,
+      "difficulty": 0.0017327989950218115,
+      "duration_secs": 303,
+      "reward": 103,
+      "affinity": "Crystal"
     },
     {
-      "id": "ecf92458-e9be-4eca-8781-07a55a1f5ace",
-      "name": "Corporate Espionage",
-      "req_strength": 10,
+      "id": "b0084f66-0086-4703-b5c2-d58079f39540",
+      "name": "Clandestine Sabotage",
+      "req_strength": 46,
+      "req_agility": 1,
+      "req_intelligence": 6,
+      "difficulty": 0.31912217235541623,
+      "duration_secs": 512,
+      "reward": 1138,
+      "affinity": "Ember"
+    },
+    {
+      "id": "0111e50a-ddc6-4ae2-ad79-0a8a753c864f",
+      "name": "Orbital Recon",
+      "req_strength": 9,
+      "req_agility": 28,
+      "req_intelligence": 3,
+      "difficulty": 0.23761128915311192,
+      "duration_secs": 572,
+      "reward": 975,
+      "affinity": "Gale"
+    },
+    {
+      "id": "e1c90a3b-b0ed-4b55-ad29-2ebbd9047275",
+      "name": "Clandestine Espionage",
+      "req_strength": 7,
+      "req_agility": 12,
+      "req_intelligence": 110,
+      "difficulty": 0.645929738303931,
+      "duration_secs": 538,
+      "reward": 2791,
+      "affinity": "Tide"
+    },
+    {
+      "id": "868c43aa-2c8a-433c-a5bd-bd08f31e7be7",
+      "name": "Corporate Breach",
+      "req_strength": 18,
       "req_agility": 20,
-      "req_intelligence": 50,
-      "difficulty": 0.25,
-      "duration_secs": 120,
-      "reward": 1200
-    },
-    {
-      "id": "5b076a80-8aea-4c50-8158-7458f597647b",
-      "name": "Harbour Extraction",
-      "req_strength": 40,
-      "req_agility": 20,
-      "req_intelligence": 10,
-      "difficulty": 0.2,
-      "duration_secs": 90,
-      "reward": 800
-    },
-    {
-      "id": "f2e8c682-f310-4acb-b549-945448b71c8f",
-      "name": "Zero-Day Exploit",
-      "req_strength": 10,
-      "req_agility": 10,
-      "req_intelligence": 70,
-      "difficulty": 0.4,
-      "duration_secs": 180,
-      "reward": 2500
-    },
-    {
-      "id": "9c227643-d8ad-4798-9c72-909a2ee1f6de",
-      "name": "Black Site Breach",
-      "req_strength": 60,
-      "req_agility": 40,
-      "req_intelligence": 20,
-      "difficulty": 0.5,
-      "duration_secs": 300,
-      "reward": 5000
+      "req_intelligence": 131,
+      "difficulty": 0.7500618513921135,
+      "duration_secs": 137,
+      "reward": 6500,
+      "affinity": "Orange"
     }
   ],
   "slimes": [],
   "incubating": [],
   "tech_tier": 0,
+  "lens_unlocked": false,
   "world_map": {
     "nodes": [
       {
@@ -480,9 +463,18 @@
     "tick_accum": 0.0,
     "startled_level": 0.0
   },
+  "last_upkeep_at": "2026-03-15T00:00:04.061483Z",
+  "last_pool_refresh": "2026-03-15T00:00:04.232764700Z",
   "inventory": {
+    "gear_pool": [],
     "biomass": 0,
     "scrap": 0,
     "reagents": 0
-  }
+  },
+  "active_expeditions": [],
+  "active_tab": "Roster",
+  "roster_sub_tab": "Collection",
+  "missions_sub_tab": "Active",
+  "map_sub_tab": "Zones",
+  "logs_sub_tab": "MissionHistory"
 }

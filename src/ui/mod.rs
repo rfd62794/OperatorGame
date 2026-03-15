@@ -449,7 +449,8 @@ impl eframe::App for OperatorApp {
             self.persist();
         }
 
-        // Background Garden
+        /*
+        // Background Garden (Temporarily disabled due to UI layering issues)
         let t = ctx.input(|i| i.time as f32);
         let dt = ctx.input(|i| i.stable_dt).min(0.1);
         let cursor = ctx.input(|i| i.pointer.hover_pos()).map(egui_pos_to_point);
@@ -478,6 +479,7 @@ impl eframe::App for OperatorApp {
                 let operator_map = self.state.slimes.iter().map(|op| (op.id(), op)).collect();
                 crate::garden::draw_garden(ui.painter(), screen_rect, &operator_map, &self.garden, t);
             });
+        */
 
         // Top status bar
         egui::TopBottomPanel::top("top_bar")
