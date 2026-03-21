@@ -87,7 +87,7 @@ $ADB_ARGS = @("-s", $DeviceSerial)
 # ─────────────────────────────────────────────────────────────────────────────
 
 Write-Host ""
-Write-Host "[3/5] Building and signing APK (this takes 2–5 minutes)..." -ForegroundColor Cyan
+Write-Host "[3/5] Building and signing APK (this takes 2-5 minutes)..." -ForegroundColor Cyan
 Write-Host "      cargo apk build --release + zipalign + apksigner" -ForegroundColor DarkGray
 
 $BuildStart = Get-Date
