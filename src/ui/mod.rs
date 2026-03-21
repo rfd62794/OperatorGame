@@ -547,7 +547,6 @@ impl eframe::App for OperatorApp {
                             }
                         }
                     });
-                    });
             });
 
             // Bottom launch / status bar
