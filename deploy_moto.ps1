@@ -75,9 +75,7 @@ $deviceLines = $rawDevices | Where-Object {
     $_ -match "\S" -and $_ -notmatch "List of devices" -and $_ -match "\bdevice\b"
 }
 
-$devices = $deviceLines   # used for .Count check below
-
-if ($devices.Count -eq 0) {
+if ($deviceLines.Count -eq 0) {
     Write-Host ""
     Write-Host "  FAIL: No ADB device detected." -ForegroundColor Red
     Write-Host "    - Connect Moto G via USB cable" -ForegroundColor Yellow
