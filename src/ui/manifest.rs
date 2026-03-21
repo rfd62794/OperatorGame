@@ -48,8 +48,11 @@ impl OperatorApp {
         if self.state.incubating.is_empty() {
             ui.label(egui::RichText::new("Incubator is empty.").italics().color(egui::Color32::GRAY));
             ui.add_space(8.0);
-            ui.label("Use the command line to splice slimes:");
-            ui.code("operator splice <parent_a> <parent_b> <offspring_name>");
+            ui.label(egui::RichText::new("To breed two slimes, open your external terminal and type:").color(egui::Color32::LIGHT_GRAY));
+            ui.add_space(4.0);
+            ui.code("operator splice [First ID] [Second ID] \"Name\"");
+            ui.add_space(4.0);
+            ui.label(egui::RichText::new("Example: operator splice 1a2b 3c4d \"Nova\"").small().color(egui::Color32::from_gray(150)));
             return;
         }
 

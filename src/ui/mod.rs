@@ -794,7 +794,7 @@ fn render_sub_tabs(
 
         match active_main_tab {
             crate::platform::BottomTab::Roster => {
-                sidebar_header(ui, "ROSTER");
+                sidebar_header(ui, "Roster");
 
                 if sub_tab_button(
                     ui,
@@ -814,7 +814,7 @@ fn render_sub_tabs(
             }
 
             crate::platform::BottomTab::Missions => {
-                sidebar_header(ui, "MISSIONS");
+                sidebar_header(ui, "Missions");
 
                 if sub_tab_button(
                     ui,
@@ -835,7 +835,7 @@ fn render_sub_tabs(
             }
 
             crate::platform::BottomTab::Map => {
-                sidebar_header(ui, "MAP");
+                sidebar_header(ui, "Map");
 
                 if sub_tab_button(
                     ui,
