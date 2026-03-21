@@ -510,19 +510,20 @@ impl eframe::App for OperatorApp {
         });
 
         // Combat log panel — sits above the launch bar
-        egui::TopBottomPanel::bottom("combat_log_panel")
-            .resizable(true)
-            .min_height(80.0)
-            .max_height(200.0)
-            .show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("── COMBAT LOG ──").strong());
-                    if !self.combat_log.is_empty() {
-                        if ui.small_button("Clear").clicked() {
-                            self.combat_log.clear();
+        if self.active_tab == crate::platform::BottomTab::Missions {
+            egui::TopBottomPanel::bottom("combat_log_panel")
+                .resizable(true)
+                .min_height(80.0)
+                .max_height(200.0)
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("── COMBAT LOG ──").strong());
+                        if !self.combat_log.is_empty() {
+                            if ui.small_button("Clear").clicked() {
+                                self.combat_log.clear();
+                            }
                         }
-                    }
-                });
+                    });
                 egui::ScrollArea::vertical()
                     .id_source("combat_log_scroll")
                     .stick_to_bottom(false)
@@ -546,22 +547,24 @@ impl eframe::App for OperatorApp {
                             }
                         }
                     });
+                    });
             });
 
-        // Bottom launch / status bar
-        egui::TopBottomPanel::bottom("bottom_bar")
-            .frame(
-                egui::Frame::none()
-                    .inner_margin(egui::Margin {
-                        left: safe_area.left,
-                        right: safe_area.right,
-                        top: 0.0,
-                        bottom: safe_area.bottom,
-                    })
-            )
-            .show(ctx, |ui| {
-                self.render_launch_bar(ui);
-            });
+            // Bottom launch / status bar
+            egui::TopBottomPanel::bottom("bottom_bar")
+                .frame(
+                    egui::Frame::none()
+                        .inner_margin(egui::Margin {
+                            left: safe_area.left,
+                            right: safe_area.right,
+                            top: 0.0,
+                            bottom: safe_area.bottom,
+                        })
+                )
+                .show(ctx, |ui| {
+                    self.render_launch_bar(ui);
+                });
+        }
 
         // Bottom Navigation Tab Bar — Stitch Design (Phase B / Phase F polish)
         let layout = crate::platform::LayoutCalculator::new(
@@ -608,10 +611,11 @@ impl eframe::App for OperatorApp {
 
                     // Active: fill + left accent strip
                     if is_active {
-                        ui.painter().rect_filled(slot_rect, egui::Rounding::ZERO, COLOR_SURFACE_LOW);
+                        // Vision Priority Fix: Increased contrast feedback for selected bottom navigation tab
+                        ui.painter().rect_filled(slot_rect, egui::Rounding::ZERO, egui::Color32::from_rgb(45, 55, 75));
                         let accent_rect = egui::Rect::from_min_size(
-                            slot_min,
-                            egui::vec2(3.0, tab_h),
+                            egui::pos2(slot_min.x, slot_min.y + tab_h - 4.0),
+                            egui::vec2(tab_w, 4.0),
                         );
                         ui.painter().rect_filled(accent_rect, egui::Rounding::ZERO, COLOR_PRIMARY);
                     }
