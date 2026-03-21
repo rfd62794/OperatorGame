@@ -115,13 +115,23 @@ foreach ($state in $uiTree) {
     foreach ($step in $state.navigation) {
         if ($step.action -eq "tap") {
             if ($step.target -and $coords.$($step.target)) {
-                $tapCoord = $coords.$($step.target)
-                Write-Host "    → Tap: $($step.target) at ($($tapCoord.X), $($tapCoord.Y))" -ForegroundColor Gray
-                # Pass digitizer coordinates to Adb. If failing, we scale.
+                $rawX = $coords.$($step.target).X
+                $rawY = $coords.$($step.target).Y
+                
+                # Digitizer compensation (Moto G ~3000x6000 raw -> 1080x2400 screen)
+                if ($rawY -gt 5000) {
+                    $tapX = [math]::Round($rawX * (1080.0 / 3000.0))
+                    $tapY = [math]::Round($rawY * (2400.0 / 6000.0))
+                } else {
+                    $tapX = $rawX
+                    $tapY = $rawY
+                }
+
+                Write-Host "    → Tap: $($step.target) at Screen($tapX, $tapY) [Digitizer: $rawX, $rawY]" -ForegroundColor Gray
                 try {
-                    Invoke-DeviceTap -Device $Device -X $tapCoord.X -Y $tapCoord.Y -DelayMs 300
+                    Invoke-DeviceTap -Device $Device -X $tapX -Y $tapY -DelayMs 300
                 } catch {
-                     Write-Warning "Failed tap: $_. ADB shell input requires screen scale."
+                     Write-Warning "Failed tap: $_."
                 }
             } elseif ($step.x -and $step.y) {
                 Write-Host "    → Tap: Custom coords ($($step.x), $($step.y))" -ForegroundColor Gray
