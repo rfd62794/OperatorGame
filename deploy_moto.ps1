@@ -85,7 +85,16 @@ if ($deviceLines.Count -eq 0) {
     exit 1
 }
 
-$DeviceSerial = ($deviceLines[0] -split "\s+")[0].Trim()
+# Use get-serialno for a clean, unambiguous serial string — no line parsing needed.
+$DeviceSerial = (& $ADB get-serialno 2>&1).Trim()
+
+if (-not $DeviceSerial -or $DeviceSerial -eq "unknown") {
+    Write-Host ""
+    Write-Host "  FAIL: Device detected but serial not readable ('$DeviceSerial')." -ForegroundColor Red
+    Write-Host "    Unlock the phone and re-authorise USB Debugging, then retry." -ForegroundColor Yellow
+    exit 1
+}
+
 Write-Host "  OK: Device connected: $DeviceSerial" -ForegroundColor Green
 
 # Bind ADB to this specific serial for the remainder of the script
