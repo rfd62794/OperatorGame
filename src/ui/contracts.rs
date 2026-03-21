@@ -29,16 +29,16 @@ impl OperatorApp {
                 .inner_margin(egui::Margin::same(6.0))
                 .rounding(egui::Rounding::same(4.0))
                 .show(ui, |ui| {
-                    ui.label(egui::RichText::new(&mission.name).strong());
+                    ui.label(egui::RichText::new(&mission.name).strong().size(14.0).color(egui::Color32::WHITE));
 
                     ui.horizontal(|ui| {
                         if let Some(aff) = mission.affinity {
                             let (r, g, b) = crate::genetics::culture_display_color_standalone(aff);
                             ui.colored_label(egui::Color32::from_rgb(r, g, b), format!("[{aff:?}]"));
                         }
-                        ui.small(format!("STR:{}", mission.req_strength));
-                        ui.small(format!("AGI:{}", mission.req_agility));
-                        ui.small(format!("INT:{}", mission.req_intelligence));
+                        ui.label(egui::RichText::new(format!("STR:{}", mission.req_strength)).color(egui::Color32::LIGHT_GRAY));
+                        ui.label(egui::RichText::new(format!("AGI:{}", mission.req_agility)).color(egui::Color32::LIGHT_GRAY));
+                        ui.label(egui::RichText::new(format!("INT:{}", mission.req_intelligence)).color(egui::Color32::LIGHT_GRAY));
                     });
 
                     ui.horizontal(|ui| {
@@ -63,11 +63,11 @@ impl OperatorApp {
                             ui.colored_label(egui::Color32::GREEN, "(-15% SYNERGY)");
                         }
 
-                        ui.small(format!("| {}s | ${}", mission.duration_secs, mission.reward));
+                        ui.label(egui::RichText::new(format!("| {}s | ${}", mission.duration_secs, mission.reward)).color(egui::Color32::LIGHT_GRAY));
                     });
 
                     let btn_label = if is_selected {
-                        "✓ SELECTED"
+                        "▶ SELECTED"
                     } else {
                         "SELECT CONTRACT"
                     };

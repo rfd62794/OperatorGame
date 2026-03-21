@@ -723,7 +723,7 @@ impl eframe::App for OperatorApp {
                                             }
                                         }
                                         crate::platform::LogsSubTab::CultureHistory => {
-                                            ui.label("[TODO] Logs → Culture History");
+                                            ui.label(egui::RichText::new("Awaiting deployment and culture synchronization...").italics().color(egui::Color32::GRAY));
                                         }
                                     },
                                 }
