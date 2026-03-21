@@ -26,7 +26,7 @@ if (-not (Get-Command "adb.exe" -ErrorAction SilentlyContinue)) {
 
 foreach ($target in $targets) {
     Write-Host ">>> TARGET: $target" -ForegroundColor Cyan
-    Write-Host "  Tap the screen (coordinates will stream here). Press any key when finished..." -ForegroundColor Gray
+    Write-Host "  Tap the screen (coordinates will stream here). Press ENTER when finished..." -ForegroundColor Gray
     
     $proc = New-Object System.Diagnostics.Process
     $proc.StartInfo.FileName = $adbPath
@@ -39,22 +39,30 @@ foreach ($target in $targets) {
     $lastX = 0
     $lastY = 0
     
-    while (-not [Console]::KeyAvailable) {
-        if ($proc.StandardOutput.EndOfStream) { 
-            Start-Sleep -Milliseconds 10
-            continue 
+    $done = $false
+    while (-not $done) {
+        if ([Console]::KeyAvailable) {
+            $key = [Console]::ReadKey($true)
+            if ($key.Key -eq [ConsoleKey]::Enter) {
+                $done = $true
+            }
         }
-        $line = $proc.StandardOutput.ReadLine()
-        $updated = $false
-        if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { $lastX = [Convert]::ToInt32($matches[1], 16); $updated = $true }
-        if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { $lastY = [Convert]::ToInt32($matches[1], 16); $updated = $true }
         
-        if ($updated) {
-            Write-Host "    -> Touch Detected: X:$lastX Y:$lastY" -ForegroundColor DarkGray
+        if (-not $done) {
+            if ($proc.StandardOutput.EndOfStream) { 
+                Start-Sleep -Milliseconds 10
+                continue 
+            }
+            $line = $proc.StandardOutput.ReadLine()
+            $updated = $false
+            if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { $lastX = [Convert]::ToInt32($matches[1], 16); $updated = $true }
+            if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { $lastY = [Convert]::ToInt32($matches[1], 16); $updated = $true }
+            
+            if ($updated) {
+                Write-Host "    -> Touch Detected: X:$lastX Y:$lastY" -ForegroundColor DarkGray
+            }
         }
     }
-    
-    $null = [Console]::ReadKey($true) # Consume the keypress
     $proc.Kill()
     
     $coords[$target] = @{ X = $lastX; Y = $lastY }
