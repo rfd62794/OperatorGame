@@ -20,7 +20,7 @@ load_dotenv()
 class OpenRouterVisionAdapter:
     """Lightweight OpenRouter adapter for vision analysis (based on OpenAgent pattern)."""
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "deepseek/deepseek-chat"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "google/gemini-2.0-flash-001"):
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         if not self.api_key:
             raise ValueError("OPENROUTER_API_KEY not found in environment or argument")
@@ -147,7 +147,7 @@ No preamble. JSON only."""
     ]
     
     # Initialize adapter
-    adapter = OpenRouterVisionAdapter(model="deepseek/deepseek-chat")
+    adapter = OpenRouterVisionAdapter(model="google/gemini-2.0-flash-001")
     
     # Call with retries (OpenAgent pattern)
     try:
@@ -175,7 +175,7 @@ No preamble. JSON only."""
 def generate_composite_report(analyses, folder):
     """Generate markdown report combining all analyses."""
     
-    report = f"# OperatorGame UI Analysis Report\n\n**Generated:** Phase F.3 OpenRouter Analysis (DeepSeek V3)\n**Folder:** {folder.name}\n**Screenshots Analyzed:** {len(analyses)}\n**Model:** DeepSeek V3 via OpenRouter\n\n---\n\n## Executive Summary\n\n"
+    report = f"# OperatorGame UI Analysis Report\n\n**Generated:** Phase F.3 OpenRouter Analysis (Gemini Flash)\n**Folder:** {folder.name}\n**Screenshots Analyzed:** {len(analyses)}\n**Model:** Gemini 2.0 Flash via OpenRouter\n\n---\n\n## Executive Summary\n\n"
     
     # Count issues
     critical_count = sum(len(a.get('critical_issues', [])) for a in analyses if isinstance(a, dict))
@@ -215,7 +215,7 @@ def generate_composite_report(analyses, folder):
                     report += f"// {c_reason}\n// Current:  {c_curr}\n// Change to: {c_rec}\n\n"
             report += "```\n\n"
     
-    report += "---\n\n**Analysis Tool:** OpenRouter DeepSeek V3 (Cost: ~$0.001 per 7 screenshots)\n"
+    report += "---\n\n**Analysis Tool:** OpenRouter Gemini Flash (Cost: ~$0.0003 per 7 screenshots)\n"
     return report
 
 # ====================================================================
@@ -235,7 +235,7 @@ def process_screenshots_openrouter(folder_path: str):
         print(f"ERROR: No PNG files found in {folder}")
         sys.exit(1)
     
-    print(f"\nAnalyzing {len(png_files)} screenshots with OpenRouter DeepSeek V3...")
+    print(f"\nAnalyzing {len(png_files)} screenshots with OpenRouter Gemini Flash...")
     print(f"Cost per analysis: ~$0.00001 (35x cheaper than Claude)\n")
     
     all_analyses = []
