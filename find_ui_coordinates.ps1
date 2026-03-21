@@ -1,10 +1,10 @@
-param(
+﻿param(
     [string]$Serial = $null
 )
 
-Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║  UI Coordinate Finder — Touch to identify coordinates      ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—" -ForegroundColor Cyan
+Write-Host "â•‘  UI Coordinate Finder â€” Touch to identify coordinates      â•‘" -ForegroundColor Cyan
+Write-Host "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Cyan
 Write-Host "Instructions:" -ForegroundColor Yellow
 Write-Host "  1. When prompted, touch the UI element on the Moto G screen"
 Write-Host "  2. The script will capture the raw touch events"
@@ -45,3 +45,4 @@ Write-Host ""
         Write-Host $_
     }
 }
+
