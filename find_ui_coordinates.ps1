@@ -19,29 +19,43 @@ Write-Host "If you miss, simply tap again. Only your LAST tap before pressing En
 $targets = @("Roster", "Missions", "Map", "Logs", "Combat_Deploy", "Back_Button")
 $coords = @{}
 
-$adb = Resolve-AdbPath
+$adbPath = "adb.exe"
+if (-not (Get-Command "adb.exe" -ErrorAction SilentlyContinue)) {
+    $adbPath = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+}
+
 foreach ($target in $targets) {
     Write-Host ">>> TARGET: $target" -ForegroundColor Cyan
-    Write-Host "  Tap the screen, then press ENTER to confirm: " -NoNewline -ForegroundColor Gray
+    Write-Host "  Tap the screen (coordinates will stream here). Press any key when finished..." -ForegroundColor Gray
     
-    # We execute raw getevent via job since this requires active stream parsing
-    $job = Start-Job -ScriptBlock {
-        param($adbPath, $serial)
-        & $adbPath -s $serial shell getevent -l 2>&1
-    } -ArgumentList $adb, $dev.Serial
-    
-    $null = Read-Host
-    Stop-Job $job
-    
-    $events = Receive-Job $job
-    Remove-Job $job
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo.FileName = $adbPath
+    $proc.StartInfo.Arguments = "-s $($dev.Serial) shell getevent -l"
+    $proc.StartInfo.UseShellExecute = $false
+    $proc.StartInfo.RedirectStandardOutput = $true
+    $proc.StartInfo.CreateNoWindow = $true
+    $proc.Start() | Out-Null
     
     $lastX = 0
     $lastY = 0
-    foreach ($line in $events) {
-        if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { $lastX = [Convert]::ToInt32($matches[1], 16) }
-        if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { $lastY = [Convert]::ToInt32($matches[1], 16) }
+    
+    while (-not [Console]::KeyAvailable) {
+        if ($proc.StandardOutput.EndOfStream) { 
+            Start-Sleep -Milliseconds 10
+            continue 
+        }
+        $line = $proc.StandardOutput.ReadLine()
+        $updated = $false
+        if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { $lastX = [Convert]::ToInt32($matches[1], 16); $updated = $true }
+        if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { $lastY = [Convert]::ToInt32($matches[1], 16); $updated = $true }
+        
+        if ($updated) {
+            Write-Host "    -> Touch Detected: X:$lastX Y:$lastY" -ForegroundColor DarkGray
+        }
     }
+    
+    $null = [Console]::ReadKey($true) # Consume the keypress
+    $proc.Kill()
     
     $coords[$target] = @{ X = $lastX; Y = $lastY }
     Write-Host "  [SAVED] $target -> ($lastX, $lastY)`n" -ForegroundColor Green
