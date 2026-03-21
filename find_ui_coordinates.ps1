@@ -24,7 +24,32 @@ if ($Serial -eq '') {
 }
 
 Write-Host ('[OK] Device locked: ' + $Serial) -ForegroundColor Green
-Write-Host 'Instructions: For each prompt, tap the target UI element on your Moto G.' -ForegroundColor Yellow
+
+Write-Host "`nVerifying App Installation and Runtime State..." -ForegroundColor Cyan
+$pmList = & $ADB -s $Serial shell pm list packages com.rfditservices.operatorgame
+if ($pmList -notmatch 'com.rfditservices.operatorgame') {
+    Write-Error 'Package com.rfditservices.operatorgame is NOT installed on this device.'
+    exit 1
+}
+
+$pidRaw = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null)
+if ($pidRaw -ne $null) {
+    if ($pidRaw.GetType().Name -eq 'Object[]') { $pidRaw = $pidRaw -join ' ' }
+    $pidValue = $pidRaw.Trim()
+} else {
+    $pidValue = ''
+}
+
+if ($pidValue -eq '') {
+    Write-Host '[WARN] App not running. Launching...' -ForegroundColor Yellow
+    & $ADB -s $Serial shell am start -n "com.rfditservices.operatorgame/android.app.NativeActivity"
+    Write-Host '  Waiting 8 seconds for game logic to load...' -ForegroundColor Gray
+    Start-Sleep -Seconds 8
+} else {
+    Write-Host ('[OK] App running (PID: ' + $pidValue + ')') -ForegroundColor Green
+}
+
+Write-Host "`nInstructions: For each prompt, tap the target UI element on your Moto G." -ForegroundColor Yellow
 Write-Host 'If you miss, simply tap again. Only your LAST tap before pressing Enter is saved.' -ForegroundColor Yellow
 Write-Host ''
 
