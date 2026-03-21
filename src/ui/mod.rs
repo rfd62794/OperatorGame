@@ -19,6 +19,19 @@ use crate::log_engine::{format_log_entry, generate_narrative};
 use crate::models::{AarOutcome, Deployment, Mission, SlimeState};
 use crate::persistence::{save, GameState};
 
+// ---------------------------------------------------------------------------
+// Stitch Design System — Color Tokens
+// ---------------------------------------------------------------------------
+
+/// Background surface low (panels, active tab fills). #131318
+const COLOR_SURFACE_LOW:  egui::Color32 = egui::Color32::from_rgb(19, 19, 24);
+/// Surface container highest (separator lines, headers). #25252c
+const COLOR_SURFACE_HIGH: egui::Color32 = egui::Color32::from_rgb(37, 37, 44);
+/// Primary accent — active/success states. #69fea5
+const COLOR_PRIMARY:      egui::Color32 = egui::Color32::from_rgb(105, 254, 165);
+/// High-contrast text (inactive labels). #f8f5fd
+const COLOR_TEXT:         egui::Color32 = egui::Color32::from_rgb(248, 245, 253);
+
 pub mod cargo;
 pub mod contracts;
 pub mod manifest;
@@ -550,7 +563,7 @@ impl eframe::App for OperatorApp {
                 self.render_launch_bar(ui);
             });
 
-        // Bottom Navigation Tab Bar (Phase B)
+        // Bottom Navigation Tab Bar — Stitch Design (Phase B / Phase F polish)
         let layout = crate::platform::LayoutCalculator::new(
             egui::vec2(ctx.screen_rect().width(), ctx.screen_rect().height()),
             safe_area,
@@ -561,33 +574,86 @@ impl eframe::App for OperatorApp {
             .fixed_pos(tab_rect.min)
             .show(ctx, |ui| {
                 ui.set_min_size(egui::vec2(tab_rect.width(), tab_rect.height()));
-                
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
-                    let tab_width = tab_rect.width() / 4.0;
-                    
-                    let tabs = [
-                        (crate::platform::BottomTab::Roster, "🧬 Roster"),
-                        (crate::platform::BottomTab::Missions, "🚀 Missions"),
-                        (crate::platform::BottomTab::Map, "🗺️ Map"),
-                        (crate::platform::BottomTab::Logs, "📜 Logs"),
-                    ];
 
-                    for (_idx, (tab, label)) in tabs.iter().enumerate() {
-                        let is_active = self.active_tab == *tab;
-                        let button = egui::Button::new(*label)
-                            .fill(if is_active { 
-                                egui::Color32::from_rgb(100, 200, 100) 
-                            } else { 
-                                egui::Color32::from_rgb(60, 60, 60) 
-                            })
-                            .min_size(egui::vec2(tab_width, tab_rect.height()));
-                        
-                        if ui.add(button).clicked() {
-                            self.active_tab = *tab;
-                        }
+                // Paint the tab bar background (solid dark surface)
+                ui.painter().rect_filled(
+                    egui::Rect::from_min_size(tab_rect.min, egui::vec2(tab_rect.width(), tab_rect.height())),
+                    egui::Rounding::ZERO,
+                    COLOR_SURFACE_LOW,
+                );
+                // Top border line separating the bar from content
+                ui.painter().hline(
+                    tab_rect.min.x..=tab_rect.max.x,
+                    tab_rect.min.y,
+                    egui::Stroke::new(1.0, COLOR_SURFACE_HIGH),
+                );
+
+                // Tab definitions: (variant, icon, label)
+                let tabs = [
+                    (crate::platform::BottomTab::Roster,   "🧬", "Roster"),
+                    (crate::platform::BottomTab::Missions, "🚀", "Missions"),
+                    (crate::platform::BottomTab::Map,      "🗺️", "Map"),
+                    (crate::platform::BottomTab::Logs,     "📜", "Logs"),
+                ];
+
+                let tab_w = tab_rect.width() / tabs.len() as f32;
+                let tab_h = tab_rect.height();
+
+                for (i, (tab, icon, label)) in tabs.iter().enumerate() {
+                    let is_active = self.active_tab == *tab;
+
+                    // Rect for this individual tab button
+                    let slot_min = egui::pos2(tab_rect.min.x + i as f32 * tab_w, tab_rect.min.y);
+                    let slot_rect = egui::Rect::from_min_size(slot_min, egui::vec2(tab_w, tab_h));
+
+                    // Active: fill + left accent strip
+                    if is_active {
+                        ui.painter().rect_filled(slot_rect, egui::Rounding::ZERO, COLOR_SURFACE_LOW);
+                        let accent_rect = egui::Rect::from_min_size(
+                            slot_min,
+                            egui::vec2(3.0, tab_h),
+                        );
+                        ui.painter().rect_filled(accent_rect, egui::Rounding::ZERO, COLOR_PRIMARY);
                     }
-                });
+
+                    // Render stacked icon + label inside the slot
+                    let _response = ui.allocate_ui_at_rect(slot_rect, |ui| {
+                        ui.set_min_size(egui::vec2(tab_w, tab_h));
+                        ui.vertical_centered(|ui| {
+                            ui.add_space(6.0);
+                            ui.label(
+                                egui::RichText::new(*icon)
+                                    .size(18.0)
+                                    .color(egui::Color32::WHITE),
+                            );
+                            ui.add_space(2.0);
+                            ui.label(
+                                egui::RichText::new(*label)
+                                    .size(10.0)
+                                    .color(if is_active { COLOR_PRIMARY } else { COLOR_TEXT }),
+                            );
+                        });
+                    });
+
+                    // Sense clicks over the full slot rect
+                    let click_response = ui.interact(
+                        slot_rect,
+                        egui::Id::new(format!("bottom_tab_{}", label)),
+                        egui::Sense::click(),
+                    );
+                    if click_response.clicked() {
+                        self.active_tab = *tab;
+                    }
+
+                    // Hover feedback: subtle highlight
+                    if click_response.hovered() && !is_active {
+                        ui.painter().rect_filled(
+                            slot_rect,
+                            egui::Rounding::ZERO,
+                            egui::Color32::from_rgba_premultiplied(255, 255, 255, 8),
+                        );
+                    }
+                }
             });
 
         // Unified 4-tab layout with vertical sub-tab sidebar
@@ -669,97 +735,131 @@ impl eframe::App for OperatorApp {
 // ---------------------------------------------------------------------------
 
 
+/// Render a single styled sub-tab button for the sidebar.
+///
+/// - **Active:** dark surface fill (#131318) + primary green text (#69fea5)
+/// - **Inactive:** transparent fill + high-contrast white text (#f8f5fd)
+/// - Minimum size: 70×40dp (44dp touch target)
+/// - Sharp corners, no stroke (Stitch design system)
+fn sub_tab_button(ui: &mut egui::Ui, label: &str, is_active: bool) -> bool {
+    let text_color = if is_active { COLOR_PRIMARY } else { COLOR_TEXT };
+    let fill_color = if is_active { COLOR_SURFACE_LOW } else { egui::Color32::TRANSPARENT };
+
+    let btn = egui::Button::new(
+        egui::RichText::new(label)
+            .size(11.0)
+            .color(text_color),
+    )
+    .fill(fill_color)
+    .stroke(egui::Stroke::NONE)
+    .rounding(egui::Rounding::ZERO)
+    .min_size(egui::vec2(70.0, 40.0));
+
+    ui.add(btn).clicked()
+}
+
+/// Render a styled section header for the sidebar.
+///
+/// All-caps bold label in primary green, preceded by spacing and
+/// followed by a thin surface-high separator line.
+fn sidebar_header(ui: &mut egui::Ui, title: &str) {
+    ui.add_space(8.0);
+    ui.label(
+        egui::RichText::new(title)
+            .size(13.0)
+            .color(COLOR_PRIMARY)
+            .strong(),
+    );
+    // Thin colored separator line via the painter
+    let sep_rect = ui.available_rect_before_wrap();
+    ui.painter().hline(
+        sep_rect.min.x..=sep_rect.max.x,
+        sep_rect.min.y,
+        egui::Stroke::new(1.0, COLOR_SURFACE_HIGH),
+    );
+    ui.add_space(6.0);
+}
+
 fn render_sub_tabs(
     ui: &mut egui::Ui,
     active_main_tab: crate::platform::BottomTab,
     app: &mut OperatorApp,
 ) {
     ui.vertical(|ui| {
-        ui.label("─────────────"); // Visual separator
+        ui.spacing_mut().item_spacing = egui::vec2(0.0, 4.0); // 4dp gap between buttons
 
         match active_main_tab {
             crate::platform::BottomTab::Roster => {
-                ui.label("Roster");
+                sidebar_header(ui, "ROSTER");
 
-                if ui
-                    .selectable_label(
-                        app.roster_sub_tab == crate::platform::RosterSubTab::Collection,
-                        "Collection",
-                    )
-                    .clicked()
-                {
+                if sub_tab_button(
+                    ui,
+                    "Collection",
+                    app.roster_sub_tab == crate::platform::RosterSubTab::Collection,
+                ) {
                     app.roster_sub_tab = crate::platform::RosterSubTab::Collection;
                 }
 
-                if ui
-                    .selectable_label(
-                        app.roster_sub_tab == crate::platform::RosterSubTab::Breeding,
-                        "Breeding",
-                    )
-                    .clicked()
-                {
+                if sub_tab_button(
+                    ui,
+                    "Breeding",
+                    app.roster_sub_tab == crate::platform::RosterSubTab::Breeding,
+                ) {
                     app.roster_sub_tab = crate::platform::RosterSubTab::Breeding;
                 }
             }
 
             crate::platform::BottomTab::Missions => {
-                ui.label("Missions");
+                sidebar_header(ui, "MISSIONS");
 
-                if ui
-                    .selectable_label(
-                        app.missions_sub_tab == crate::platform::MissionsSubTab::Active,
-                        "Active",
-                    )
-                    .clicked()
-                {
+                if sub_tab_button(
+                    ui,
+                    "Active",
+                    app.missions_sub_tab == crate::platform::MissionsSubTab::Active,
+                ) {
                     app.missions_sub_tab = crate::platform::MissionsSubTab::Active;
                 }
 
-                if ui
-                    .selectable_label(
-                        app.missions_sub_tab == crate::platform::MissionsSubTab::QuestBoard,
-                        "Quest Board",
-                    )
-                    .clicked()
-                {
+                // Abbreviated: "Quest Board" → "Quests" to fit 80–100dp column
+                if sub_tab_button(
+                    ui,
+                    "Quests",
+                    app.missions_sub_tab == crate::platform::MissionsSubTab::QuestBoard,
+                ) {
                     app.missions_sub_tab = crate::platform::MissionsSubTab::QuestBoard;
                 }
             }
 
             crate::platform::BottomTab::Map => {
-                ui.label("Map");
+                sidebar_header(ui, "MAP");
 
-                if ui
-                    .selectable_label(
-                        app.map_sub_tab == crate::platform::MapSubTab::Zones,
-                        "Zones",
-                    )
-                    .clicked()
-                {
+                if sub_tab_button(
+                    ui,
+                    "Zones",
+                    app.map_sub_tab == crate::platform::MapSubTab::Zones,
+                ) {
                     app.map_sub_tab = crate::platform::MapSubTab::Zones;
                 }
             }
 
             crate::platform::BottomTab::Logs => {
-                ui.label("Logs");
+                sidebar_header(ui, "LOGS");
 
-                if ui
-                    .selectable_label(
-                        app.logs_sub_tab == crate::platform::LogsSubTab::MissionHistory,
-                        "Mission History",
-                    )
-                    .clicked()
-                {
+                // Abbreviated: "Mission History" → "Missions" to fit 80–100dp column
+                if sub_tab_button(
+                    ui,
+                    "Missions",
+                    app.logs_sub_tab == crate::platform::LogsSubTab::MissionHistory,
+                ) {
                     app.logs_sub_tab = crate::platform::LogsSubTab::MissionHistory;
                 }
 
-                if ui
-                    .selectable_label(
-                        app.logs_sub_tab == crate::platform::LogsSubTab::CultureHistory,
-                        "Culture History",
-                    )
-                    .clicked()
-                {
+                // Abbreviated: "Culture History" → "Culture" to fit 80–100dp column
+                if sub_tab_button(
+                    ui,
+                    "Culture",
+                    app.logs_sub_tab == crate::platform::LogsSubTab::CultureHistory,
+                ) {
                     app.logs_sub_tab = crate::platform::LogsSubTab::CultureHistory;
                 }
             }
