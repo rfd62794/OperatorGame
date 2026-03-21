@@ -1,49 +1,35 @@
 function Detect-AppCrash {
     param(
         [Parameter(Mandatory=$true)]
-        [string[]]$LogLines,
-        [ValidateSet("Strict", "Warn")]
-        [string]$Sensitivity = "Strict"
+        [string[]]$LogLines
     )
     
     <#
     .SYNOPSIS
-    Analyze logcat for crash patterns (SIGKILL, SIGSEGV, FATAL, etc.).
-    
-    .OUTPUTS
-    [hashtable] with Crashed=$bool, Type=$string, Details=$string[]
+    Analyze logcat buffers for native vs JVM crash signatures.
     #>
     
-    $crashPatterns = @(
-        "FATAL EXCEPTION",
-        "Force finishing activity",
-        "SIGSEGV",
-        "SIGKILL",
-        "ANR in"
-    )
+    $nativeCrashPatterns = @("SIGSEGV", "SIGKILL", "dlopen failed", "linker error", "library .* not found")
+    $javaCrashPatterns = @("FATAL EXCEPTION", "Force finishing activity", "ANR in")
     
     $details = @()
     $crashed = $false
     $type = "None"
     
     foreach ($line in $LogLines) {
-        foreach ($pattern in $crashPatterns) {
-            if ($line -match $pattern) {
-                if (-not $crashed) {
-                    $crashed = $true
-                    $type = $pattern
-                }
+        foreach ($p in $nativeCrashPatterns) {
+            if ($line -match $p) {
+                if (-not $crashed) { $type = "NDK Native Crash ($p)" }
+                $crashed = $true
                 $details += $line
             }
         }
-    }
-    
-    if (-not $crashed -and $Sensitivity -eq "Warn") {
-        $warnings = $LogLines | Where-Object { $_ -match " E/.*Exception" }
-        if ($warnings) {
-            $crashed = $true
-            $type = "Unhandled Exception"
-            $details = @($warnings)
+        foreach ($p in $javaCrashPatterns) {
+            if ($line -match $p) {
+                if (-not $crashed) { $type = "Java Exception ($p)" }
+                $crashed = $true
+                $details += $line
+            }
         }
     }
     
