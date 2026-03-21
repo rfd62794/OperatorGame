@@ -5,9 +5,9 @@ if (-not $folder) {
     exit 1
 }
 
-$jsons = Get-ChildItem -Path $folder.FullName -Filter "*.json" -Exclude "*_analysis.json"
+$jsons = Get-ChildItem -Path $folder.FullName -Filter "*.json" | Where-Object { $_.Name -notmatch "_analysis\.json" -and $_.Name -ne "manifest.json" }
 
-if ($jsons.Count -eq 0) {
+if (-not $jsons) {
     Write-Warning "No metadata JSON files found. Run analyze_screenshots.ps1 first."
     exit
 }
