@@ -41,3 +41,6 @@ venv/
 # Temporary
 .tmp/
 temp/
+
+# Environment Variables
+.env

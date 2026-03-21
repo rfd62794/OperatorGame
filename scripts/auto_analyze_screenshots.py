@@ -9,7 +9,11 @@ import base64
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
 from anthropic import Anthropic
+
+# Safely load local .env variables into os.environ
+load_dotenv()
 
 def encode_image(image_path):
     """Encode PNG to base64 for API."""
