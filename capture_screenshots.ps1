@@ -51,7 +51,8 @@ if ($pidRaw -ne $null) {
 if ($pidValue -eq '') {
     Write-Host '[WARN] App not running. Launching...' -ForegroundColor Yellow
     & $ADB -s $Serial shell am start -n "com.rfditservices.operatorgame/android.app.NativeActivity"
-    Start-Sleep -Seconds 3
+    Write-Host '  Waiting 8 seconds for game logic to load...' -ForegroundColor Gray
+    Start-Sleep -Seconds 8
     $pidRaw = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null)
     if ($pidRaw -ne $null) {
         if ($pidRaw.GetType().Name -eq 'Object[]') { $pidRaw = $pidRaw -join ' ' }
@@ -83,7 +84,8 @@ function Capture-Tab {
     }
     
     $filename = $OutputDir + '\' + $TabName + '.png'
-    & $ADB -s $Serial exec-out screencap -p > $filename
+    & $ADB -s $Serial shell screencap -p /data/local/tmp/screencap.png
+    & $ADB -s $Serial pull /data/local/tmp/screencap.png $filename | Out-Null
     
     if (Test-Path $filename) {
         $size = (Get-Item $filename).Length / 1KB
