@@ -60,9 +60,12 @@ if (-not (Test-Path $ADB)) {
 Write-Host ""
 Write-Host "[2/5] Scanning for connected ADB devices..." -ForegroundColor Cyan
 
-# Start ADB server explicitly first — suppresses "daemon not running" stderr
-# that PowerShell's $ErrorActionPreference = "Stop" would treat as fatal.
+# ADB writes "* daemon not running; starting now" to stderr on first run.
+# $ErrorActionPreference = "Stop" treats ANY native stderr as a terminating error,
+# even before 2>&1 can redirect it. Relax briefly, then restore.
+$ErrorActionPreference = "Continue"
 & $ADB start-server 2>&1 | Out-Null
+$ErrorActionPreference = "Stop"
 
 $rawDevices = & $ADB devices
 $devices = $rawDevices |
