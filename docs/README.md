@@ -1,64 +1,52 @@
-# OPERATOR — Document Index
+# OperatorGame Documentation
 
-> **The two Bibles. If code and design conflict, this is the arbiter.**
+Welcome to the OperatorGame design, architecture, and development documentation.
 
----
+## Quick Links
 
-## 🎮 Design Bible (GDD)
+- **[Deployment & Automation](../DEPLOYMENT.md)** — How to build and deploy to Android
+- **[Constitution](../CONSTITUTION.md)** — Governance, ADR discipline, project structure
+- **[Specification](../SPEC.md)** — Game mechanics, rules, balance
 
-| Document | Purpose | Status |
-|----------|---------|--------|
-| [GDD.md](GDD.md) | Game feel, systems, tone, conquest vision | ✅ Current (v2.0) |
+## Documentation Structure
 
----
+### [Design](./design/)
+High-level visual identity, blueprint, and design philosophy.
+- `DESIGN_BLUEPRINT.md` — Aesthetic direction, color system, UI patterns
+- `VISUAL_IDENTITY.md` — Branding, asset guidelines
 
-## ⚙️ Engineering Bible (SDD)
+### [Systems](./systems/)
+Core game mechanics: genetics, stats, lifecycle, combat.
+- `STAT_SYSTEM.md` — Character stat derivation and growth
+- `LIFECYCLE_SDD.md` — Breeding, incubation, lifecycle phases
+- Genetics engine, color mixing, stat calculations
 
-| Document | Purpose | Status |
-|----------|---------|--------|
-| [../CONSTITUTION.md](../CONSTITUTION.md) | Non-negotiable governing principles | ✅ Locked v1.0 |
-| [../SPEC.md](../SPEC.md) | Domain entity contracts + formulas | ✅ Current (v2.0) |
-| [sdd/PLAN.md](sdd/PLAN.md) | Module map, dependencies, test coverage | ✅ Current (v2.0) |
+### [Sprints & Phases](./sprints/)
+Development history: phase directives, SDD specs, architectural decisions.
+- `phase_e_core_loop.md` — Core loop implementation
+- `phase_f_ui_polish.md` — Mobile UI refinement
+- `android_tools_architecture.md` — PowerShell automation framework
+- `crash_diagnosis_directive.md` — Debugging and telemetry
+- (All sprint planning and architectural evolution)
 
----
+### [Architecture Decision Records](./adr/)
+Critical technical decisions and their rationale.
 
-## 📋 Architectural Decision Records (ADRs)
+### [Roadmap](./roadmap/)
+Future features, Sprint 2+, long-term vision.
 
-| ADR | Decision | Status |
-|-----|---------|--------|
-| [ADR-001](adr/ADR-001-rust-stack.md) | Rust over Python/Go for core logic | ✅ Accepted |
-| [ADR-002](adr/ADR-002-timestamp-over-countdown.md) | Timestamp-based offline timers | ✅ Accepted |
-| [ADR-003](adr/ADR-003-atomic-save.md) | Atomic `.tmp` → rename save strategy | ✅ Accepted |
-| [ADR-004](adr/ADR-004-success-formula.md) | Per-attribute scoring formula | ✅ Accepted |
-| [ADR-005](adr/ADR-005-culture-hex-wheel.md) | Culture hex-wheel genetics system | ✅ Accepted (Sprint 1) |
+## For New Contributors
 
----
+1. Read `../CONSTITUTION.md` for project governance
+2. Read `../SPECIFICATION.md` for game rules
+3. Skim `./design/` to understand aesthetic direction
+4. Skim `./systems/` to understand mechanics
+5. Review relevant `./sprints/` phase for context on current work
 
-## 🗺️ Sprint Roadmap
+## For Build/Deploy
 
-| Sprint | Document | Status |
-|--------|---------|--------|
-| S1: Genetics Engine | [roadmap/SPRINT-1-GENETICS.md](roadmap/SPRINT-1-GENETICS.md) | ✅ Shipped |
-| S2: D20 Combat Core | [roadmap/SPRINT-2-COMBAT.md](roadmap/SPRINT-2-COMBAT.md) | 🔄 Next |
-| S3: Island Expedition | [roadmap/SPRINT-3-EXPEDITION.md](roadmap/SPRINT-3-EXPEDITION.md) | ⬜ Planned |
-
----
-
-## 🔬 Reference
-
-| Document | Purpose |
-|----------|---------|
-| [SLIME_BLUEPRINT.md](SLIME_BLUEPRINT.md) | rpgCore v1 systemic audit → Rust transplant spec |
+See `../DEPLOYMENT.md` for Android automation framework.
 
 ---
 
-## Rule: Which Bible Wins?
-
-```
-Is it about how a player FEELS?  →  GDD.md
-Is it about how a system WORKS?  →  SPEC.md (root)
-Is it about WHY we chose X?      →  ADR-00N
-Is it about where code LIVES?    →  sdd/PLAN.md
-Is it about what's next?         →  roadmap/SPRINT-N
-```
-
+*Last updated: March 2026*
