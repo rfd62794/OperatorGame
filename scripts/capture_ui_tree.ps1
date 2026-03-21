@@ -38,8 +38,10 @@ Write-Host "[Setup] Loaded coordinates from ui_coordinates.json" -ForegroundColo
 # getevent output was X: ~450, Y: ~5800 which is digitizer scale.
 # If Invoke-DeviceTap limits to 5000 we scale, but let's trust ADB input tap.
 # Custom X/Y for subtabs are rough screen ratios since subtabs are on the left.
-$subTab1Y = 300 
-$subTab2Y = 450 
+# Moto G physical density is 2.0. SubTab 1 is ~120dp (240px). SubTab 2 is ~165dp (330px).
+$subX = 80
+$subTab1Y = 240 
+$subTab2Y = 330 
 
 $uiTree = @(
     @{
@@ -47,7 +49,7 @@ $uiTree = @(
         description = "Roster → Collection (default)"
         navigation = @(
             @{ action = "tap"; target = "Roster"; delay = 1000 }
-            @{ action = "tap"; x = 100; y = $subTab1Y; delay = 600 }
+            @{ action = "tap"; x = $subX; y = $subTab1Y; delay = 600 }
         )
         filename = "01_roster_collection.png"
     },
@@ -56,7 +58,7 @@ $uiTree = @(
         description = "Roster → Breeding"
         navigation = @(
             @{ action = "tap"; target = "Roster"; delay = 1000 }
-            @{ action = "tap"; x = 100; y = $subTab2Y; delay = 600 }
+            @{ action = "tap"; x = $subX; y = $subTab2Y; delay = 600 }
         )
         filename = "02_roster_breeding.png"
     },
@@ -65,7 +67,7 @@ $uiTree = @(
         description = "Missions → Active (default)"
         navigation = @(
             @{ action = "tap"; target = "Missions"; delay = 1000 }
-            @{ action = "tap"; x = 100; y = $subTab1Y; delay = 600 }
+            @{ action = "tap"; x = $subX; y = $subTab1Y; delay = 600 }
         )
         filename = "03_missions_active.png"
     },
@@ -74,7 +76,7 @@ $uiTree = @(
         description = "Missions → Quest Board"
         navigation = @(
             @{ action = "tap"; target = "Missions"; delay = 1000 }
-            @{ action = "tap"; x = 100; y = $subTab2Y; delay = 600 }
+            @{ action = "tap"; x = $subX; y = $subTab2Y; delay = 600 }
         )
         filename = "04_missions_questboard.png"
     },
@@ -83,7 +85,7 @@ $uiTree = @(
         description = "Map → Zones (default)"
         navigation = @(
             @{ action = "tap"; target = "Map"; delay = 1000 }
-            @{ action = "tap"; x = 100; y = $subTab1Y; delay = 600 }
+            @{ action = "tap"; x = $subX; y = $subTab1Y; delay = 600 }
         )
         filename = "05_map_zones.png"
     },
@@ -92,7 +94,7 @@ $uiTree = @(
         description = "Logs → Mission History (default)"
         navigation = @(
             @{ action = "tap"; target = "Logs"; delay = 1000 }
-            @{ action = "tap"; x = 100; y = $subTab1Y; delay = 600 }
+            @{ action = "tap"; x = $subX; y = $subTab1Y; delay = 600 }
         )
         filename = "06_logs_history.png"
     },
@@ -101,7 +103,7 @@ $uiTree = @(
         description = "Logs → Culture History"
         navigation = @(
             @{ action = "tap"; target = "Logs"; delay = 1000 }
-            @{ action = "tap"; x = 100; y = $subTab2Y; delay = 600 }
+            @{ action = "tap"; x = $subX; y = $subTab2Y; delay = 600 }
         )
         filename = "07_logs_culture.png"
     }
@@ -118,10 +120,10 @@ foreach ($state in $uiTree) {
                 $rawX = $coords.$($step.target).X
                 $rawY = $coords.$($step.target).Y
                 
-                # Digitizer compensation (Moto G ~3000x6000 raw -> 1080x2400 screen)
+                # Digitizer compensation (Moto G ~3000x6000 raw -> 720x1604 physical screen pixels)
                 if ($rawY -gt 5000) {
-                    $tapX = [math]::Round($rawX * (1080.0 / 3000.0))
-                    $tapY = [math]::Round($rawY * (2400.0 / 6000.0))
+                    $tapX = [math]::Round($rawX * (720.0 / 3000.0))
+                    $tapY = [math]::Round($rawY * (1604.0 / 6000.0))
                 } else {
                     $tapX = $rawX
                     $tapY = $rawY
