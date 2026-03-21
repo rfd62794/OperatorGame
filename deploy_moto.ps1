@@ -60,10 +60,14 @@ if (-not (Test-Path $ADB)) {
 Write-Host ""
 Write-Host "[2/5] Scanning for connected ADB devices..." -ForegroundColor Cyan
 
-$rawDevices = & $ADB devices 2>&1
+# Start ADB server explicitly first — suppresses "daemon not running" stderr
+# that PowerShell's $ErrorActionPreference = "Stop" would treat as fatal.
+& $ADB start-server 2>&1 | Out-Null
+
+$rawDevices = & $ADB devices
 $devices = $rawDevices |
     Select-Object -Skip 1 |
-    Where-Object { $_ -match "\S" -and $_ -match "`tdevice$" }
+    Where-Object { "$_".Trim() -ne "" -and "$_" -match "`tdevice$" }
 
 if ($devices.Count -eq 0) {
     Write-Host ""
