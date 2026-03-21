@@ -13,11 +13,10 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-$Keystore = "operatorgame-release.jks"
-$Alias = "operatorgame"
-$ApkUnsigned = "target/release/apk/operator.apk" # Adjust based on cargo-apk/xbuild output
+$Keystore  = "operatorgame-release.jks"
+$Alias     = "operatorgame"
 $ApkAligned = "operatorgame-release-aligned.apk"
-$ApkFinal = "operatorgame-release.apk"
+$ApkFinal   = "operatorgame-release.apk"
 
 if ($GenerateKeys) {
     Write-Host "Generating release keystore..." -ForegroundColor Cyan
@@ -53,14 +52,23 @@ $Zipalign = "$($BuildToolsDir.FullName)\zipalign.exe"
 $Apksigner = "$($BuildToolsDir.FullName)\apksigner.bat"
 
 Write-Host "📦 Building and packaging APK with cargo apk..." -ForegroundColor Cyan
+
+# Purge stale APK output so discovery below finds only the new build
+Remove-Item -Recurse -Force "target\release\apk" -ErrorAction SilentlyContinue
+
 cargo apk build --release
 
-$ApkUnsigned = "target/release/apk/operator.apk"
+# Dynamic APK discovery — handles filename variations across cargo-apk versions
+$ApkUnsigned = Get-ChildItem -Path "target\release\apk" -Filter "*.apk" -Recurse -ErrorAction SilentlyContinue |
+    Select-Object -First 1 -ExpandProperty FullName
 
-if (-not (Test-Path $ApkUnsigned)) {
-    Write-Host "Error: Could not find output APK at $ApkUnsigned. Adjust path in script." -ForegroundColor Red
+if (-not $ApkUnsigned) {
+    Write-Host "Error: No APK found under target\release\apk\ after build." -ForegroundColor Red
+    Write-Host "       Check the cargo-apk output above for compilation errors." -ForegroundColor Yellow
     exit 1
 }
+
+Write-Host "  Found unsigned APK: $ApkUnsigned" -ForegroundColor DarkGray
 
 Write-Host "🔐 Aligning APK..." -ForegroundColor Cyan
 & $Zipalign -v -p 4 $ApkUnsigned $ApkAligned
