@@ -4,3 +4,40 @@
 *.jks
 *.aab
 bundletool*.jar
+
+# PowerShell Automation Artifacts
+screenshots_*/
+ui_coordinates.json
+
+# Android SDK / Local Config
+local.properties
+.gradle/
+
+# Android Keystores (CRITICAL: Never leak signing keys)
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+# Generated Files
+*.apk
+*.aab
+
+# OS/IDE
+.DS_Store
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Temporary
+.tmp/
+temp/
