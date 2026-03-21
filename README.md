@@ -47,6 +47,9 @@
 
 ## 📥 Quick Start
 
+### For Android Hardware Deployment
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for automated build & test pipelines using the native SDD framework.
+
 ### CLI Interface
 ```bash
 # Clone the repository
