@@ -14,9 +14,16 @@ $pidNum = Launch-OperatorApp -Device $dev
 Write-Host "[OK] App locked and active (PID: $pidNum)`n" -ForegroundColor Green
 
 Write-Host "Instructions: For each prompt, tap the target UI element on your device." -ForegroundColor Yellow
-Write-Host "If you miss, simply tap again. Only your LAST tap before pressing Enter is saved.`n" -ForegroundColor Yellow
+Write-Host "ONE-TAP TRUST VALIDATION ENABLED. Script will advance the moment you touch." -ForegroundColor Yellow
 
-$targets = @("Roster", "Missions", "Map", "Logs", "Combat_Deploy", "Back_Button")
+$targets = @(
+    @{ Id="Roster"; Desc="Bottom Navigation Bar: First Tab (Left)" },
+    @{ Id="Missions"; Desc="Bottom Navigation Bar: Second Tab" },
+    @{ Id="Map"; Desc="Bottom Navigation Bar: Third Tab" },
+    @{ Id="Logs"; Desc="Bottom Navigation Bar: Fourth Tab (Right)" },
+    @{ Id="Combat_Deploy"; Desc="Center Screen: Large Combat Deploy Button" },
+    @{ Id="Back_Button"; Desc="Top Left: Back/Return Navigation Arrow" }
+)
 $coords = @{}
 
 $adbPath = "adb.exe"
@@ -24,9 +31,10 @@ if (-not (Get-Command "adb.exe" -ErrorAction SilentlyContinue)) {
     $adbPath = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 }
 
-foreach ($target in $targets) {
-    Write-Host ">>> TARGET: $target" -ForegroundColor Cyan
-    Write-Host "  Tap the screen (coordinates will stream here). Press ENTER when finished..." -ForegroundColor Gray
+foreach ($t in $targets) {
+    Write-Host "`n>>> TARGET: $($t.Id)" -ForegroundColor Cyan
+    Write-Host "  $($t.Desc)" -ForegroundColor Yellow
+    Write-Host "  Waiting for 1 tap..." -ForegroundColor Gray
     
     $proc = New-Object System.Diagnostics.Process
     $proc.StartInfo.FileName = $adbPath
@@ -38,35 +46,33 @@ foreach ($target in $targets) {
     
     $lastX = 0
     $lastY = 0
+    $hasX = $false
+    $hasY = $false
     
-    $done = $false
-    while (-not $done) {
-        if ([Console]::KeyAvailable) {
-            $key = [Console]::ReadKey($true)
-            if ($key.Key -eq [ConsoleKey]::Enter) {
-                $done = $true
-            }
+    while (-not ($hasX -and $hasY)) {
+        if ($proc.StandardOutput.EndOfStream) { 
+            Start-Sleep -Milliseconds 10
+            continue 
         }
+        $line = $proc.StandardOutput.ReadLine()
         
-        if (-not $done) {
-            if ($proc.StandardOutput.EndOfStream) { 
-                Start-Sleep -Milliseconds 10
-                continue 
-            }
-            $line = $proc.StandardOutput.ReadLine()
-            $updated = $false
-            if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { $lastX = [Convert]::ToInt32($matches[1], 16); $updated = $true }
-            if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { $lastY = [Convert]::ToInt32($matches[1], 16); $updated = $true }
-            
-            if ($updated) {
-                Write-Host "    -> Touch Detected: X:$lastX Y:$lastY" -ForegroundColor DarkGray
-            }
+        if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { 
+            $lastX = [Convert]::ToInt32($matches[1], 16)
+            $hasX = $true 
+        }
+        if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { 
+            $lastY = [Convert]::ToInt32($matches[1], 16)
+            $hasY = $true 
         }
     }
+    
     $proc.Kill()
     
-    $coords[$target] = @{ X = $lastX; Y = $lastY }
-    Write-Host "  [SAVED] $target -> ($lastX, $lastY)`n" -ForegroundColor Green
+    $coords[$t.Id] = @{ X = $lastX; Y = $lastY }
+    Write-Host "  [LOCKED] $($t.Id) -> X:$lastX Y:$lastY" -ForegroundColor Green
+    
+    # 1 second buffer so user doesn't accidentally double-tap the next target
+    Start-Sleep -Seconds 1
 }
 
 Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
