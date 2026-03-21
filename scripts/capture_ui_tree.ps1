@@ -116,20 +116,19 @@ foreach ($state in $uiTree) {
     
     foreach ($step in $state.navigation) {
         if ($step.action -eq "tap") {
-            if ($step.target -and $coords.$($step.target)) {
-                $rawX = $coords.$($step.target).X
-                $rawY = $coords.$($step.target).Y
-                
-                # Digitizer compensation (Moto G ~3000x6000 raw -> 720x1604 physical screen pixels)
-                if ($rawY -gt 5000) {
-                    $tapX = [math]::Round($rawX * (720.0 / 3000.0))
-                    $tapY = [math]::Round($rawY * (1604.0 / 6000.0))
-                } else {
-                    $tapX = $rawX
-                    $tapY = $rawY
+            if ($step.target) {
+                # Statically mapped to Moto G 720x1604 physical bounds:
+                # Android OS Nav Bar takes bottom ~100px. Egui bottom bar sits safely above it (Y=1450).
+                # 4 tabs evenly spaced across 720px width:
+                switch ($step.target) {
+                    "Roster"   { $tapX = 90;  $tapY = 1450 }
+                    "Missions" { $tapX = 270; $tapY = 1450 }
+                    "Map"      { $tapX = 450; $tapY = 1450 }
+                    "Logs"     { $tapX = 630; $tapY = 1450 }
+                    default    { $tapX = 360; $tapY = 800  } # Center fallback
                 }
 
-                Write-Host "    → Tap: $($step.target) at Screen($tapX, $tapY) [Digitizer: $rawX, $rawY]" -ForegroundColor Gray
+                Write-Host "    → Tap: $($step.target) natively locked at Screen($tapX, $tapY)" -ForegroundColor Gray
                 try {
                     Invoke-DeviceTap -Device $Device -X $tapX -Y $tapY -DelayMs 300
                 } catch {
