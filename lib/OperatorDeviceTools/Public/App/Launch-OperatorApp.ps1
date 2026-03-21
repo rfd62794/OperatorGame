@@ -2,20 +2,13 @@ function Launch-OperatorApp {
     param(
         [Parameter(Mandatory=$true)]
         [Device]$Device,
-        [int]$WaitSeconds = 8,
+        [int]$TimeoutSeconds = 15,
         [switch]$KillIfRunning = $false
     )
     
     <#
     .SYNOPSIS
     Launch OperatorGame on device with async startup verification.
-    
-    .DESCRIPTION
-    Uses Native Android monkey launcher to resolve intents dynamically,
-    waiting structural milliseconds for the engine to boot.
-    
-    .OUTPUTS
-    [int] Process ID (PID) or throws on failure
     #>
     
     if ($KillIfRunning) {
@@ -25,14 +18,19 @@ function Launch-OperatorApp {
     
     $pidNum = Is-AppRunning -Device $Device
     if (-not $pidNum) {
+        # Monkey is still the most resilient dynamic launcher (bypasses NativeActivity crashes)
         Invoke-AdbCommand -Serial $Device.Serial -Command "shell monkey -p com.rfditservices.operatorgame -c android.intent.category.LAUNCHER 1" -NoErrorCheck | Out-Null
         
-        Write-Host "Waiting $WaitSeconds seconds for app bootstrap..." -ForegroundColor Gray
-        Start-Sleep -Seconds $WaitSeconds
+        Write-Host "Polling for app bootstrap..." -ForegroundColor Gray
+        $elapsed = 0
+        while (-not $pidNum -and ($elapsed -lt $TimeoutSeconds)) {
+            Start-Sleep -Milliseconds 500
+            $elapsed += 0.5
+            $pidNum = Is-AppRunning -Device $Device
+        }
         
-        $pidNum = Is-AppRunning -Device $Device
         if (-not $pidNum) {
-            throw "Failed to launch app or acquire PID string."
+            throw "Timeout: Failed to launch app or acquire PID after $TimeoutSeconds seconds."
         }
     }
     

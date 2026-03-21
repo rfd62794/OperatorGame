@@ -1,6 +1,6 @@
 class Device {
     [string]$Serial
-    [string]$State          # online, offline, recovery, etc.
+    [string]$State
     [string]$Model
     [int]$ApiLevel
     [bool]$DebugEnabled
@@ -8,7 +8,6 @@ class Device {
     [string]$AndroidVersion
     
     [void] Refresh() {
-        # This relies on the Private Invoke-AdbCommand being initialized
         $this.State = (Invoke-AdbCommand -Serial $this.Serial -Command "get-state").Trim()
         
         $apiStr = Invoke-AdbCommand -Serial $this.Serial -Command "shell getprop ro.build.version.sdk"
@@ -17,12 +16,15 @@ class Device {
         $this.AndroidVersion = (Invoke-AdbCommand -Serial $this.Serial -Command "shell getprop ro.build.version.release").Trim()
         $this.Model = (Invoke-AdbCommand -Serial $this.Serial -Command "shell getprop ro.product.model").Trim()
         
-        $dfStr = Invoke-AdbCommand -Serial $this.Serial -Command "shell df /data | grep /data"
+        $dfStr = Invoke-AdbCommand -Serial $this.Serial -Command "shell df /data | grep /data" -NoErrorCheck
         if ($dfStr -match '\s+(\d+)\s+\d+%\s+/data') {
             # Usually df prints in 1K-blocks, convert to GB
             $this.StorageFreeGb = [math]::Round([double]$matches[1] / 1024 / 1024, 2)
+        } else {
+            Write-Warning "Could not parse storage info from df output for $($this.Serial)"
+            $this.StorageFreeGb = 0
         }
-        $this.DebugEnabled = $true # ADB is responsive
+        $this.DebugEnabled = $true
     }
     
     [bool] IsHealthy() {

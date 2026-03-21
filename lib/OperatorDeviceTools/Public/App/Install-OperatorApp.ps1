@@ -9,14 +9,6 @@ function Install-OperatorApp {
     <#
     .SYNOPSIS
     Install OperatorGame APK on device (with auto-healing).
-    
-    .DESCRIPTION
-    - Validates presence in `pm list`
-    - Parses workplace for APK artifacts if none provided
-    - Installs using standard hooks
-    
-    .OUTPUTS
-    [bool] $true if install successful, throws on failure
     #>
     
     $pmList = Invoke-AdbCommand -Serial $Device.Serial -Command "shell pm list packages com.rfditservices.operatorgame" -NoErrorCheck
@@ -28,28 +20,28 @@ function Install-OperatorApp {
     
     if (-not $ApkPath) {
         $repoPath = $Script:OperatorDeviceTools.RepositoryRoot
-        $apkFiles = Get-ChildItem -Path $repoPath -Filter "*.apk" -Recurse -ErrorAction SilentlyContinue
+        $apkFiles = Get-ChildItem -Path $repoPath -Filter "*operatorgame-release*.apk" -Recurse -ErrorAction SilentlyContinue
         if (-not $apkFiles) {
-            throw "OperatorGame is not installed, and no .apk files were found in the workspace."
+            throw "OperatorGame is not installed, and no matching .apk files were found in the workspace."
         }
         
         $ApkPath = ($apkFiles | Sort-Object LastWriteTime -Descending)[0].FullName
-        Write-Host "Auto-discovered APK Artifact: $ApkPath" -ForegroundColor Cyan
+        Write-Host "Auto-discovered APK: $ApkPath" -ForegroundColor Cyan
     }
     
     if (-not (Test-Path $ApkPath)) {
-        throw "APK artifact strictly not found at path: $ApkPath"
+        throw "APK not found at path: $ApkPath"
     }
     
-    Write-Host "Re-deploying APK architecture to $($Device.Serial)..." -ForegroundColor Yellow
+    Write-Host "Installing APK onto $($Device.Serial)..." -ForegroundColor Yellow
     $installArgs = if ($Force) { "install -r" } else { "install" }
     
     $out = Invoke-AdbCommand -Serial $Device.Serial -Command "$installArgs `"$ApkPath`"" -TimeoutSeconds 120
     
     if ($out -match "Success") {
-        Write-Host "Deployment successful." -ForegroundColor Green
+        Write-Host "Installation successful." -ForegroundColor Green
         return $true
     } else {
-        throw "APK Build Installation failed:`n$out"
+        throw "APK Installation failed:`n$out"
     }
 }
