@@ -1,6 +1,6 @@
 # OPERATOR: A Dispatch Simulator
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Platform: Android | WASM | CLI](https://img.shields.io/badge/platform-Android%20%7C%20WASM%20%7C%20CLI-blue.svg)](#)
 
