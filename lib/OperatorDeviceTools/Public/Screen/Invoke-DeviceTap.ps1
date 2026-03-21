@@ -14,6 +14,14 @@ function Invoke-DeviceTap {
     Simulate direct XY coordinate touch input on the target device screen.
     #>
     
+    if (-not $Device.IsHealthy()) {
+        throw "Cannot tap: Device $($Device.Serial) is not responsive or healthy."
+    }
+    
+    if ($X -lt 0 -or $Y -lt 0 -or $X -gt 5000 -or $Y -gt 5000) {
+        throw "Coordinates ($X, $Y) are outside reasonable boundary values."
+    }
+    
     Invoke-AdbCommand -Serial $Device.Serial -Command "shell input tap $X $Y" | Out-Null
     
     if ($DelayMs -gt 0) {
