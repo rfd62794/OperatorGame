@@ -85,4 +85,4 @@ else {
 
 Remove-Item $ApkAligned -ErrorAction SilentlyContinue
 
-Write-Host "✅ Success! Final signed APK ready at: $ApkFinal" -ForegroundColor Green
+Write-Host "SUCCESS: Final signed APK ready at: $ApkFinal" -ForegroundColor Green

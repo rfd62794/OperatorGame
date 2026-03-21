@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-OPERATOR: Moto G 2025 — ADB logcat monitor.
-Streams all Error-level logs filtered to the OperatorGame process.
+OPERATOR: Moto G 2025 - ADB logcat monitor.
+Streams logs filtered to the OperatorGame process.
 
 .DESCRIPTION
 Resolves ADB from the Android SDK (no hardcoded paths), clears the logcat buffer,
@@ -17,7 +17,7 @@ $PackageName = "com.rfditservices.operatorgame"
 # Resolve ADB from Android SDK (consistent with build_android.ps1 pattern)
 $ADB = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 
-# Fallback: try ANDROID_HOME env var if LOCALAPPDATA path doesn't exist
+# Fallback: try ANDROID_HOME env var if LOCALAPPDATA path does not exist
 if (-not (Test-Path $ADB) -and $env:ANDROID_HOME) {
     $ADB = "$env:ANDROID_HOME\platform-tools\adb.exe"
 }
@@ -38,7 +38,7 @@ Write-Host ""
 $rawDevices = & $ADB devices 2>&1
 $devices = $rawDevices |
     Select-Object -Skip 1 |
-    Where-Object { $_ -match "\S" -and $_ -match "\tdevice$" }
+    Where-Object { $_ -match "\S" -and $_ -match "`tdevice$" }
 
 if ($devices.Count -eq 0) {
     Write-Host "ERROR: No ADB device connected." -ForegroundColor Red
@@ -46,24 +46,25 @@ if ($devices.Count -eq 0) {
     exit 1
 }
 
-$DeviceSerial = ($devices[0] -split "\t")[0].Trim()
+$DeviceSerial = ($devices[0] -split "`t")[0].Trim()
 Write-Host "  Device  : $DeviceSerial" -ForegroundColor Green
 Write-Host ""
 
 # Resolve PID of the running OperatorGame process
-$AppPid = (& $ADB -s $DeviceSerial shell pidof $PackageName 2>$null).Trim()
+$AppPid = (& $ADB -s $DeviceSerial shell pidof $PackageName 2>$null)
+if ($AppPid) { $AppPid = $AppPid.Trim() }
 
 # Clear stale logcat buffer
 & $ADB -s $DeviceSerial logcat -c
 
 Write-Host "Streaming logs (Ctrl+C to stop)..." -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+Write-Host "----------------------------------------" -ForegroundColor DarkGray
 
 if ($AppPid) {
     Write-Host "  Filtered to PID $AppPid ($PackageName)" -ForegroundColor Green
     & $ADB -s $DeviceSerial logcat --pid=$AppPid
 } else {
-    Write-Host "  App not running — streaming *:E (all errors) as fallback" -ForegroundColor Yellow
-    Write-Host "  Launch the app first, then re-run this script for filtered output." -ForegroundColor DarkGray
+    Write-Host "  App not running - streaming all errors as fallback" -ForegroundColor Yellow
+    Write-Host "  Launch the app first, then re-run for filtered output." -ForegroundColor DarkGray
     & $ADB -s $DeviceSerial logcat *:E
 }
