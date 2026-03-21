@@ -22,7 +22,7 @@ Write-Host "  Automated UI Tree Navigation & Screenshot Collection" -ForegroundC
 Write-Host "════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
 Write-Host "`n[Setup] Launching OperatorGame..." -ForegroundColor Yellow
-$pidNum = Launch-OperatorApp -KillIfRunning
+$pidNum = Launch-OperatorApp -Device $Device -KillIfRunning
 Start-Sleep -Seconds 3 # Let app bootstrap
 
 $coordFile = Join-Path $PSScriptRoot "..\ui_coordinates.json"
@@ -119,13 +119,13 @@ foreach ($state in $uiTree) {
                 Write-Host "    → Tap: $($step.target) at ($($tapCoord.X), $($tapCoord.Y))" -ForegroundColor Gray
                 # Pass digitizer coordinates to Adb. If failing, we scale.
                 try {
-                    Invoke-DeviceTap -X $tapCoord.X -Y $tapCoord.Y -DelayMs 300
+                    Invoke-DeviceTap -Device $Device -X $tapCoord.X -Y $tapCoord.Y -DelayMs 300
                 } catch {
                      Write-Warning "Failed tap: $_. ADB shell input requires screen scale."
                 }
             } elseif ($step.x -and $step.y) {
                 Write-Host "    → Tap: Custom coords ($($step.x), $($step.y))" -ForegroundColor Gray
-                Invoke-DeviceTap -X $step.x -Y $step.y -DelayMs 300
+                Invoke-DeviceTap -Device $Device -X $step.x -Y $step.y -DelayMs 300
             }
             if ($step.delay) { Start-Sleep -Milliseconds $step.delay }
         }
@@ -134,7 +134,7 @@ foreach ($state in $uiTree) {
     Write-Host "  Capturing screenshot..." -ForegroundColor Yellow
     $outPath = Join-Path $OutputFolder $state.filename
     try {
-        $shot = Capture-Screenshot -OutputPath $outPath -Label $state.name
+        $shot = Capture-Screenshot -Device $Device -OutputPath $outPath -Label $state.name
         Write-Host "  ✅ Captured: $($shot.FilePath) ($($shot.SizeKb) KB)" -ForegroundColor Green
         $capturedCount++
     } catch {
