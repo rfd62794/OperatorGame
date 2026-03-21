@@ -62,7 +62,7 @@ label          = "OperatorGame"
 manifest_path  = "AndroidManifest.xml"
 min_sdk_version = 26
 target_sdk_version = 35
-stl            = "c++_shared"
+stl            = "c++_static"
 assets         = "assets"
 build_targets  = ["aarch64-linux-android", "armv7-linux-androideabi"]
 [package.metadata.android.signing.release]
