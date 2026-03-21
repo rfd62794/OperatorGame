@@ -29,7 +29,8 @@ if ($Serial -eq '') {
     
     $Serial = ($devices[0] -split '\s+')[0]
     Write-Host ('[OK] Auto-detected device: ' + $Serial) -ForegroundColor Green
-} else {
+}
+else {
     Write-Host ('[OK] Using device: ' + $Serial) -ForegroundColor Green
 }
 
@@ -44,7 +45,8 @@ $pidRaw = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null)
 if ($pidRaw -ne $null) {
     if ($pidRaw.GetType().Name -eq 'Object[]') { $pidRaw = $pidRaw -join ' ' }
     $pidValue = $pidRaw.Trim()
-} else {
+}
+else {
     $pidValue = ''
 }
 
@@ -57,7 +59,8 @@ if ($pidValue -eq '') {
     if ($pidRaw -ne $null) {
         if ($pidRaw.GetType().Name -eq 'Object[]') { $pidRaw = $pidRaw -join ' ' }
         $pidValue = $pidRaw.Trim()
-    } else {
+    }
+    else {
         $pidValue = ''
     }
 }
@@ -79,7 +82,8 @@ function Capture-Tab {
     
     if ($Interactive) {
         Read-Host '  [Interactive] Press Enter to capture when UI is ready...'
-    } else {
+    }
+    else {
         Start-Sleep -Seconds $DelaySeconds
     }
     
@@ -91,7 +95,8 @@ function Capture-Tab {
         $size = (Get-Item $filename).Length / 1KB
         $sizeStr = [math]::Round($size, 1)
         Write-Host ('  [OK] Captured: ' + $TabName + '.png (' + $sizeStr + ' KB)') -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host ('  [ERROR] Failed to capture: ' + $TabName) -ForegroundColor Red
     }
 }
@@ -115,7 +120,8 @@ function Navigate-Tab {
         $parts = $pos -split ','
         & $ADB -s $Serial shell input tap $parts[0] $parts[1]
         Start-Sleep -Seconds 1
-    } else {
+    }
+    else {
         Write-Host ('  [ERROR] Unknown tab: ' + $Tab) -ForegroundColor Red
     }
 }

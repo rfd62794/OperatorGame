@@ -42,7 +42,7 @@ if ($pidRaw -ne $null) {
 
 if ($pidValue -eq '') {
     Write-Host '[WARN] App not running. Launching...' -ForegroundColor Yellow
-    & $ADB -s $Serial shell am start -n "com.rfditservices.operatorgame/android.app.NativeActivity"
+    & $ADB -s $Serial shell monkey -p com.rfditservices.operatorgame -c android.intent.category.LAUNCHER 1 > $null
     Write-Host '  Waiting 8 seconds for game logic to load...' -ForegroundColor Gray
     Start-Sleep -Seconds 8
 } else {
