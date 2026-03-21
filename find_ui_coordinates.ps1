@@ -1,141 +1,56 @@
-param(
-    [string]$Serial = ''
-)
+Import-Module -Name "$PSScriptRoot\lib\OperatorDeviceTools\OperatorDeviceTools.psm1" -Force
 
-Write-Host '------------------------------------------------------------' -ForegroundColor Cyan
-Write-Host '  UI Coordinate Finder (Interactive)' -ForegroundColor Cyan
-Write-Host '------------------------------------------------------------' -ForegroundColor Cyan
+Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
+Write-Host "  UI Coordinate Finder (Interactive)" -ForegroundColor Cyan
+Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
 
-$ADB = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+$dev = Connect-Device
+Write-Host "[OK] Master Device locked: $($dev.Serial)" -ForegroundColor Green
 
-if (-not (Test-Path $ADB)) {
-    Write-Error 'ADB not found.'
-    exit 1
-}
+Write-Host "`nApp Integrity Sequence..." -ForegroundColor Yellow
+$isInstalled = Install-OperatorApp -Device $dev -Force:$false
 
-if ($Serial -eq '') {
-    & $ADB start-server 2>&1 | Out-Null
-    $devices = @(& $ADB devices | Select-Object -Skip 1 | Where-Object { $_ -match 'device' -and $_ -notmatch 'List of' })
-    if ($devices.Count -eq 0) {
-        Write-Error 'No devices connected.'
-        exit 1
-    }
-    $Serial = ($devices[0] -split '\s+')[0]
-}
+$pidNum = Launch-OperatorApp -Device $dev
+Write-Host "[OK] App locked and active (PID: $pidNum)`n" -ForegroundColor Green
 
-Write-Host ('[OK] Device locked: ' + $Serial) -ForegroundColor Green
+Write-Host "Instructions: For each prompt, tap the target UI element on your device." -ForegroundColor Yellow
+Write-Host "If you miss, simply tap again. Only your LAST tap before pressing Enter is saved.`n" -ForegroundColor Yellow
 
-Write-Host "`nVerifying App Installation and Runtime State..." -ForegroundColor Cyan
-$pmList = & $ADB -s $Serial shell pm list packages com.rfditservices.operatorgame
-if ($pmList -notmatch 'com.rfditservices.operatorgame') {
-    Write-Error 'Package com.rfditservices.operatorgame is NOT installed on this device.'
-    exit 1
-}
+$targets = @("Roster", "Missions", "Map", "Logs", "Combat_Deploy", "Back_Button")
+$coords = @{}
 
-$pidRaw = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null)
-if ($pidRaw -ne $null) {
-    if ($pidRaw.GetType().Name -eq 'Object[]') { $pidRaw = $pidRaw -join ' ' }
-    $pidValue = $pidRaw.Trim()
-} else {
-    $pidValue = ''
-}
-
-if ($pidValue -eq '') {
-    Write-Host '[WARN] App not running. Launching...' -ForegroundColor Yellow
-    & $ADB -s $Serial shell monkey -p com.rfditservices.operatorgame -c android.intent.category.LAUNCHER 1 > $null
-    Write-Host '  Waiting 8 seconds for game logic to load...' -ForegroundColor Gray
-    Start-Sleep -Seconds 8
-} else {
-    Write-Host ('[OK] App running (PID: ' + $pidValue + ')') -ForegroundColor Green
-}
-
-Write-Host "`nInstructions: For each prompt, tap the target UI element on your Moto G." -ForegroundColor Yellow
-Write-Host 'If you miss, simply tap again. Only your LAST tap before pressing Enter is saved.' -ForegroundColor Yellow
-Write-Host ''
-
-$targets = @(
-    'Roster',
-    'Missions',
-    'Map',
-    'Logs',
-    'Collection',
-    'Breeding',
-    'Active',
-    'QuestBoard',
-    'MissionHistory',
-    'CultureHistory'
-)
-
-$results = @{}
-$tempFile = "$env:TEMP\getevent.log"
-
+$adb = Resolve-AdbPath
 foreach ($target in $targets) {
-    Write-Host ('>>> TARGET: ' + $target) -ForegroundColor Cyan
+    Write-Host ">>> TARGET: $target" -ForegroundColor Cyan
+    Write-Host "  Tap the screen, then press ENTER to confirm: " -NoNewline -ForegroundColor Gray
     
-    if (Test-Path $tempFile) { 
-        Remove-Item $tempFile -Force -ErrorAction SilentlyContinue 
-    }
-    
-    # Start capturing raw hex coordinates strictly into a file via background job
+    # We execute raw getevent via job since this requires active stream parsing
     $job = Start-Job -ScriptBlock {
-        param($adb, $serial, $tmp)
-        cmd.exe /c "$adb -s $serial shell getevent -l > ""$tmp"""
-    } -ArgumentList $ADB, $Serial, $tempFile
+        param($adbPath, $serial)
+        & $adbPath -s $serial shell getevent -l 2>&1
+    } -ArgumentList $adb, $dev.Serial
     
-    # Give getevent 500ms to bind to device inputs
-    Start-Sleep -Milliseconds 500
+    $null = Read-Host
+    Stop-Job $job
     
-    Read-Host '  Tap the screen, then press ENTER to confirm'
+    $events = Receive-Job $job
+    Remove-Job $job
     
-    Stop-Job $job | Out-Null
-    Remove-Job $job | Out-Null
-    
-    # Wait a fraction for file locks from cmd.exe to clear
-    Start-Sleep -Milliseconds 200
-    
-    $lastX = ''
-    $lastY = ''
-    
-    if (Test-Path $tempFile) {
-        $lines = Get-Content $tempFile -ErrorAction SilentlyContinue
-        if ($lines -ne $null) {
-            foreach ($line in $lines) {
-                # Moto G and most Androids track multi-touch hex position
-                # Absolute positioning check X
-                if ($line -match 'ABS_MT_POSITION_X\s+([0-9a-fA-F]+)') {
-                    $lastX = [convert]::ToInt32($matches[1], 16).ToString()
-                } elseif ($line -match 'ABS_X\s+([0-9a-fA-F]+)') {
-                    $lastX = [convert]::ToInt32($matches[1], 16).ToString()
-                }
-                
-                # Absolute positioning check Y
-                if ($line -match 'ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)') {
-                    $lastY = [convert]::ToInt32($matches[1], 16).ToString()
-                } elseif ($line -match 'ABS_Y\s+([0-9a-fA-F]+)') {
-                    $lastY = [convert]::ToInt32($matches[1], 16).ToString()
-                }
-            }
-        }
+    $lastX = 0
+    $lastY = 0
+    foreach ($line in $events) {
+        if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { $lastX = [Convert]::ToInt32($matches[1], 16) }
+        if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { $lastY = [Convert]::ToInt32($matches[1], 16) }
     }
     
-    if (($lastX -ne '') -and ($lastY -ne '')) {
-        Write-Host ('  [CAPTURED] ' + $target + ' -> X: ' + $lastX + ', Y: ' + $lastY) -ForegroundColor Green
-        $results[$target] = ($lastX + ',' + $lastY)
-    } else {
-        Write-Host '  [WARN] No tap detected. Standard coordinates will be skipped.' -ForegroundColor Yellow
-    }
-    Write-Host ''
+    $coords[$target] = @{ X = $lastX; Y = $lastY }
+    Write-Host "  [SAVED] $target -> ($lastX, $lastY)`n" -ForegroundColor Green
 }
 
-Write-Host '------------------------------------------------------------' -ForegroundColor Cyan
-Write-Host '  FINAL COORDINATE MAPPING' -ForegroundColor Cyan
-Write-Host '------------------------------------------------------------' -ForegroundColor Cyan
+Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
+Write-Host "Final Coordinate Map:" -ForegroundColor Yellow
+$coords.GetEnumerator() | Sort-Object Name | Format-Table @{Label="Target"; Expression={$_.Name}}, @{Label="X"; Expression={$_.Value.X}}, @{Label="Y"; Expression={$_.Value.Y}} -AutoSize
 
-Write-Host 'Copy and paste these exact strings into capture_screenshots.ps1:' -ForegroundColor Yellow
-Write-Host ''
-foreach ($key in $targets) {
-    if ($results.ContainsKey($key)) {
-        Write-Host ("'" + $key + "' = '" + $results[$key] + "'") -ForegroundColor White
-    }
-}
-Write-Host ''
+$outPath = Join-Path $PSScriptRoot "ui_coordinates.json"
+$coords | ConvertTo-Json -Depth 3 | Set-Content $outPath
+Write-Host "Mapping dumped to $outPath" -ForegroundColor Green
