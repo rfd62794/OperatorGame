@@ -2,7 +2,7 @@ param(
     [string]$Serial = $null
 )
 
-Write-Host "UI Coordinate Finder — Touch to identify coordinates" -ForegroundColor Cyan
+Write-Host "UI Coordinate Finder - Touch to identify coordinates" -ForegroundColor Cyan
 Write-Host "Instructions:" -ForegroundColor Yellow
 Write-Host "  1. When prompted, touch the UI element on the Moto G screen"
 Write-Host "  2. The script will capture the touch coordinates"
@@ -19,7 +19,7 @@ if (-not (Test-Path $ADB)) {
 # Auto-detect device
 if (-not $Serial) {
     & $ADB start-server 2>&1 | Out-Null
-    $devices = & $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and $_ -notmatch "List of" }
+    $devices = & $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and ($_ -notmatch "List of") }
     
     if ($devices.Count -eq 0) {
         Write-Error "No devices connected."

@@ -4,10 +4,10 @@ param(
     [switch]$Interactive
 )
 
-Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║  OperatorGame Mobile Screenshot Capture                   ║" -ForegroundColor Cyan
-Write-Host "║  Automated UI tab screenshots from Moto G                 ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
+Write-Host "  OperatorGame Mobile Screenshot Capture                    " -ForegroundColor Cyan
+Write-Host "  Automated UI tab screenshots from Moto G                  " -ForegroundColor Cyan
+Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
 
 $ADB = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 
@@ -19,7 +19,7 @@ if (-not (Test-Path $ADB)) {
 # Auto-detect device if not specified
 if (-not $Serial) {
     & $ADB start-server 2>&1 | Out-Null
-    $devices = & $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and $_ -notmatch "List of" }
+    $devices = & $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and ($_ -notmatch "List of") }
     
     if ($devices.Count -eq 0) {
         Write-Error "No devices connected."
@@ -27,9 +27,9 @@ if (-not $Serial) {
     }
     
     $Serial = ($devices[0] -split '\s+')[0]
-    Write-Host "✓ Auto-detected device: $Serial" -ForegroundColor Green
+    Write-Host "[OK] Auto-detected device: $Serial" -ForegroundColor Green
 } else {
-    Write-Host "✓ Using device: $Serial" -ForegroundColor Green
+    Write-Host "[OK] Using device: $Serial" -ForegroundColor Green
 }
 
 # Create output directory
@@ -37,19 +37,20 @@ if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir | Out-Null
 }
 
-Write-Host "✓ Output directory: $OutputDir" -ForegroundColor Green
+Write-Host "[OK] Output directory: $OutputDir" -ForegroundColor Green
 
 # Verify app is running
 Write-Host "`nVerifying app is running..." -ForegroundColor Cyan
-$pid = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null).Trim()
+$pidValue = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null).Trim()
 
-if (-not $pid) {
-    Write-Host "⚠️  App not running. Launching..." -ForegroundColor Yellow
+if (-not $pidValue) {
+    Write-Host "[WARN] App not running. Launching..." -ForegroundColor Yellow
     & $ADB -s $Serial shell am start -n "com.rfditservices.operatorgame/android.app.NativeActivity"
     Start-Sleep -Seconds 3
+    $pidValue = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null).Trim()
 }
 
-Write-Host "✓ App running (PID: $pid)" -ForegroundColor Green
+Write-Host "[OK] App running (PID: $pidValue)" -ForegroundColor Green
 
 # Screenshot capture function
 function Capture-Tab {
@@ -77,9 +78,10 @@ function Capture-Tab {
     
     if (Test-Path $filename) {
         $size = (Get-Item $filename).Length / 1KB
-        Write-Host "  ✓ Captured: $TabName.png ($([math]::Round($size, 1)) KB)" -ForegroundColor Green
+        $sizeStr = [math]::Round($size, 1)
+        Write-Host "  [OK] Captured: $TabName.png ($sizeStr KB)" -ForegroundColor Green
     } else {
-        Write-Host "  ❌ Failed to capture: $TabName" -ForegroundColor Red
+        Write-Host "  [ERROR] Failed to capture: $TabName" -ForegroundColor Red
     }
 }
 
@@ -103,10 +105,11 @@ function Navigate-Tab {
     if ($tabPositions.ContainsKey($Tab)) {
         $pos = $tabPositions[$Tab]
         Write-Host "  Tapping $Tab at ($pos)..." -ForegroundColor Gray
-        & $ADB -s $Serial shell input tap $pos.Split(',')[0] $pos.Split(',')[1]
+        $parts = $pos -split ','
+        & $ADB -s $Serial shell input tap $parts[0] $parts[1]
         Start-Sleep -Seconds 1
     } else {
-        Write-Host "  ❌ Unknown tab: $Tab" -ForegroundColor Red
+        Write-Host "  [ERROR] Unknown tab: $Tab" -ForegroundColor Red
     }
 }
 
@@ -177,13 +180,13 @@ Capture-Tab "07_Logs_CultureHistory" "Culture timeline, discovery progression"
 
 # ===== SUMMARY =====
 Write-Host "`n" -ForegroundColor Green
-Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║  Screenshot Capture Complete                              ║" -ForegroundColor Green
-Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "------------------------------------------------------------" -ForegroundColor Green
+Write-Host "  Screenshot Capture Complete                               " -ForegroundColor Green
+Write-Host "------------------------------------------------------------" -ForegroundColor Green
 
 $screenshots = Get-ChildItem $OutputDir -Filter "*.png" | Measure-Object
-Write-Host "`n✓ Captured $($screenshots.Count) screenshots" -ForegroundColor Green
-Write-Host "✓ Output directory: $OutputDir" -ForegroundColor Green
+Write-Host "`n[OK] Captured $($screenshots.Count) screenshots" -ForegroundColor Green
+Write-Host "[OK] Output directory: $OutputDir" -ForegroundColor Green
 Write-Host "`nNext steps:" -ForegroundColor Cyan
 Write-Host "  1. Review screenshots for UI issues (overlay, alignment, accessibility)"
 Write-Host "  2. Document issues found (which tabs, which elements)"
