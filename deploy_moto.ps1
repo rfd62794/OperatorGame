@@ -68,9 +68,14 @@ $ErrorActionPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
 $rawDevices = & $ADB devices
-$devices = $rawDevices |
-    Select-Object -Skip 1 |
-    Where-Object { "$_".Trim() -ne "" -and "$_" -match "`tdevice$" }
+
+# Match lines that contain a serial + "device" status word.
+# -split "\s+" handles both tab and space separators across ADB versions.
+$deviceLines = $rawDevices | Where-Object {
+    $_ -match "\S" -and $_ -notmatch "List of devices" -and $_ -match "\bdevice\b"
+}
+
+$devices = $deviceLines   # used for .Count check below
 
 if ($devices.Count -eq 0) {
     Write-Host ""
@@ -82,7 +87,7 @@ if ($devices.Count -eq 0) {
     exit 1
 }
 
-$DeviceSerial = ($devices[0] -split "`t")[0].Trim()
+$DeviceSerial = ($deviceLines[0] -split "\s+")[0].Trim()
 Write-Host "  OK: Device connected: $DeviceSerial" -ForegroundColor Green
 
 # Bind ADB to this specific serial for the remainder of the script
