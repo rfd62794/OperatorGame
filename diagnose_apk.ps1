@@ -54,20 +54,28 @@ $soFiles | ForEach-Object {
 Write-Host ""
 Write-Host "[2/3] Checking critical dependencies..." -ForegroundColor Cyan
 
-$critical = @(
-    "liboperator.so",        # Main Rust native library (name = "operator" in Cargo.toml)
-    "libc++_shared.so"       # C++ shared runtime — required when stl = "c++_shared"
-)
+# liboperator.so MUST be present
+$mainLib = $soFiles | Where-Object { $_.Name -eq "liboperator.so" }
+if ($mainLib) {
+    Write-Host "  PRESENT : liboperator.so" -ForegroundColor Green
+} else {
+    Write-Host "  MISSING : liboperator.so  <-- primary crash cause" -ForegroundColor Red
+    $anyCriticalMissing = $true
+}
 
-$anyCriticalMissing = $false
-foreach ($lib in $critical) {
-    $found = $soFiles | Where-Object { $_.Name -eq $lib }
-    if ($found) {
-        Write-Host "  PRESENT : $lib" -ForegroundColor Green
-    } else {
-        Write-Host "  MISSING : $lib  <-- likely crash cause" -ForegroundColor Red
-        $anyCriticalMissing = $true
-    }
+# libc++_shared.so: only required when stl = "c++_shared"
+# With stl = "c++_static" it is intentionally absent (baked into liboperator.so)
+$libcpp = $soFiles | Where-Object { $_.Name -eq "libc++_shared.so" }
+$stlMode = (Select-String -Path "Cargo.toml" -Pattern "stl\s*=\s*" 2>$null | Select-Object -First 1)
+$isStaticStl = $stlMode -match "c\+\+_static"
+
+if ($libcpp) {
+    Write-Host "  PRESENT : libc++_shared.so" -ForegroundColor Green
+} elseif ($isStaticStl) {
+    Write-Host "  ABSENT  : libc++_shared.so (expected -- stl = c++_static, runtime is baked into liboperator.so)" -ForegroundColor DarkGray
+} else {
+    Write-Host "  MISSING : libc++_shared.so  <-- crash cause (stl=c++_shared requires this file)" -ForegroundColor Red
+    $anyCriticalMissing = $true
 }
 
 # ---------------------------------------------------------------------------
