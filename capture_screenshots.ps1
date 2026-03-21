@@ -19,7 +19,7 @@ if (-not (Test-Path $ADB)) {
 # Auto-detect device if not specified
 if (-not $Serial) {
     & $ADB start-server 2>&1 | Out-Null
-    $devices = & $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and ($_ -notmatch "List of") }
+    $devices = @(& $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and ($_ -notmatch "List of") })
     
     if ($devices.Count -eq 0) {
         Write-Error "No devices connected."
@@ -41,13 +41,15 @@ Write-Host "[OK] Output directory: $OutputDir" -ForegroundColor Green
 
 # Verify app is running
 Write-Host "`nVerifying app is running..." -ForegroundColor Cyan
-$pidValue = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null).Trim()
+$pidRaw = & $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null
+$pidValue = if ($pidRaw) { $pidRaw.Trim() } else { "" }
 
 if (-not $pidValue) {
     Write-Host "[WARN] App not running. Launching..." -ForegroundColor Yellow
     & $ADB -s $Serial shell am start -n "com.rfditservices.operatorgame/android.app.NativeActivity"
     Start-Sleep -Seconds 3
-    $pidValue = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null).Trim()
+    $pidRaw2 = & $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null
+    $pidValue = if ($pidRaw2) { $pidRaw2.Trim() } else { "" }
 }
 
 Write-Host "[OK] App running (PID: $pidValue)" -ForegroundColor Green

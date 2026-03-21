@@ -19,7 +19,7 @@ if (-not (Test-Path $ADB)) {
 # Auto-detect device
 if (-not $Serial) {
     & $ADB start-server 2>&1 | Out-Null
-    $devices = & $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and ($_ -notmatch "List of") }
+    $devices = @(& $ADB devices | Select-Object -Skip 1 | Where-Object { $_.Trim() -and ($_ -notmatch "List of") })
     
     if ($devices.Count -eq 0) {
         Write-Error "No devices connected."
