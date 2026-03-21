@@ -56,7 +56,7 @@ Write-Host "Building and packaging APK with cargo apk..." -ForegroundColor Cyan
 # Purge stale APK output so discovery below finds only the new build
 Remove-Item -Recurse -Force "target\release\apk" -ErrorAction SilentlyContinue
 
-cargo apk build --release
+cargo apk build --release --lib
 
 # Dynamic APK discovery - handles filename variations across cargo-apk versions
 $ApkUnsigned = Get-ChildItem -Path "target\release\apk" -Filter "*.apk" -Recurse -ErrorAction SilentlyContinue |
