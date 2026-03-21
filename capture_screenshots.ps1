@@ -1,12 +1,13 @@
-﻿param(
+param(
     [string]$Serial = $null,
-    [string]$OutputDir = "screenshots_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+    [string]$OutputDir = "screenshots_$(Get-Date -Format 'yyyyMMdd_HHmmss')",
+    [switch]$Interactive
 )
 
-Write-Host "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—" -ForegroundColor Cyan
-Write-Host "â•‘  OperatorGame Mobile Screenshot Capture                    â•‘" -ForegroundColor Cyan
-Write-Host "â•‘  Automated UI tab screenshots from Moto G                  â•‘" -ForegroundColor Cyan
-Write-Host "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Cyan
+Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "║  OperatorGame Mobile Screenshot Capture                   ║" -ForegroundColor Cyan
+Write-Host "║  Automated UI tab screenshots from Moto G                 ║" -ForegroundColor Cyan
+Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 
 $ADB = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 
@@ -26,9 +27,9 @@ if (-not $Serial) {
     }
     
     $Serial = ($devices[0] -split '\s+')[0]
-    Write-Host "âœ“ Auto-detected device: $Serial" -ForegroundColor Green
+    Write-Host "✓ Auto-detected device: $Serial" -ForegroundColor Green
 } else {
-    Write-Host "âœ“ Using device: $Serial" -ForegroundColor Green
+    Write-Host "✓ Using device: $Serial" -ForegroundColor Green
 }
 
 # Create output directory
@@ -36,21 +37,19 @@ if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir | Out-Null
 }
 
-$OutputDir = (Resolve-Path $OutputDir).Path
-Write-Host "âœ“ Output directory: $OutputDir" -ForegroundColor Green
+Write-Host "✓ Output directory: $OutputDir" -ForegroundColor Green
 
 # Verify app is running
 Write-Host "`nVerifying app is running..." -ForegroundColor Cyan
 $pid = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null).Trim()
 
 if (-not $pid) {
-    Write-Host "âš ï¸  App not running. Launching..." -ForegroundColor Yellow
+    Write-Host "⚠️  App not running. Launching..." -ForegroundColor Yellow
     & $ADB -s $Serial shell am start -n "com.rfditservices.operatorgame/android.app.NativeActivity"
     Start-Sleep -Seconds 3
 }
 
-$pid = (& $ADB -s $Serial shell pidof com.rfditservices.operatorgame 2>$null).Trim()
-Write-Host "âœ“ App running (PID: $(if ($pid) { $pid } else { 'unknown' }))" -ForegroundColor Green
+Write-Host "✓ App running (PID: $pid)" -ForegroundColor Green
 
 # Screenshot capture function
 function Capture-Tab {
@@ -66,19 +65,21 @@ function Capture-Tab {
     }
     
     # Wait for UI to settle
-    Start-Sleep -Seconds $DelaySeconds
+    if ($Interactive) {
+        Read-Host "  [Interactive] Press Enter to capture when UI is ready..."
+    } else {
+        Start-Sleep -Seconds $DelaySeconds
+    }
     
-    # Capture screenshot - using shell + pull to avoid PowerShell binary redirection corruption
+    # Capture screenshot
     $filename = "$OutputDir\$TabName.png"
-    & $ADB -s $Serial shell screencap -p /sdcard/temp_screen.png
-    & $ADB -s $Serial pull /sdcard/temp_screen.png $filename | Out-Null
-    & $ADB -s $Serial shell rm /sdcard/temp_screen.png
+    & $ADB -s $Serial exec-out screencap -p > $filename
     
     if (Test-Path $filename) {
         $size = (Get-Item $filename).Length / 1KB
-        Write-Host "  âœ“ Captured: $TabName.png ($([math]::Round($size, 1)) KB)" -ForegroundColor Green
+        Write-Host "  ✓ Captured: $TabName.png ($([math]::Round($size, 1)) KB)" -ForegroundColor Green
     } else {
-        Write-Host "  âŒ Failed to capture: $TabName" -ForegroundColor Red
+        Write-Host "  ❌ Failed to capture: $TabName" -ForegroundColor Red
     }
 }
 
@@ -89,13 +90,14 @@ function Navigate-Tab {
         [string]$Tab
     )
     
+    # Moto G screen dimensions (approximate): 412 x 1900
     # Bottom tab bar is at bottom ~56dp
-    # Tab positions (rough estimates for Moto G):
+    # Tab positions (rough estimates for 412dp width / 4 tabs = ~103dp per tab):
     $tabPositions = @{
-        "Roster"   = "120,2300"    # Left side
-        "Missions" = "350,2300"   # Left-center
-        "Map"      = "650,2300"   # Right-center
-        "Logs"     = "900,2300"   # Right side
+        "Roster"   = "50,1870"    # Left side
+        "Missions" = "155,1870"   # Left-center
+        "Map"      = "260,1870"   # Right-center
+        "Logs"     = "365,1870"   # Right side
     }
     
     if ($tabPositions.ContainsKey($Tab)) {
@@ -104,7 +106,7 @@ function Navigate-Tab {
         & $ADB -s $Serial shell input tap $pos.Split(',')[0] $pos.Split(',')[1]
         Start-Sleep -Seconds 1
     } else {
-        Write-Host "  âŒ Unknown tab: $Tab" -ForegroundColor Red
+        Write-Host "  ❌ Unknown tab: $Tab" -ForegroundColor Red
     }
 }
 
@@ -112,8 +114,8 @@ function Navigate-Tab {
 function Navigate-SubTab {
     param(
         [string]$SubTabName,
-        [int]$TapX = 200,
-        [int]$TapY = 400
+        [int]$TapX = 150,
+        [int]$TapY = 300
     )
     
     Write-Host "  Tapping sub-tab: $SubTabName at ($TapX, $TapY)..." -ForegroundColor Gray
@@ -127,12 +129,12 @@ Navigate-Tab "Roster"
 
 # Sub-tab: Collection
 Write-Host "`n  Sub-tab: Collection" -ForegroundColor Cyan
-Navigate-SubTab "Collection" 200 400
+Navigate-SubTab "Collection" 150 300
 Capture-Tab "01_Roster_Collection" "Slime cards, staging UI"
 
 # Sub-tab: Breeding (if exists)
 Write-Host "`n  Sub-tab: Breeding (if accessible)" -ForegroundColor Cyan
-Navigate-SubTab "Breeding" 350 400
+Navigate-SubTab "Breeding" 250 300
 Capture-Tab "02_Roster_Breeding" "Incubator, breeding pair UI"
 
 # ===== MISSIONS TAB =====
@@ -142,12 +144,12 @@ Start-Sleep -Seconds 1
 
 # Sub-tab: Active
 Write-Host "`n  Sub-tab: Active" -ForegroundColor Cyan
-Navigate-SubTab "Active" 200 400
+Navigate-SubTab "Active" 150 300
 Capture-Tab "03_Missions_Active" "In-progress deployments, AAR"
 
 # Sub-tab: Quest Board
 Write-Host "`n  Sub-tab: Quest Board (if accessible)" -ForegroundColor Cyan
-Navigate-SubTab "QuestBoard" 350 400
+Navigate-SubTab "QuestBoard" 250 300
 Capture-Tab "04_Missions_QuestBoard" "Available quests, requirements"
 
 # ===== MAP TAB =====
@@ -165,25 +167,24 @@ Start-Sleep -Seconds 1
 
 # Sub-tab: Mission History
 Write-Host "`n  Sub-tab: Mission History" -ForegroundColor Cyan
-Navigate-SubTab "MissionHistory" 200 400
+Navigate-SubTab "MissionHistory" 150 300
 Capture-Tab "06_Logs_MissionHistory" "Past missions, AAR history"
 
 # Sub-tab: Culture History (if accessible)
 Write-Host "`n  Sub-tab: Culture History (if accessible)" -ForegroundColor Cyan
-Navigate-SubTab "CultureHistory" 350 400
+Navigate-SubTab "CultureHistory" 280 300
 Capture-Tab "07_Logs_CultureHistory" "Culture timeline, discovery progression"
 
 # ===== SUMMARY =====
 Write-Host "`n" -ForegroundColor Green
-Write-Host "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—" -ForegroundColor Green
-Write-Host "â•‘  Screenshot Capture Complete                               â•‘" -ForegroundColor Green
-Write-Host "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Green
+Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Green
+Write-Host "║  Screenshot Capture Complete                              ║" -ForegroundColor Green
+Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Green
 
 $screenshots = Get-ChildItem $OutputDir -Filter "*.png" | Measure-Object
-Write-Host "`nâœ“ Captured $($screenshots.Count) screenshots" -ForegroundColor Green
-Write-Host "âœ“ Output directory: $OutputDir" -ForegroundColor Green
+Write-Host "`n✓ Captured $($screenshots.Count) screenshots" -ForegroundColor Green
+Write-Host "✓ Output directory: $OutputDir" -ForegroundColor Green
 Write-Host "`nNext steps:" -ForegroundColor Cyan
 Write-Host "  1. Review screenshots for UI issues (overlay, alignment, accessibility)"
 Write-Host "  2. Document issues found (which tabs, which elements)"
 Write-Host "  3. Create directive to fix identified issues"
-
