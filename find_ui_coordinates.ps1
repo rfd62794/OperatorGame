@@ -34,7 +34,12 @@ if (-not (Get-Command "adb.exe" -ErrorAction SilentlyContinue)) {
 foreach ($t in $targets) {
     Write-Host "`n>>> TARGET: $($t.Id)" -ForegroundColor Cyan
     Write-Host "  $($t.Desc)" -ForegroundColor Yellow
-    Write-Host "  Waiting for 1 tap..." -ForegroundColor Gray
+    
+    Write-Host "  [NAVIGATE] Use your phone to navigate so this element is visible." -ForegroundColor DarkGray
+    Write-Host "  Press ENTER in this console when you are ready to tap the target..." -NoNewline -ForegroundColor DarkGray
+    $null = Read-Host
+    
+    Write-Host "`n  [READY] Tap the target now..." -ForegroundColor Green
     
     $proc = New-Object System.Diagnostics.Process
     $proc.StartInfo.FileName = $adbPath
