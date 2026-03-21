@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BIO-MONITOR | ACTIVE MISSIONS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#005f33",
+                        "inverse-surface": "#fbf8ff",
+                        "on-error": "#490006",
+                        "on-background": "#f8f5fd",
+                        "tertiary-fixed-dim": "#74a2ff",
+                        "on-primary-container": "#003218",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-low": "#131318",
+                        "on-secondary-fixed-variant": "#883800",
+                        "on-surface": "#f8f5fd",
+                        "secondary": "#ff8844",
+                        "surface-bright": "#2b2b33",
+                        "on-primary-fixed": "#004a27",
+                        "surface-container-high": "#1f1f26",
+                        "surface-tint": "#69fea5",
+                        "outline": "#76747b",
+                        "tertiary-dim": "#6a9cff",
+                        "surface": "#0e0e13",
+                        "on-tertiary-fixed-variant": "#00367d",
+                        "tertiary-fixed": "#8bb0ff",
+                        "secondary-fixed-dim": "#ffb28b",
+                        "inverse-primary": "#006e3c",
+                        "tertiary-container": "#4488ff",
+                        "surface-container-highest": "#25252c",
+                        "primary": "#69fea5",
+                        "inverse-on-surface": "#55545a",
+                        "surface-variant": "#25252c",
+                        "on-tertiary-container": "#000311",
+                        "on-secondary-fixed": "#5b2300",
+                        "on-secondary": "#4b1c00",
+                        "on-secondary-container": "#fff6f3",
+                        "error-dim": "#d7383b",
+                        "surface-dim": "#0e0e13",
+                        "tertiary": "#6a9cff",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-fixed": "#ffc5a9",
+                        "primary-fixed": "#69fea5",
+                        "primary-dim": "#59ef98",
+                        "primary-fixed-dim": "#59ef98",
+                        "secondary-dim": "#f27e3b",
+                        "secondary-container": "#9e4300",
+                        "on-tertiary-fixed": "#00163b",
+                        "primary-container": "#14c16f",
+                        "error-container": "#9f0519",
+                        "outline-variant": "#48474d",
+                        "surface-container": "#19191f",
+                        "on-surface-variant": "#acaab1",
+                        "on-tertiary": "#001e4b",
+                        "on-primary-fixed-variant": "#006a3a",
+                        "background": "#0e0e13",
+                        "error": "#ff716c"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .segmented-progress {
+            background-image: linear-gradient(90deg, transparent 0%, transparent 4px, #131318 4px, #131318 6px);
+            background-size: 10px 100%;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-4 w-full h-16 bg-[#0e0e13] border-b-4 border-[#131318] fixed top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container-highest overflow-hidden flex items-center justify-center">
+<img alt="Scientist Avatar" class="w-full h-full object-cover" data-alt="Cybernetic laboratory scientist avatar icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEsBj0G3dvADLtxQoS1SyMn_OpUrTkZR8AIg6-Vxun_uSteR1mI0dNv6OTxNqFgs63BOrHNsIldgXIivGdjs5h4httKHX01Kfz_UZ7F_K8x88NoRQVSo1PW77ArHt_OQvd_xxqw39xteXJdqOquH36qy4QS2z2v3DR13gLyWdc51XIKEgLdT94eqZ8rbyXsNMy3xNLI74LPCn3UvswFZmFSlfZPNgdXCu8hIOCNgb54sIwkW-czgiOf2oepkBg08ZOItMhDV-SG_E"/>
+</div>
+<h1 class="font-['Space_Grotesk'] uppercase tracking-wider font-bold text-xl text-[#69fea5]">BIO-MONITOR</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#f8f5fd] hover:bg-[#25252c] p-2 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<div class="flex min-h-screen pt-16 pb-20 md:pb-0">
+<!-- NavigationDrawer (Desktop) -->
+<aside class="hidden md:flex flex-col w-64 bg-[#131318] fixed h-full border-r-4 border-[#0e0e13] z-40">
+<div class="p-6">
+<span class="text-[#69fea5] font-bold font-['Space_Grotesk'] text-xs tracking-[0.2em] uppercase">Subsystems</span>
+</div>
+<nav class="flex flex-col gap-0.5 bg-[#0e0e13]">
+<a class="flex items-center gap-4 px-6 py-4 text-gray-400 bg-[#131318] font-['Space_Grotesk'] text-sm tracking-tight hover:bg-[#1f1f26] transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="science">science</span>
+<span>COLLECTION/BREEDING</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 bg-[#25252c] text-[#69fea5] border-l-2 border-[#69fea5] font-['Space_Grotesk'] text-sm tracking-tight transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span>ACTIVE/QUEST BOARD</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 text-gray-400 bg-[#131318] font-['Space_Grotesk'] text-sm tracking-tight hover:bg-[#1f1f26] transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span>WORLD SECTOR</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 text-gray-400 bg-[#131318] font-['Space_Grotesk'] text-sm tracking-tight hover:bg-[#1f1f26] transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span>SYSTEM LOGS</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-4 md:p-8 max-w-6xl mx-auto w-full">
+<!-- Sub-Tabs -->
+<div class="flex gap-1 mb-8 bg-surface-container-low p-1 w-fit">
+<button class="px-6 py-2 font-headline text-xs font-bold tracking-widest uppercase bg-surface-container-highest text-primary">Active</button>
+<button class="px-6 py-2 font-headline text-xs font-bold tracking-widest uppercase text-outline hover:text-on-surface-variant transition-colors">Available</button>
+<button class="px-6 py-2 font-headline text-xs font-bold tracking-widest uppercase text-outline hover:text-on-surface-variant transition-colors">History</button>
+</div>
+<!-- Bento Grid Missions -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Mission 1: In Progress -->
+<div class="lg:col-span-12 xl:col-span-8 bg-surface-container-low p-6 relative overflow-hidden flex flex-col gap-6">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex flex-wrap justify-between items-start gap-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="potted_plant">potted_plant</span>
+<span class="font-headline text-[10px] tracking-[0.3em] uppercase text-secondary font-black">Tactical Deployment</span>
+</div>
+<h2 class="font-headline text-3xl font-extrabold tracking-tight uppercase">Defend the Hive</h2>
+<p class="text-on-surface-variant font-mono text-xs mt-1 uppercase">LOC: EMBER FOUNDRY // SECTOR-04</p>
+</div>
+<div class="bg-surface-container-high px-4 py-2 flex flex-col items-end border-r-4 border-secondary">
+<span class="font-headline text-[10px] uppercase text-outline tracking-widest">Time Remaining</span>
+<span class="font-mono text-2xl font-bold text-secondary">45:00</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Progress & Status -->
+<div class="space-y-4">
+<div>
+<div class="flex justify-between mb-2">
+<span class="font-headline text-[10px] uppercase text-on-surface font-bold tracking-widest">Containment Status</span>
+<span class="font-mono text-[10px] text-secondary">68%</span>
+</div>
+<div class="h-4 bg-surface-container-highest w-full relative">
+<div class="h-full bg-secondary w-[68%] relative overflow-hidden">
+<div class="absolute inset-0 segmented-progress"></div>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="bg-surface-container-highest px-3 py-1 font-mono text-[10px] text-secondary border-b-2 border-secondary uppercase">Vitals: Unstable</span>
+<span class="bg-surface-container-highest px-3 py-1 font-mono text-[10px] text-on-surface-variant uppercase">Threat: Class-C</span>
+</div>
+</div>
+<!-- Squad Info -->
+<div class="bg-surface-container-highest p-4 border-l-2 border-outline-variant">
+<span class="font-headline text-[10px] uppercase text-outline font-bold tracking-widest mb-3 block">Deployment Roster</span>
+<div class="flex flex-wrap gap-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center border border-secondary/40">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="flare">flare</span>
+</div>
+<span class="font-headline text-xs font-bold tracking-wider">SPARK</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-tertiary/20 flex items-center justify-center border border-tertiary/40">
+<span class="material-symbols-outlined text-tertiary text-lg" data-icon="waves">waves</span>
+</div>
+<span class="font-headline text-xs font-bold tracking-wider">ECHO</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mission 2: Complete -->
+<div class="lg:col-span-12 xl:col-span-4 bg-surface-container-low p-6 relative flex flex-col gap-6">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle">check_circle</span>
+<span class="font-headline text-[10px] tracking-[0.3em] uppercase text-primary font-black">Mission Success</span>
+</div>
+<h2 class="font-headline text-2xl font-extrabold tracking-tight uppercase">Scout the Tundra</h2>
+<p class="text-on-surface-variant font-mono text-xs mt-1 uppercase">LOC: CRYSTAL CAVERNS</p>
+</div>
+<!-- Rewards Section -->
+<div class="space-y-3">
+<span class="font-headline text-[10px] uppercase text-outline font-bold tracking-widest">Pending Extraction</span>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between bg-surface-container-highest p-2">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="science">science</span>
+<span class="font-headline text-xs uppercase tracking-tight">Gel Sample</span>
+</div>
+<span class="font-mono text-xs font-bold text-primary">x24</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-highest p-2">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="precision_manufacturing">precision_manufacturing</span>
+<span class="font-headline text-xs uppercase tracking-tight">Industrial Scrap</span>
+</div>
+<span class="font-mono text-xs font-bold text-on-surface">x150</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-highest p-2">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-lg" data-icon="experiment">experiment</span>
+<span class="font-headline text-xs uppercase tracking-tight">Bio-Reagents</span>
+</div>
+<span class="font-mono text-xs font-bold text-tertiary">x3</span>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-headline font-black tracking-[0.2em] uppercase text-xs hover:opacity-90 transition-opacity active:scale-[0.98]">
+                        PROCESS &amp; RETURN
+                    </button>
+</div>
+<!-- Mission Statistics Overlay (Utility Card) -->
+<div class="lg:col-span-12 xl:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-low p-4 border-t-2 border-tertiary">
+<span class="block font-headline text-[10px] text-outline uppercase tracking-widest mb-1">Energy Flux</span>
+<span class="font-mono text-xl font-bold text-tertiary">94.2 GW</span>
+</div>
+<div class="bg-surface-container-low p-4 border-t-2 border-primary">
+<span class="block font-headline text-[10px] text-outline uppercase tracking-widest mb-1">Slime Yield</span>
+<span class="font-mono text-xl font-bold text-primary">+12.4%</span>
+</div>
+<div class="bg-surface-container-low p-4 border-t-2 border-secondary">
+<span class="block font-headline text-[10px] text-outline uppercase tracking-widest mb-1">Hazard Level</span>
+<span class="font-mono text-xl font-bold text-secondary">LOW</span>
+</div>
+<div class="bg-surface-container-low p-4 border-t-2 border-outline-variant">
+<span class="block font-headline text-[10px] text-outline uppercase tracking-widest mb-1">System Load</span>
+<span class="font-mono text-xl font-bold text-on-surface">24%</span>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-[#0e0e13] md:hidden border-t-2 border-[#25252c]">
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">ROSTER</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#131318] text-[#69fea5] p-2 border-t-2 border-[#69fea5] transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">MISSIONS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">MAP</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">LOGS</span>
+</a>
+</nav>
+</body></html>

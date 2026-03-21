@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bio-Monitor - Quest Board</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary": "#005f33",
+              "inverse-surface": "#fbf8ff",
+              "on-error": "#490006",
+              "on-background": "#f8f5fd",
+              "tertiary-fixed-dim": "#74a2ff",
+              "on-primary-container": "#003218",
+              "surface-container-lowest": "#000000",
+              "surface-container-low": "#131318",
+              "on-secondary-fixed-variant": "#883800",
+              "on-surface": "#f8f5fd",
+              "secondary": "#ff8844",
+              "surface-bright": "#2b2b33",
+              "on-primary-fixed": "#004a27",
+              "surface-container-high": "#1f1f26",
+              "surface-tint": "#69fea5",
+              "outline": "#76747b",
+              "tertiary-dim": "#6a9cff",
+              "surface": "#0e0e13",
+              "on-tertiary-fixed-variant": "#00367d",
+              "tertiary-fixed": "#8bb0ff",
+              "secondary-fixed-dim": "#ffb28b",
+              "inverse-primary": "#006e3c",
+              "tertiary-container": "#4488ff",
+              "surface-container-highest": "#25252c",
+              "primary": "#69fea5",
+              "inverse-on-surface": "#55545a",
+              "surface-variant": "#25252c",
+              "on-tertiary-container": "#000311",
+              "on-secondary-fixed": "#5b2300",
+              "on-secondary": "#4b1c00",
+              "on-secondary-container": "#fff6f3",
+              "error-dim": "#d7383b",
+              "surface-dim": "#0e0e13",
+              "tertiary": "#6a9cff",
+              "on-error-container": "#ffa8a3",
+              "secondary-fixed": "#ffc5a9",
+              "primary-fixed": "#69fea5",
+              "primary-dim": "#59ef98",
+              "primary-fixed-dim": "#59ef98",
+              "secondary-dim": "#f27e3b",
+              "secondary-container": "#9e4300",
+              "on-tertiary-fixed": "#00163b",
+              "primary-container": "#14c16f",
+              "error-container": "#9f0519",
+              "outline-variant": "#48474d",
+              "surface-container": "#19191f",
+              "on-surface-variant": "#acaab1",
+              "on-tertiary": "#001e4b",
+              "on-primary-fixed-variant": "#006a3a",
+              "background": "#0e0e13",
+              "error": "#ff716c"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #0e0e13;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #25252c;
+      }
+      .glass-blur {
+        backdrop-filter: blur(12px);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-4 w-full h-16 bg-[#0e0e13] border-b-4 border-[#131318] sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container-highest flex items-center justify-center rounded-none border border-outline-variant">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+</div>
+<h1 class="text-xl font-black text-[#69fea5] font-['Space_Grotesk'] uppercase tracking-wider">BIO-MONITOR</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-[#25252c] transition-colors duration-200">
+<span class="material-symbols-outlined text-[#f8f5fd]">settings</span>
+</button>
+</div>
+</header>
+<main class="flex min-h-[calc(100vh-144px)]">
+<!-- NavigationDrawer (Sidebar for Desktop) -->
+<aside class="hidden md:flex w-64 flex-col bg-[#131318] border-r border-outline-variant">
+<div class="p-4 border-b border-outline-variant">
+<span class="text-[#69fea5] font-bold font-headline uppercase text-xs tracking-widest">SUBSYSTEMS</span>
+</div>
+<nav class="flex flex-col w-full">
+<a class="flex items-center gap-3 p-4 text-gray-400 bg-[#131318] hover:bg-[#1f1f26] transition-colors uppercase font-label tracking-tight text-sm" href="#">
+<span class="material-symbols-outlined">science</span>
+                    COLLECTION/BREEDING
+                </a>
+<a class="flex items-center gap-3 p-4 bg-[#25252c] text-[#69fea5] border-l-2 border-[#69fea5] uppercase font-label tracking-tight text-sm" href="#">
+<span class="material-symbols-outlined">assignment</span>
+                    ACTIVE/QUEST BOARD
+                </a>
+<a class="flex items-center gap-3 p-4 text-gray-400 bg-[#131318] hover:bg-[#1f1f26] transition-colors uppercase font-label tracking-tight text-sm" href="#">
+<span class="material-symbols-outlined">explore</span>
+                    WORLD SECTOR
+                </a>
+<a class="flex items-center gap-3 p-4 text-gray-400 bg-[#131318] hover:bg-[#1f1f26] transition-colors uppercase font-label tracking-tight text-sm" href="#">
+<span class="material-symbols-outlined">terminal</span>
+                    SYSTEM LOGS
+                </a>
+</nav>
+</aside>
+<!-- Content Canvas -->
+<section class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 space-y-8">
+<!-- Sub-Tab Header & Filter Bar -->
+<div class="flex flex-col gap-6">
+<div class="flex items-center justify-between border-b border-outline-variant pb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+<h2 class="font-headline font-bold text-2xl uppercase tracking-tighter">QUEST BOARD / RECON</h2>
+</div>
+<div class="text-[10px] font-label text-outline uppercase tracking-widest bg-surface-container px-2 py-1">
+                        Sector: 02-B // Online
+                    </div>
+</div>
+<!-- Filter Bar -->
+<div class="flex flex-wrap items-center gap-2">
+<button class="px-4 py-1 bg-primary text-on-primary font-label text-xs font-bold uppercase tracking-widest">All</button>
+<button class="px-4 py-1 bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label text-xs font-bold uppercase tracking-widest transition-colors">Ring 1</button>
+<button class="px-4 py-1 bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label text-xs font-bold uppercase tracking-widest transition-colors">By Culture</button>
+<div class="ml-auto flex items-center gap-2 text-outline-variant">
+<span class="text-[10px] uppercase font-label">Filter Active</span>
+<span class="material-symbols-outlined text-sm">filter_list</span>
+</div>
+</div>
+</div>
+<!-- Quest Cards Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+<!-- Quest Card 1 -->
+<div class="bg-surface-container-low p-5 flex flex-col gap-4 relative group hover:bg-surface-container-high transition-all duration-300">
+<div class="absolute left-0 top-0 h-full w-1 bg-primary"></div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline font-black text-xl text-on-surface leading-none mb-1">Scout the Tundra</h3>
+<p class="text-[10px] text-primary uppercase font-label tracking-[0.2em]">Bio-Hazard Level: Stable</p>
+</div>
+<div class="text-right">
+<span class="block text-[10px] text-outline uppercase font-label">Difficulty</span>
+<span class="text-lg font-headline font-bold text-secondary">7/10</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 bg-surface-container-lowest p-3 border-l-2 border-surface-container-highest">
+<div class="flex flex-col">
+<span class="text-[9px] text-outline uppercase font-label">Estimated Time</span>
+<span class="text-sm font-bold font-headline">~20 min</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/20 pl-2">
+<span class="text-[9px] text-outline uppercase font-label">Affinity Bonus</span>
+<span class="text-sm font-bold font-headline text-tertiary">Tide (+5%)</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/20 pl-2">
+<span class="text-[9px] text-outline uppercase font-label">Status</span>
+<span class="text-sm font-bold font-headline text-primary">Available</span>
+</div>
+</div>
+<div class="space-y-2">
+<span class="text-[10px] text-outline uppercase font-label tracking-widest">Field Requirements</span>
+<div class="flex flex-wrap gap-3">
+<div class="flex items-center gap-1">
+<span class="text-xs font-headline font-bold text-on-surface">STR</span>
+<span class="text-xs font-headline text-primary">15</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="text-xs font-headline font-bold text-on-surface">AGI</span>
+<span class="text-xs font-headline text-primary">10</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="text-xs font-headline font-bold text-on-surface">INT</span>
+<span class="text-xs font-headline text-primary">5</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex justify-end">
+<button class="px-6 py-2 bg-surface-container-highest hover:bg-primary hover:text-on-primary font-headline font-bold text-xs uppercase tracking-widest transition-all">Assign Protocol</button>
+</div>
+</div>
+<!-- Quest Card 2 -->
+<div class="bg-surface-container-low p-5 flex flex-col gap-4 relative group hover:bg-surface-container-high transition-all duration-300">
+<div class="absolute left-0 top-0 h-full w-1 bg-tertiary"></div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline font-black text-xl text-on-surface leading-none mb-1">Crystal Expanse</h3>
+<p class="text-[10px] text-tertiary uppercase font-label tracking-[0.2em]">Bio-Hazard Level: Low</p>
+</div>
+<div class="text-right">
+<span class="block text-[10px] text-outline uppercase font-label">Difficulty</span>
+<span class="text-lg font-headline font-bold text-primary">4/10</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 bg-surface-container-lowest p-3 border-l-2 border-surface-container-highest">
+<div class="flex flex-col">
+<span class="text-[9px] text-outline uppercase font-label">Estimated Time</span>
+<span class="text-sm font-bold font-headline">~12 min</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/20 pl-2">
+<span class="text-[9px] text-outline uppercase font-label">Affinity Bonus</span>
+<span class="text-sm font-bold font-headline text-on-surface">None</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/20 pl-2">
+<span class="text-[9px] text-outline uppercase font-label">Status</span>
+<span class="text-sm font-bold font-headline text-primary">Available</span>
+</div>
+</div>
+<div class="space-y-2">
+<span class="text-[10px] text-outline uppercase font-label tracking-widest">Field Requirements</span>
+<div class="flex flex-wrap gap-3">
+<div class="flex items-center gap-1">
+<span class="text-xs font-headline font-bold text-on-surface">STR</span>
+<span class="text-xs font-headline text-primary">5</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex justify-end">
+<button class="px-6 py-2 bg-surface-container-highest hover:bg-tertiary hover:text-on-tertiary font-headline font-bold text-xs uppercase tracking-widest transition-all">Assign Protocol</button>
+</div>
+</div>
+</div>
+<!-- Party Status Area -->
+<div class="bg-surface-container p-6 border-t-2 border-surface-container-highest space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-bold text-lg uppercase tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">shield_person</span>
+                        Current Party Status
+                    </h3>
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-[10px] font-label text-outline uppercase">Squad Locked</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Party Member 1 -->
+<div class="bg-surface-container-low p-4 flex items-center gap-4 border border-outline-variant/20">
+<div class="w-12 h-12 bg-surface-container-high rounded-full overflow-hidden flex-shrink-0 border-2 border-primary/30">
+<img alt="Spark Avatar" class="w-full h-full object-cover" data-alt="Slime creature glowing with yellow electric sparks" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALuNlQo6HSkoso4hmtdF_G-bLpz4AqePUJ197nLnzy3x283FKfg1OzWQv51xeesNuaG8_a1cPAQiYObeM1qibG8VbX6rD8yKPNP8xN1e4_rrNRF6l678_CcvMZGj-pGUyvS9_nL0XX8FZTRHs0OfoJSUzUO9RaKS7OTfdZzOBGexjQigBYOKHK0Z06lJp-f65pHw45MzOOPwUF7Mqv8YXFBMdDKEw3GAiD-NUBHcTNrP5hwlF4nIc7gO7IxhZLuXArNdsjY6YT2YE"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<span class="font-headline font-black text-sm uppercase">Spark</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex gap-2 text-[10px] font-label text-outline uppercase">
+<span>Str 18</span>
+<span>Agi 12</span>
+</div>
+</div>
+</div>
+<!-- Party Member 2 -->
+<div class="bg-surface-container-low p-4 flex items-center gap-4 border border-outline-variant/20">
+<div class="w-12 h-12 bg-surface-container-high rounded-full overflow-hidden flex-shrink-0 border-2 border-tertiary/30">
+<img alt="Echo Avatar" class="w-full h-full object-cover" data-alt="Blue water slime creature with sonic ripple patterns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-vl3nzy9T8wUlBjFYlbgKNeLwYm4iWSpdg6mD_YLl9HWKdkzKty5Xm8zY3UuiTrmQHsEA3j_xTCWdIIZpcXdIqOuJJ8S6Z3iaPLjOyBrOAhuS57iekgn6-xEPwlRA3GTk0Z9D6BVGTnsoAddVmNxLIuAoEpMTEY3UeEITs8nztcEDBAJZE2oldHFqNIREsjUNa1ODAgBbItPpuDnubQOEOp7iEBLE3ELBhqsXiPcNO3ykrbmZ5IZd52XGDeim9M2PN56DRg1ypBg"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<span class="font-headline font-black text-sm uppercase">Echo</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex gap-2 text-[10px] font-label text-outline uppercase">
+<span>Str 8</span>
+<span>Int 22</span>
+</div>
+</div>
+</div>
+<!-- Party Member 3 -->
+<div class="bg-surface-container-low p-4 flex items-center gap-4 border border-outline-variant/20">
+<div class="w-12 h-12 bg-surface-container-high rounded-full overflow-hidden flex-shrink-0 border-2 border-secondary/30">
+<img alt="Jumper Avatar" class="w-full h-full object-cover" data-alt="Green grass slime creature with powerful hind legs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDM9ibv1XMbJI5ljS2KLkkIY_3YBkrUq-97X4bXhSl84Y6rxGXdhHtl9s0DqM_aEPKDIWYasU2Gh4Lq0XPj7L4hC6JC0RAoS6nZ6RkBulxlaJrWXmPO4ekWCfuyh-jQT8lRIm-79ws2s_z9ljiOoGu5438xlPmE8E8gY6d9S9CSVVpDwZurKzeaXWIO1R9B1vMlPI9ojAiS8a-Jr3wlzKwLbdqv2xBDO9ns7S6d6bszzzaACB8a64aVt3mmPsiaVwSYADelorlp2v4"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<span class="font-headline font-black text-sm uppercase">Jumper</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex gap-2 text-[10px] font-label text-outline uppercase">
+<span>Agi 25</span>
+<span>Str 12</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Buttons -->
+<div class="flex gap-4 pt-4 border-t border-outline-variant/10">
+<button class="flex-1 py-4 bg-surface-container-highest text-on-surface font-headline font-bold uppercase tracking-widest text-sm hover:bg-surface-variant transition-colors border-b-2 border-outline">SELECT SQUAD</button>
+<button class="flex-[2] py-4 bg-primary text-on-primary font-headline font-black uppercase tracking-[0.3em] text-sm hover:opacity-90 transition-all shadow-[0_0_20px_rgba(105,254,165,0.2)]">DISPATCH</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Visible on Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-[#0e0e13] border-t-2 border-[#25252c] md:hidden shadow-2xl">
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest uppercase">ROSTER</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#131318] text-[#69fea5] p-2 border-t-2 border-[#69fea5] active:opacity-80 transition-all" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest uppercase">MISSIONS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest uppercase">MAP</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest uppercase">LOGS</span>
+</a>
+</nav>
+<!-- Content Spacing for Fixed Nav on Mobile -->
+<div class="h-20 md:hidden"></div>
+</body></html>

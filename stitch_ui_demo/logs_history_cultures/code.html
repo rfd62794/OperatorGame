@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SlimeGarden - Mission &amp; Culture Logs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#005f33",
+                        "inverse-surface": "#fbf8ff",
+                        "on-error": "#490006",
+                        "on-background": "#f8f5fd",
+                        "tertiary-fixed-dim": "#74a2ff",
+                        "on-primary-container": "#003218",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-low": "#131318",
+                        "on-secondary-fixed-variant": "#883800",
+                        "on-surface": "#f8f5fd",
+                        "secondary": "#ff8844",
+                        "surface-bright": "#2b2b33",
+                        "on-primary-fixed": "#004a27",
+                        "surface-container-high": "#1f1f26",
+                        "surface-tint": "#69fea5",
+                        "outline": "#76747b",
+                        "tertiary-dim": "#6a9cff",
+                        "surface": "#0e0e13",
+                        "on-tertiary-fixed-variant": "#00367d",
+                        "tertiary-fixed": "#8bb0ff",
+                        "secondary-fixed-dim": "#ffb28b",
+                        "inverse-primary": "#006e3c",
+                        "tertiary-container": "#4488ff",
+                        "surface-container-highest": "#25252c",
+                        "primary": "#69fea5",
+                        "inverse-on-surface": "#55545a",
+                        "surface-variant": "#25252c",
+                        "on-tertiary-container": "#000311",
+                        "on-secondary-fixed": "#5b2300",
+                        "on-secondary": "#4b1c00",
+                        "on-secondary-container": "#fff6f3",
+                        "error-dim": "#d7383b",
+                        "surface-dim": "#0e0e13",
+                        "tertiary": "#6a9cff",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-fixed": "#ffc5a9",
+                        "primary-fixed": "#69fea5",
+                        "primary-dim": "#59ef98",
+                        "primary-fixed-dim": "#59ef98",
+                        "secondary-dim": "#f27e3b",
+                        "secondary-container": "#9e4300",
+                        "on-tertiary-fixed": "#00163b",
+                        "primary-container": "#14c16f",
+                        "error-container": "#9f0519",
+                        "outline-variant": "#48474d",
+                        "surface-container": "#19191f",
+                        "on-surface-variant": "#acaab1",
+                        "on-tertiary": "#001e4b",
+                        "on-primary-fixed-variant": "#006a3a",
+                        "background": "#0e0e13",
+                        "error": "#ff716c"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .segmented-progress {
+            background-image: repeating-linear-gradient(90deg, transparent, transparent 4px, #0e0e13 4px, #0e0e13 6px);
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0e0e13; }
+        ::-webkit-scrollbar-thumb { background: #25252c; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<header class="flex justify-between items-center px-4 w-full h-16 bg-[#0e0e13] border-b-4 border-[#131318] z-50">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="scientist_profile_icon">biotech</span>
+</div>
+<h1 class="font-headline uppercase tracking-wider font-bold text-primary text-xl font-black">BIO-MONITOR</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-[#25252c] transition-colors duration-200">
+<span class="material-symbols-outlined text-on-surface" data-icon="settings">settings</span>
+</button>
+</header>
+<div class="flex min-h-[calc(100vh-144px)]">
+<aside class="hidden md:flex flex-col w-64 bg-[#131318] border-r-2 border-[#0e0e13]">
+<div class="p-4">
+<p class="font-headline text-xs tracking-widest text-on-surface-variant uppercase mb-4">SUBSYSTEMS</p>
+<nav class="flex flex-col gap-0.5">
+<a class="flex items-center gap-3 p-3 font-headline text-sm tracking-tight text-gray-400 bg-[#131318] hover:bg-[#1f1f26] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="science">science</span>
+<span>COLLECTION/BREEDING</span>
+</a>
+<a class="flex items-center gap-3 p-3 font-headline text-sm tracking-tight text-gray-400 bg-[#131318] hover:bg-[#1f1f26] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span>ACTIVE/QUEST BOARD</span>
+</a>
+<a class="flex items-center gap-3 p-3 font-headline text-sm tracking-tight text-gray-400 bg-[#131318] hover:bg-[#1f1f26] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span>WORLD SECTOR</span>
+</a>
+<a class="flex items-center gap-3 p-3 font-headline text-sm tracking-tight bg-[#25252c] text-[#69fea5] border-l-2 border-[#69fea5] scale-95 active:scale-100 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span>SYSTEM LOGS</span>
+</a>
+</nav>
+</div>
+</aside>
+<main class="flex-1 overflow-y-auto bg-surface p-4 md:p-8 space-y-8 pb-24">
+<section>
+<div class="flex items-center gap-4 mb-6">
+<h2 class="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">Mission History</h2>
+<div class="h-px flex-1 bg-outline-variant opacity-20"></div>
+<span class="text-[10px] font-headline tracking-[0.2em] text-on-surface-variant">ARCHIVE_4A</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+<div class="bg-surface-container-low border-l-4 border-primary p-5 flex flex-col gap-4 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-6xl" data-icon="verified">verified</span>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline font-bold text-lg text-primary tracking-tight">Defend the Hive</h3>
+<p class="text-xs font-mono text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span>
+                                    Ember Foundry
+                                </p>
+</div>
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 uppercase tracking-widest border border-primary/20">Victory ✓</span>
+</div>
+<div class="grid grid-cols-2 gap-4 py-2 border-y border-outline-variant/10">
+<div class="space-y-1">
+<p class="text-[10px] uppercase text-on-surface-variant font-bold tracking-wider">Deployment</p>
+<div class="flex gap-2">
+<span class="text-xs bg-surface-container-highest px-2 py-0.5 text-secondary border border-secondary/20">Spark</span>
+<span class="text-xs bg-surface-container-highest px-2 py-0.5 text-tertiary border border-tertiary/20">Echo</span>
+</div>
+</div>
+<div class="space-y-1 text-right">
+<p class="text-[10px] uppercase text-on-surface-variant font-bold tracking-wider">Timestamp</p>
+<p class="text-xs font-mono">2026-03-14</p>
+</div>
+</div>
+<div class="space-y-2">
+<p class="text-[10px] uppercase text-on-surface-variant font-bold tracking-wider">Loot Recovered</p>
+<div class="flex flex-wrap gap-3">
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(105,254,165,0.6)]"></div>
+<span class="text-xs font-mono">Gel +50</span>
+</div>
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<span class="text-xs font-mono">Scrap +5</span>
+</div>
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_rgba(106,156,255,0.6)]"></div>
+<span class="text-xs font-mono">Reagent +1</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-2 bg-primary text-on-primary font-headline font-black py-2 uppercase tracking-tighter hover:bg-primary-dim transition-all active:scale-[0.98]">
+                            [VIEW AAR]
+                        </button>
+</div>
+<div class="bg-surface-container-low border-l-4 border-primary/40 p-5 flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface tracking-tight opacity-80">Scout the Tundra</h3>
+<p class="text-xs font-mono text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span>
+                                    Crystal Caverns
+                                </p>
+</div>
+<span class="bg-primary/5 text-primary/60 text-[10px] font-bold px-2 py-1 uppercase tracking-widest border border-primary/10">Victory ✓</span>
+</div>
+<div class="flex-1 flex items-center justify-center border-2 border-dashed border-outline-variant/10 min-h-[80px]">
+<p class="text-[10px] uppercase text-on-surface-variant font-bold tracking-[0.2em]">Summary Data Compiled</p>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant uppercase font-bold">Loot Summary</span>
+<div class="flex -space-x-1">
+<div class="w-4 h-4 rounded-full bg-primary/20 border border-primary/40"></div>
+<div class="w-4 h-4 rounded-full bg-tertiary/20 border border-tertiary/40"></div>
+</div>
+</div>
+<button class="px-4 py-1.5 bg-surface-container-highest text-on-surface font-headline font-bold text-xs uppercase tracking-widest hover:bg-outline-variant transition-all">
+                                Detail
+                            </button>
+</div>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center gap-4 mb-6">
+<h2 class="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">Culture History</h2>
+<div class="h-px flex-1 bg-outline-variant opacity-20"></div>
+<span class="text-[10px] font-headline tracking-[0.2em] text-on-surface-variant">ARCHIVE_4B</span>
+</div>
+<div class="bg-surface-container-low p-6 space-y-8">
+<div class="relative pt-10 pb-4 overflow-x-auto no-scrollbar">
+<div class="absolute top-1/2 left-0 w-full h-0.5 bg-surface-container-highest -translate-y-1/2"></div>
+<div class="flex justify-between items-center min-w-[600px] relative px-4">
+<div class="flex flex-col items-center gap-3 relative">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-[0_0_15px_rgba(105,254,165,0.4)] z-10 border-4 border-surface-container-low">
+<span class="material-symbols-outlined text-xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+<span class="font-headline text-[10px] font-black uppercase tracking-widest text-primary">Ember</span>
+</div>
+<div class="flex flex-col items-center gap-3 relative">
+<div class="w-10 h-10 rounded-full bg-tertiary flex items-center justify-center text-on-tertiary shadow-[0_0_15px_rgba(106,156,255,0.4)] z-10 border-4 border-surface-container-low">
+<span class="material-symbols-outlined text-xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+<span class="font-headline text-[10px] font-black uppercase tracking-widest text-tertiary">Tide</span>
+</div>
+<div class="flex flex-col items-center gap-3 relative">
+<div class="w-10 h-10 rounded-full bg-primary-dim flex items-center justify-center text-on-primary z-10 border-4 border-surface-container-low">
+<span class="material-symbols-outlined text-xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+<span class="font-headline text-[10px] font-black uppercase tracking-widest text-primary-dim">Gale</span>
+</div>
+<div class="flex flex-col items-center gap-3 relative">
+<div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-on-secondary shadow-[0_0_15px_rgba(255,136,68,0.4)] z-10 border-4 border-surface-container-low">
+<span class="material-symbols-outlined text-xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+<span class="font-headline text-[10px] font-black uppercase tracking-widest text-secondary">Orange</span>
+</div>
+<div class="flex flex-col items-center gap-3 relative">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-outline-variant z-10 border-4 border-surface-container-low grayscale">
+<span class="material-symbols-outlined text-xl" data-icon="lock">lock</span>
+</div>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Marsh</span>
+</div>
+<div class="flex flex-col items-center gap-3 relative">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-outline-variant z-10 border-4 border-surface-container-low grayscale">
+<span class="material-symbols-outlined text-xl" data-icon="lock">lock</span>
+</div>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Void</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-outline-variant/10">
+<div class="md:col-span-1 space-y-4">
+<div class="w-full aspect-square bg-surface-container-highest relative overflow-hidden group">
+<img alt="Ember Culture Sample" class="w-full h-full object-cover mix-blend-screen opacity-60" data-alt="Abstract vibrant orange and red fluid patterns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeaWrxVZ2afYIF68ifvzpQ26-ShLSo4MM9iI560ibtiksru-IfN5SWMpbSBXu6DSJegcyRo62tSLAETEnBwqaD2A3msyj60wPP5Iri_i2nBdE0-kH9CX0FOdh2l9cccDwnEIvdFdnRrMkarjnZ-EjpyC3cWXYumuyn4elzKiKKZR5lKV8A9AEiUswGRcEDNIBgKy5Dnb15MEOnfNCRrU-BUEuCUn7MrD3gtYLJEjOyk3k7EFNAsOitLAV9kzJ_YDaAf8etjNDAW1g"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<p class="text-[10px] uppercase font-bold text-secondary tracking-widest">Selected Unit</p>
+<h4 class="font-headline font-black text-2xl uppercase tracking-tighter">Ember Core</h4>
+</div>
+</div>
+</div>
+<div class="md:col-span-2 space-y-6">
+<div class="grid grid-cols-2 gap-8">
+<div class="space-y-4">
+<p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-[0.2em]">Acquisition Progress</p>
+<ul class="space-y-3">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle" data-weight="fill">check_circle</span>
+<span class="text-xs font-mono uppercase">Primary Genome Extraction</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle" data-weight="fill">check_circle</span>
+<span class="text-xs font-mono uppercase">Heat-Resistant Bonding</span>
+</li>
+<li class="flex items-center gap-3 opacity-40">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="radio_button_unchecked">radio_button_unchecked</span>
+<span class="text-xs font-mono uppercase">Hyper-Stable Fusion</span>
+</li>
+</ul>
+</div>
+<div class="space-y-2">
+<p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-[0.2em]">First Encounter</p>
+<p class="text-2xl font-headline font-black text-on-surface">MAR 02 2026</p>
+<p class="text-xs font-mono text-on-surface-variant">Sector: Southern Furnaces</p>
+<div class="mt-4 p-3 bg-surface border border-outline-variant/10">
+<div class="flex justify-between text-[10px] uppercase font-bold mb-1">
+<span>Compatibility</span>
+<span class="text-secondary">88%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-none overflow-hidden">
+<div class="h-full bg-secondary w-[88%] segmented-progress"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-secondary/5 border-l-2 border-secondary space-y-1">
+<p class="text-[10px] uppercase font-black text-secondary tracking-widest flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="info">info</span>
+                                    Field Researcher Note
+                                </p>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                                    The Ember strain demonstrates extreme volatility when exposed to aqueous reagents. Suggest containment in Grade-4 heat-shielded vats for breeding cycles.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 bg-[#0e0e13] shadow-2xl border-t-2 border-[#25252c] pb-safe md:hidden">
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="groups">groups</span>
+<span class="font-headline font-bold text-[10px] tracking-widest uppercase">ROSTER</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="biotech">biotech</span>
+<span class="font-headline font-bold text-[10px] tracking-widest uppercase">MISSIONS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="map">map</span>
+<span class="font-headline font-bold text-[10px] tracking-widest uppercase">MAP</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#131318] text-[#69fea5] p-2 border-t-2 border-[#69fea5] transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="list_alt">list_alt</span>
+<span class="font-headline font-bold text-[10px] tracking-widest uppercase">LOGS</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SlimeGarden - BIO-MONITOR Roster</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#005f33",
+                        "inverse-surface": "#fbf8ff",
+                        "on-error": "#490006",
+                        "on-background": "#f8f5fd",
+                        "tertiary-fixed-dim": "#74a2ff",
+                        "on-primary-container": "#003218",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-low": "#131318",
+                        "on-secondary-fixed-variant": "#883800",
+                        "on-surface": "#f8f5fd",
+                        "secondary": "#ff8844",
+                        "surface-bright": "#2b2b33",
+                        "on-primary-fixed": "#004a27",
+                        "surface-container-high": "#1f1f26",
+                        "surface-tint": "#69fea5",
+                        "outline": "#76747b",
+                        "tertiary-dim": "#6a9cff",
+                        "surface": "#0e0e13",
+                        "on-tertiary-fixed-variant": "#00367d",
+                        "tertiary-fixed": "#8bb0ff",
+                        "secondary-fixed-dim": "#ffb28b",
+                        "inverse-primary": "#006e3c",
+                        "tertiary-container": "#4488ff",
+                        "surface-container-highest": "#25252c",
+                        "primary": "#69fea5",
+                        "inverse-on-surface": "#55545a",
+                        "surface-variant": "#25252c",
+                        "on-tertiary-container": "#000311",
+                        "on-secondary-fixed": "#5b2300",
+                        "on-secondary": "#4b1c00",
+                        "on-secondary-container": "#fff6f3",
+                        "error-dim": "#d7383b",
+                        "surface-dim": "#0e0e13",
+                        "tertiary": "#6a9cff",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-fixed": "#ffc5a9",
+                        "primary-fixed": "#69fea5",
+                        "primary-dim": "#59ef98",
+                        "primary-fixed-dim": "#59ef98",
+                        "secondary-dim": "#f27e3b",
+                        "secondary-container": "#9e4300",
+                        "on-tertiary-fixed": "#00163b",
+                        "primary-container": "#14c16f",
+                        "error-container": "#9f0519",
+                        "outline-variant": "#48474d",
+                        "surface-container": "#19191f",
+                        "on-surface-variant": "#acaab1",
+                        "on-tertiary": "#001e4b",
+                        "on-primary-fixed-variant": "#006a3a",
+                        "background": "#0e0e13",
+                        "error": "#ff716c"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .slime-gradient-primary { background: linear-gradient(135deg, #69fea5 0%, #14c16f 100%); }
+        .slime-gradient-secondary { background: linear-gradient(135deg, #ff8844 0%, #9e4300 100%); }
+        .slime-gradient-tertiary { background: linear-gradient(135deg, #6a9cff 0%, #00367d 100%); }
+        .segmented-progress {
+            background-image: linear-gradient(90deg, transparent 0%, transparent 80%, #0e0e13 80%, #0e0e13 100%);
+            background-size: 10px 100%;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-4 w-full h-16 bg-[#0e0e13] border-b-4 border-[#131318] z-50 sticky top-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-none bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">biotech</span>
+</div>
+<h1 class="font-['Space_Grotesk'] uppercase tracking-wider font-bold text-xl text-[#69fea5]">BIO-MONITOR</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="transition-colors duration-200 hover:bg-[#25252c] p-2">
+<span class="material-symbols-outlined text-[#69fea5]">settings</span>
+</button>
+</div>
+</header>
+<div class="flex min-h-screen">
+<!-- NavigationDrawer (Sidebar for Desktop) -->
+<aside class="hidden md:flex flex-col w-64 bg-[#131318] border-r border-outline-variant">
+<div class="p-4">
+<p class="text-[#69fea5] font-bold font-['Space_Grotesk'] text-xs tracking-[0.2em] mb-4">SUBSYSTEMS</p>
+<nav class="flex flex-col gap-0.5 bg-[#0e0e13]">
+<a class="scale-95 active:scale-100 transition-all font-['Space_Grotesk'] text-sm tracking-tight flex items-center gap-3 p-3 bg-[#25252c] text-[#69fea5] border-l-2 border-[#69fea5]" href="#">
+<span class="material-symbols-outlined">science</span>
+<span>COLLECTION/BREEDING</span>
+</a>
+<a class="scale-95 active:scale-100 transition-all font-['Space_Grotesk'] text-sm tracking-tight flex items-center gap-3 p-3 text-gray-400 bg-[#131318] hover:bg-[#1f1f26]" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span>ACTIVE/QUEST BOARD</span>
+</a>
+<a class="scale-95 active:scale-100 transition-all font-['Space_Grotesk'] text-sm tracking-tight flex items-center gap-3 p-3 text-gray-400 bg-[#131318] hover:bg-[#1f1f26]" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span>WORLD SECTOR</span>
+</a>
+<a class="scale-95 active:scale-100 transition-all font-['Space_Grotesk'] text-sm tracking-tight flex items-center gap-3 p-3 text-gray-400 bg-[#131318] hover:bg-[#1f1f26]" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span>SYSTEM LOGS</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 pb-32 md:pb-8">
+<!-- Sub-Tab Header -->
+<div class="bg-surface-container-low p-4 sticky top-16 z-40 border-b border-outline-variant/20">
+<div class="flex gap-8">
+<button class="font-headline text-sm font-bold tracking-widest text-primary border-b-2 border-primary pb-1">COLLECTION</button>
+<button class="font-headline text-sm font-bold tracking-widest text-on-surface-variant hover:text-on-surface pb-1">BREEDING TANK</button>
+<button class="font-headline text-sm font-bold tracking-widest text-on-surface-variant hover:text-on-surface pb-1">VAULT</button>
+</div>
+</div>
+<!-- Bento Grid Collection -->
+<section class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto">
+<!-- Slime Card: Spark -->
+<div class="bg-surface-container-low group relative overflow-hidden flex flex-col">
+<div class="absolute top-0 left-0 w-1 h-full bg-error"></div>
+<div class="p-4 flex gap-4">
+<div class="w-24 h-24 bg-surface-container-highest flex items-center justify-center relative">
+<div class="absolute inset-0 opacity-20 bg-error"></div>
+<span class="material-symbols-outlined text-4xl text-error" style="font-variation-settings: 'FILL' 1;">mode_fan</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline font-black text-xl text-on-surface">Spark</h3>
+<p class="text-[10px] font-headline tracking-tighter text-error uppercase font-bold">Red/Ember • Basic</p>
+</div>
+<div class="bg-surface-container-highest px-2 py-1 flex items-center gap-1">
+<span class="text-[10px] font-bold text-on-surface-variant">LV</span>
+<span class="font-headline font-bold text-error">03</span>
+</div>
+</div>
+<!-- XP Bar -->
+<div class="mt-3">
+<div class="flex justify-between text-[8px] font-bold text-on-surface-variant mb-1">
+<span>XP PROGRESSION</span>
+<span>75%</span>
+</div>
+<div class="h-2 bg-surface-container-highest w-full relative">
+<div class="absolute top-0 left-0 h-full bg-error w-3/4 segmented-progress"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-3 gap-[1px] bg-outline-variant/10 border-t border-outline-variant/20">
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">STR</p>
+<p class="font-headline text-sm font-bold text-error">12</p>
+</div>
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">AGI</p>
+<p class="font-headline text-sm font-bold text-error">08</p>
+</div>
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">INT</p>
+<p class="font-headline text-sm font-bold text-error">05</p>
+</div>
+</div>
+<!-- Footer / Toggle -->
+<div class="p-3 bg-surface-container-highest flex justify-between items-center">
+<div class="flex flex-col">
+<span class="text-[8px] text-on-surface-variant font-bold">CONTAINMENT STATUS</span>
+<span class="text-[10px] font-bold text-primary">STAGED</span>
+</div>
+<button class="bg-primary text-on-primary px-4 py-1 font-headline font-bold text-xs uppercase tracking-tighter">UNSTAGE</button>
+</div>
+</div>
+<!-- Slime Card: Echo -->
+<div class="bg-surface-container-low group relative overflow-hidden flex flex-col">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="p-4 flex gap-4">
+<div class="w-24 h-24 bg-surface-container-highest flex items-center justify-center relative">
+<div class="absolute inset-0 opacity-20 bg-secondary"></div>
+<span class="material-symbols-outlined text-4xl text-secondary" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline font-black text-xl text-on-surface">Echo</h3>
+<p class="text-[10px] font-headline tracking-tighter text-secondary uppercase font-bold">Orange/Tide+Ember • Spotted</p>
+</div>
+<div class="bg-surface-container-highest px-2 py-1 flex items-center gap-1">
+<span class="text-[10px] font-bold text-on-surface-variant">LV</span>
+<span class="font-headline font-bold text-secondary">02</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="flex justify-between text-[8px] font-bold text-on-surface-variant mb-1">
+<span>XP PROGRESSION</span>
+<span>40%</span>
+</div>
+<div class="h-2 bg-surface-container-highest w-full relative">
+<div class="absolute top-0 left-0 h-full bg-secondary w-[40%] segmented-progress"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-[1px] bg-outline-variant/10 border-t border-outline-variant/20">
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">STR</p>
+<p class="font-headline text-sm font-bold text-secondary">09</p>
+</div>
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">AGI</p>
+<p class="font-headline text-sm font-bold text-secondary">11</p>
+</div>
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">INT</p>
+<p class="font-headline text-sm font-bold text-secondary">07</p>
+</div>
+</div>
+<div class="p-3 bg-surface-container-highest flex justify-between items-center">
+<div class="flex flex-col">
+<span class="text-[8px] text-on-surface-variant font-bold">CONTAINMENT STATUS</span>
+<span class="text-[10px] font-bold text-primary">STAGED</span>
+</div>
+<button class="bg-primary text-on-primary px-4 py-1 font-headline font-bold text-xs uppercase tracking-tighter">UNSTAGE</button>
+</div>
+</div>
+<!-- Slime Card: Jumper -->
+<div class="bg-surface-container-low group relative overflow-hidden flex flex-col">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary"></div>
+<div class="p-4 flex gap-4">
+<div class="w-24 h-24 bg-surface-container-highest flex items-center justify-center relative">
+<div class="absolute inset-0 opacity-20 bg-tertiary"></div>
+<span class="material-symbols-outlined text-4xl text-tertiary" style="font-variation-settings: 'FILL' 1;">air</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline font-black text-xl text-on-surface">Jumper</h3>
+<p class="text-[10px] font-headline tracking-tighter text-tertiary uppercase font-bold">Yellow/Gale • Striped</p>
+</div>
+<div class="bg-surface-container-highest px-2 py-1 flex items-center gap-1">
+<span class="text-[10px] font-bold text-on-surface-variant">LV</span>
+<span class="font-headline font-bold text-tertiary">02</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="flex justify-between text-[8px] font-bold text-on-surface-variant mb-1">
+<span>XP PROGRESSION</span>
+<span>15%</span>
+</div>
+<div class="h-2 bg-surface-container-highest w-full relative">
+<div class="absolute top-0 left-0 h-full bg-tertiary w-[15%] segmented-progress"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-[1px] bg-outline-variant/10 border-t border-outline-variant/20">
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">STR</p>
+<p class="font-headline text-sm font-bold text-tertiary">04</p>
+</div>
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">AGI</p>
+<p class="font-headline text-sm font-bold text-tertiary">15</p>
+</div>
+<div class="bg-surface-container-low p-2 text-center">
+<p class="text-[8px] text-on-surface-variant font-bold">INT</p>
+<p class="font-headline text-sm font-bold text-tertiary">08</p>
+</div>
+</div>
+<div class="p-3 bg-surface-container-highest flex justify-between items-center">
+<div class="flex flex-col">
+<span class="text-[8px] text-on-surface-variant font-bold">CONTAINMENT STATUS</span>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Available</span>
+</div>
+<button class="bg-surface-container-low border border-primary text-primary px-4 py-1 font-headline font-bold text-xs uppercase tracking-tighter hover:bg-primary hover:text-on-primary transition-colors">STAGE</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Active Party Indicator (Floating Fixed Bottom) -->
+<div class="fixed bottom-20 left-0 w-full px-4 md:left-64 md:w-[calc(100%-16rem)] z-40">
+<div class="bg-[#131318]/90 backdrop-blur-md border-t-2 border-primary p-3 flex justify-between items-center shadow-2xl">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-[8px] font-black text-primary tracking-[0.2em] uppercase">Active Party</span>
+<span class="text-xl font-headline font-bold text-on-surface">2 <span class="text-on-surface-variant text-sm">/ 3</span></span>
+</div>
+<div class="flex gap-2">
+<div class="w-8 h-8 bg-error border border-error/50 flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-on-primary" style="font-variation-settings: 'FILL' 1;">mode_fan</span>
+</div>
+<div class="w-8 h-8 bg-secondary border border-secondary/50 flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-on-primary" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<div class="w-8 h-8 border-2 border-dashed border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-outline-variant">add</span>
+</div>
+</div>
+</div>
+<button class="bg-primary text-on-primary font-headline font-bold px-6 py-2 uppercase text-xs tracking-widest shadow-[0_0_15px_rgba(105,254,165,0.3)]">DEPLOY MISSION</button>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-[#0e0e13] border-t-2 border-[#25252c] md:hidden">
+<a class="flex flex-col items-center justify-center bg-[#131318] text-[#69fea5] p-2 border-t-2 border-[#69fea5]" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">ROSTER</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">MISSIONS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">MAP</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">LOGS</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BIO-MONITOR | WORLD SECTOR</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#005f33",
+                        "inverse-surface": "#fbf8ff",
+                        "on-error": "#490006",
+                        "on-background": "#f8f5fd",
+                        "tertiary-fixed-dim": "#74a2ff",
+                        "on-primary-container": "#003218",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-low": "#131318",
+                        "on-secondary-fixed-variant": "#883800",
+                        "on-surface": "#f8f5fd",
+                        "secondary": "#ff8844",
+                        "surface-bright": "#2b2b33",
+                        "on-primary-fixed": "#004a27",
+                        "surface-container-high": "#1f1f26",
+                        "surface-tint": "#69fea5",
+                        "outline": "#76747b",
+                        "tertiary-dim": "#6a9cff",
+                        "surface": "#0e0e13",
+                        "on-tertiary-fixed-variant": "#00367d",
+                        "tertiary-fixed": "#8bb0ff",
+                        "secondary-fixed-dim": "#ffb28b",
+                        "inverse-primary": "#006e3c",
+                        "tertiary-container": "#4488ff",
+                        "surface-container-highest": "#25252c",
+                        "primary": "#69fea5",
+                        "inverse-on-surface": "#55545a",
+                        "surface-variant": "#25252c",
+                        "on-tertiary-container": "#000311",
+                        "on-secondary-fixed": "#5b2300",
+                        "on-secondary": "#4b1c00",
+                        "on-secondary-container": "#fff6f3",
+                        "error-dim": "#d7383b",
+                        "surface-dim": "#0e0e13",
+                        "tertiary": "#6a9cff",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-fixed": "#ffc5a9",
+                        "primary-fixed": "#69fea5",
+                        "primary-dim": "#59ef98",
+                        "primary-fixed-dim": "#59ef98",
+                        "secondary-dim": "#f27e3b",
+                        "secondary-container": "#9e4300",
+                        "on-tertiary-fixed": "#00163b",
+                        "primary-container": "#14c16f",
+                        "error-container": "#9f0519",
+                        "outline-variant": "#48474d",
+                        "surface-container": "#19191f",
+                        "on-surface-variant": "#acaab1",
+                        "on-tertiary": "#001e4b",
+                        "on-primary-fixed-variant": "#006a3a",
+                        "background": "#0e0e13",
+                        "error": "#ff716c"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .ring-path {
+            background-image: radial-gradient(circle at center, transparent 60%, rgba(105, 254, 165, 0.05) 100%);
+        }
+        .industrial-grid {
+            background-image: radial-gradient(circle, #1f1f26 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-4 w-full h-16 bg-[#0e0e13] border-b-4 border-[#131318] fixed top-0 left-0 z-50">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest border border-primary">
+<img alt="User Profile" data-alt="Futuristic scientist profile avatar icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByN3PNKh32ZZoEMWacgm8Jb1AP42jYpOqrzTYazS_YSSHpJlEVs1x4DKndMI4eT918dXNA61oUoSaDVdWMjCzJcdig2gVXzCVVW3jHehYZ434VMeI6Q2HqeHTtn4Lwoe16Z8I42stYXKLWAeqN3Sht4McI9a_phRZrIruDiC53cRq7T70EQOf7KxIoH9mfy5imSPquzdBtbzzJMHGu5Oecbz7c485o6x9dy7GG8hu2Pl_GSxXRnezdGiBQeZbDT8SMqMGWqv__0Fg"/>
+</div>
+<h1 class="font-['Space_Grotesk'] uppercase tracking-wider font-bold text-[#69fea5] text-xl font-black">BIO-MONITOR</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#69fea5] transition-colors duration-200 hover:bg-[#25252c] p-2 cursor-pointer">settings</span>
+</div>
+</header>
+<div class="flex pt-16 min-h-screen pb-20 md:pb-0">
+<!-- NavigationDrawer (Hidden on mobile) -->
+<aside class="hidden md:flex w-72 h-[calc(100vh-64px)] bg-[#131318] sticky top-16 flex-col border-r border-outline-variant/20">
+<div class="p-6">
+<h2 class="font-['Space_Grotesk'] text-[#69fea5] font-bold text-xs tracking-widest uppercase opacity-60">SUBSYSTEMS</h2>
+</div>
+<nav class="flex flex-col gap-0.5 bg-[#0e0e13]">
+<a class="flex items-center gap-4 px-6 py-4 transition-all scale-95 active:scale-100 text-gray-400 bg-[#131318] hover:bg-[#1f1f26] font-['Space_Grotesk'] text-sm tracking-tight" href="#">
+<span class="material-symbols-outlined">science</span> COLLECTION/BREEDING
+                </a>
+<a class="flex items-center gap-4 px-6 py-4 transition-all scale-95 active:scale-100 text-gray-400 bg-[#131318] hover:bg-[#1f1f26] font-['Space_Grotesk'] text-sm tracking-tight" href="#">
+<span class="material-symbols-outlined">assignment</span> ACTIVE/QUEST BOARD
+                </a>
+<a class="flex items-center gap-4 px-6 py-4 transition-all scale-95 active:scale-100 bg-[#25252c] text-[#69fea5] border-l-2 border-[#69fea5] font-['Space_Grotesk'] text-sm tracking-tight" href="#">
+<span class="material-symbols-outlined">explore</span> WORLD SECTOR
+                </a>
+<a class="flex items-center gap-4 px-6 py-4 transition-all scale-95 active:scale-100 text-gray-400 bg-[#131318] hover:bg-[#1f1f26] font-['Space_Grotesk'] text-sm tracking-tight" href="#">
+<span class="material-symbols-outlined">terminal</span> SYSTEM LOGS
+                </a>
+</nav>
+<div class="mt-auto p-6 bg-surface-container-low border-t border-outline-variant/10">
+<div class="flex items-center justify-between text-[10px] font-mono text-primary/40 uppercase tracking-tighter">
+<span>Terminal Status</span>
+<span>Online</span>
+</div>
+</div>
+</aside>
+<!-- Main Content (Canvas) -->
+<main class="flex-1 industrial-grid relative">
+<div class="max-w-7xl mx-auto p-4 md:p-10">
+<!-- Section Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="h-1 w-8 bg-primary"></span>
+<span class="text-primary font-bold tracking-[0.2em] text-[10px] uppercase">Navigation Interface / Sector Map</span>
+</div>
+<h2 class="text-4xl md:text-5xl font-headline font-black text-on-surface uppercase tracking-tight">World Sector</h2>
+</div>
+<!-- Sub-Tabs -->
+<div class="flex bg-surface-container-low p-1 gap-1">
+<button class="px-6 py-2 text-xs font-bold uppercase bg-surface-container-highest text-primary border-b-2 border-primary">Zones</button>
+<button class="px-6 py-2 text-xs font-bold uppercase text-on-surface-variant hover:bg-surface-container-high transition-colors">Resources</button>
+<button class="px-6 py-2 text-xs font-bold uppercase text-on-surface-variant hover:bg-surface-container-high transition-colors">Anomalies</button>
+</div>
+</div>
+<!-- Ring-Based Map Layout -->
+<div class="space-y-16">
+<!-- RING 1: Inner Core -->
+<section>
+<div class="flex items-center gap-4 mb-6">
+<span class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border border-primary/30 text-primary font-bold text-xs">01</span>
+<h3 class="text-xl font-headline font-bold uppercase tracking-widest text-on-surface">Ring 1: Core Stabilized Zones</h3>
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+<span class="text-[10px] font-bold text-primary px-2 py-1 bg-primary/10 border border-primary/20">ACCESS GRANTED ✓</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Ember Foundry -->
+<div class="bg-surface-container-low border-l-4 border-error overflow-hidden group">
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-error/10 text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">DIFFICULTY: 03/10</span>
+</div>
+<h4 class="text-xl font-headline font-black text-on-surface uppercase mb-1">Ember Foundry</h4>
+<p class="text-xs text-on-surface-variant mb-6 uppercase tracking-wider">High Temperature Slime Habitat</p>
+<div class="space-y-4">
+<div class="h-1 bg-surface-container-highest flex">
+<div class="h-full bg-error w-3/10"></div>
+</div>
+<button class="w-full py-3 bg-error text-on-error font-headline font-bold text-xs uppercase hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                                            VIEW QUESTS <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tide Shallows -->
+<div class="bg-surface-container-low border-l-4 border-tertiary overflow-hidden group">
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">waves</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">DIFFICULTY: 02/10</span>
+</div>
+<h4 class="text-xl font-headline font-black text-on-surface uppercase mb-1">Tide Shallows</h4>
+<p class="text-xs text-on-surface-variant mb-6 uppercase tracking-wider">Aquatic Nutrient Estuary</p>
+<div class="space-y-4">
+<div class="h-1 bg-surface-container-highest flex">
+<div class="h-full bg-tertiary w-2/10"></div>
+</div>
+<button class="w-full py-3 bg-tertiary text-on-tertiary font-headline font-bold text-xs uppercase hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                                            VIEW QUESTS <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Gale Peaks -->
+<div class="bg-surface-container-low border-l-4 border-secondary overflow-hidden group">
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-secondary/10 text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">air</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">DIFFICULTY: 05/10</span>
+</div>
+<h4 class="text-xl font-headline font-black text-on-surface uppercase mb-1">Gale Peaks</h4>
+<p class="text-xs text-on-surface-variant mb-6 uppercase tracking-wider">Low Pressure Bio-Vents</p>
+<div class="space-y-4">
+<div class="h-1 bg-surface-container-highest flex">
+<div class="h-full bg-secondary w-5/10"></div>
+</div>
+<button class="w-full py-3 bg-secondary text-on-secondary font-headline font-bold text-xs uppercase hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                                            VIEW QUESTS <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- RING 2: Outer Perimeter -->
+<section>
+<div class="flex items-center gap-4 mb-6">
+<span class="flex items-center justify-center w-8 h-8 rounded-full bg-outline-variant/20 border border-outline-variant/30 text-outline-variant font-bold text-xs">02</span>
+<h3 class="text-xl font-headline font-bold uppercase tracking-widest text-on-surface opacity-80">Ring 2: Peripheral Outposts</h3>
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+<span class="text-[10px] font-bold text-secondary px-2 py-1 bg-secondary/10 border border-secondary/20">RESTRICTED ACCESS 🔒</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Crystal Caverns -->
+<div class="bg-surface-container-low border-l-4 border-tertiary-dim overflow-hidden group">
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-tertiary-dim/10 text-tertiary-dim">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pentagon</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">DIFFICULTY: 07/10</span>
+</div>
+<h4 class="text-xl font-headline font-black text-on-surface uppercase mb-1">Crystal Caverns</h4>
+<p class="text-xs text-on-surface-variant mb-6 uppercase tracking-wider">Subterranean Luminescence</p>
+<div class="space-y-4">
+<div class="h-1 bg-surface-container-highest flex">
+<div class="h-full bg-tertiary-dim w-7/10"></div>
+</div>
+<button class="w-full py-3 bg-tertiary-dim text-on-tertiary font-headline font-bold text-xs uppercase hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                                            VIEW QUESTS <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Marsh Mire (Locked) -->
+<div class="bg-surface-container-lowest/50 border-l-4 border-outline-variant overflow-hidden relative">
+<div class="absolute inset-0 flex items-center justify-center z-10 bg-surface/40 backdrop-blur-[2px]">
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-4xl text-outline">lock</span>
+<div class="px-3 py-1 bg-surface-container-highest border border-outline-variant text-[10px] font-bold text-primary uppercase">Requires Green Slime</div>
+</div>
+</div>
+<div class="p-6 opacity-30 grayscale">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-outline-variant/10 text-outline-variant">
+<span class="material-symbols-outlined">water_lux</span>
+</div>
+<span class="text-[10px] font-mono">DIFFICULTY: 08/10</span>
+</div>
+<h4 class="text-xl font-headline font-black uppercase mb-1">Marsh Mire</h4>
+<p class="text-xs uppercase mb-6">Decomposition Layer</p>
+<div class="h-1 bg-surface-container-highest"></div>
+</div>
+</div>
+<!-- Tundra Wastes (Locked) -->
+<div class="bg-surface-container-lowest/50 border-l-4 border-outline-variant overflow-hidden relative">
+<div class="absolute inset-0 flex items-center justify-center z-10 bg-surface/40 backdrop-blur-[2px]">
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-4xl text-outline">lock</span>
+<div class="px-3 py-1 bg-surface-container-highest border border-outline-variant text-[10px] font-bold text-error uppercase tracking-tighter">System Lockdown</div>
+</div>
+</div>
+<div class="p-6 opacity-30 grayscale">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-outline-variant/10 text-outline-variant">
+<span class="material-symbols-outlined">ac_unit</span>
+</div>
+<span class="text-[10px] font-mono">DIFFICULTY: 09/10</span>
+</div>
+<h4 class="text-xl font-headline font-black uppercase mb-1">Tundra Wastes</h4>
+<p class="text-xs uppercase mb-6">Cryogenic Containment</p>
+<div class="h-1 bg-surface-container-highest"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- RING 3: The Void (Deep Scan) -->
+<section class="opacity-40">
+<div class="flex items-center gap-4 mb-6">
+<span class="flex items-center justify-center w-8 h-8 rounded-full bg-error/10 border border-error/20 text-error font-bold text-xs">03</span>
+<h3 class="text-xl font-headline font-bold uppercase tracking-widest text-on-surface">Ring 3: Uncharted Sectors</h3>
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+</div>
+<div class="flex flex-col items-center justify-center py-20 bg-surface-container-low border-2 border-dashed border-outline-variant/20">
+<span class="material-symbols-outlined text-6xl text-outline-variant mb-4">radar</span>
+<p class="font-headline font-bold text-outline-variant uppercase tracking-[0.3em]">Sector Scanning in Progress</p>
+<p class="text-xs text-outline-variant/60 mt-2">Clear Ring 2 to deploy long-range probes</p>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+<!-- BottomNavBar (Visible on mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-[#0e0e13] border-t-2 border-[#25252c] shadow-2xl">
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white active:opacity-80 transition-all" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">ROSTER</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white active:opacity-80 transition-all" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">MISSIONS</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#131318] text-[#69fea5] p-2 border-t-2 border-[#69fea5] active:opacity-80 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">MAP</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 p-2 hover:text-white active:opacity-80 transition-all" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-['Space_Grotesk'] font-bold text-[10px] tracking-widest">LOGS</span>
+</a>
+</nav>
+</body></html>
