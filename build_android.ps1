@@ -13,8 +13,8 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-$Keystore  = "operatorgame-release.jks"
-$Alias     = "operatorgame"
+$Keystore   = "operatorgame-release.jks"
+$Alias      = "operatorgame"
 $ApkAligned = "operatorgame-release-aligned.apk"
 $ApkFinal   = "operatorgame-release.apk"
 
@@ -25,8 +25,8 @@ if ($GenerateKeys) {
         -alias $Alias `
         -keyalg RSA -keysize 2048 `
         -validity 10000
-    
-    Write-Host "⚠️ IMPORTANT: Backup $Keystore securely in 2+ locations! ⚠️" -ForegroundColor Yellow
+
+    Write-Host "IMPORTANT: Backup $Keystore securely in 2+ locations!" -ForegroundColor Yellow
     exit 0
 }
 
@@ -48,17 +48,17 @@ if ($null -eq $BuildToolsDir) {
     exit 1
 }
 
-$Zipalign = "$($BuildToolsDir.FullName)\zipalign.exe"
+$Zipalign  = "$($BuildToolsDir.FullName)\zipalign.exe"
 $Apksigner = "$($BuildToolsDir.FullName)\apksigner.bat"
 
-Write-Host "📦 Building and packaging APK with cargo apk..." -ForegroundColor Cyan
+Write-Host "Building and packaging APK with cargo apk..." -ForegroundColor Cyan
 
 # Purge stale APK output so discovery below finds only the new build
 Remove-Item -Recurse -Force "target\release\apk" -ErrorAction SilentlyContinue
 
 cargo apk build --release
 
-# Dynamic APK discovery — handles filename variations across cargo-apk versions
+# Dynamic APK discovery - handles filename variations across cargo-apk versions
 $ApkUnsigned = Get-ChildItem -Path "target\release\apk" -Filter "*.apk" -Recurse -ErrorAction SilentlyContinue |
     Select-Object -First 1 -ExpandProperty FullName
 
@@ -70,10 +70,10 @@ if (-not $ApkUnsigned) {
 
 Write-Host "  Found unsigned APK: $ApkUnsigned" -ForegroundColor DarkGray
 
-Write-Host "🔐 Aligning APK..." -ForegroundColor Cyan
+Write-Host "Aligning APK..." -ForegroundColor Cyan
 & $Zipalign -v -p 4 $ApkUnsigned $ApkAligned
 
-Write-Host "✍️ Signing APK via apksigner..." -ForegroundColor Cyan
+Write-Host "Signing APK via apksigner..." -ForegroundColor Cyan
 if (Test-Path $Apksigner) {
     & $Apksigner sign --ks $Keystore --out $ApkFinal $ApkAligned
 }
