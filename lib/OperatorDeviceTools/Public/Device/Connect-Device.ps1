@@ -8,6 +8,15 @@ function Connect-Device {
     <#
     .SYNOPSIS
     Establish and validate connection to Android device.
+    
+    .DESCRIPTION
+    - Auto-detects device if $Serial is not specified
+    - Verifies device is online and responsive
+    - Optionally launches app if $AutoLaunch is set
+    - Returns Device object or throws on failure
+    
+    .OUTPUTS
+    [Device] Connected device with validated state
     #>
     
     $adb = Resolve-AdbPath

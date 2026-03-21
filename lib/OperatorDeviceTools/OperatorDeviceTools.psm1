@@ -1,4 +1,4 @@
-# OperatorDeviceTools.psm1 — Unified Android Tools Subsystem
+# OperatorDeviceTools.psm1 - Unified Android Tools Subsystem
 
 #region Module Configuration
 $ModulePath = Split-Path -Parent $MyInvocation.MyCommand.Path

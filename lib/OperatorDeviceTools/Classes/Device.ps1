@@ -31,6 +31,6 @@ class Device {
     
     [string] ToString() {
         $gbStr = if ($this.StorageFreeGb) { "$($this.StorageFreeGb) GB free" } else { "Unknown storage" }
-        return "$($this.Serial) — $($this.Model) (API $($this.ApiLevel), $gbStr)"
+        return "$($this.Serial) - $($this.Model) (API $($this.ApiLevel), $gbStr)"
     }
 }

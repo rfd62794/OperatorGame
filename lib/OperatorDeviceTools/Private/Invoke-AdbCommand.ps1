@@ -12,7 +12,13 @@ function Invoke-AdbCommand {
     
     <#
     .SYNOPSIS
-    Execute ADB command securely with timeout validation.
+    Execute ADB command with error handling and timeout.
+    
+    .DESCRIPTION
+    - Ensures ADB daemon is running
+    - Applies timeout to long-running commands
+    - Parses stderr vs stdout intelligently
+    - Throws on failure unless $NoErrorCheck
     #>
     
     $adb = Resolve-AdbPath
