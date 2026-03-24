@@ -468,10 +468,6 @@ impl OperatorApp {
 
 impl eframe::App for OperatorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // SIMULATION: Force high-PPI to test narrow viewport reflow (Moto G 360dp)
-        // REMOVE BEFORE FINAL BUILD
-        ctx.set_pixels_per_point(3.0);
-
         let safe_area = crate::platform::read_window_insets();
 
         // Redraw every 100ms — animates progress bars without a background thread.
