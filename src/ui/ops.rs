@@ -21,29 +21,34 @@ impl OperatorApp {
                     ui.colored_label(aar.outcome_color, egui::RichText::new(&aar.outcome_label).size(18.0).strong());
                     ui.add_space(8.0);
                     
-                    ui.label(format!("Squad Experience Gained: {}", aar.xp_gained));
-                    if !aar.level_ups.is_empty() {
-                        ui.add_space(4.0);
-                        ui.label(egui::RichText::new("PROMOTIONS:").strong().color(egui::Color32::from_rgb(100, 200, 255)));
-                        for lvl in &aar.level_ups {
-                            ui.label(format!(" • {}", lvl));
-                        }
-                    }
+                    egui::ScrollArea::vertical()
+                        .max_height(300.0) // Constraint for mobile "feel"
+                        .auto_shrink([false; 2])
+                        .show(ui, |ui| {
+                            ui.label(format!("Squad Experience Gained: {}", aar.xp_gained));
+                            if !aar.level_ups.is_empty() {
+                                ui.add_space(4.0);
+                                ui.label(egui::RichText::new("PROMOTIONS:").strong().color(egui::Color32::from_rgb(100, 200, 255)));
+                                for lvl in &aar.level_ups {
+                                    ui.label(format!(" • {}", lvl));
+                                }
+                            }
 
-                    if !aar.injured_names.is_empty() {
-                        ui.add_space(4.0);
-                        ui.label(egui::RichText::new("CASUALTIES:").strong().color(egui::Color32::from_rgb(255, 100, 100)));
-                        for inj in &aar.injured_names {
-                            ui.label(format!(" • {} (Medical Leave)", inj));
-                        }
-                    }
+                            if !aar.injured_names.is_empty() {
+                                ui.add_space(4.0);
+                                ui.label(egui::RichText::new("CASUALTIES:").strong().color(egui::Color32::from_rgb(255, 100, 100)));
+                                for inj in &aar.injured_names {
+                                    ui.label(format!(" • {} (Medical Leave)", inj));
+                                }
+                            }
 
-                    ui.add_space(8.0);
-                    ui.collapsing("View Encounter Dice Rolls", |ui| {
-                        for roll in &aar.roll_lines {
-                            ui.label(roll);
-                        }
-                    });
+                            ui.add_space(8.0);
+                            ui.collapsing("View Encounter Dice Rolls", |ui| {
+                                for roll in &aar.roll_lines {
+                                    ui.label(roll);
+                                }
+                            });
+                        });
 
                     ui.add_space(16.0);
                     if ui.button(egui::RichText::new("ACKNOWLEDGE & DISMISS").size(14.0)).clicked() {
