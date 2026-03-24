@@ -259,8 +259,13 @@ fn test_f1b_13_combat_log_truncation() {
     app.state.missions.push(crate::models::Mission {
         id: app.state.deployments[0].mission_id,
         name: "Truncate Mission".to_string(),
-        description: "".to_string(),
+        req_strength: 0,
+        req_agility: 0,
+        req_intelligence: 0,
+        difficulty: 0.1,
+        duration_secs: 10,
         reward: 100,
+        affinity: None,
     });
     
     app.resolve_deployment(app.state.deployments[0].id);
