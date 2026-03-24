@@ -15,9 +15,9 @@ Write-Host "Serial Target: $($dev.Serial)"
 Write-Host "Daemon State:  $($dev.State)"
 Write-Host "Target Object: $($dev.ToString())"
 
-$pid = Is-AppRunning -Device $dev
-if ($pid) {
-    Write-Host "Game Client:   Online (Native PID: $pid)" -ForegroundColor Green
+$native_pid = Is-AppRunning -Device $dev
+if ($native_pid) {
+    Write-Host "Game Client:   Online (Native PID: $native_pid)" -ForegroundColor Green
 } else {
     Write-Host "Game Client:   Offline" -ForegroundColor Yellow
 }
