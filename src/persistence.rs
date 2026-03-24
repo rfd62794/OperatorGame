@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::genetics::GeneticTier;
 use crate::inventory::Inventory;
-use crate::models::{Deployment, Expedition, Mission};
+use crate::models::{Deployment, Expedition, LogEntry, Mission};
 use crate::world_map::WorldMap;
 
 // ---------------------------------------------------------------------------
@@ -90,8 +90,8 @@ impl IncubatingGenome {
 // ---------------------------------------------------------------------------
 
 /// Current save format version. Increment with every breaking schema change.
-/// v8 (Sprint 9): Operator struct (biological/operational separation)
-pub const SAVE_VERSION: u32 = 8;
+/// v9 (Sprint F.1b): combat_log moved from OperatorApp RAM into GameState
+pub const SAVE_VERSION: u32 = 9;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -141,6 +141,10 @@ pub struct GameState {
     /// UI state: Logs sub-tab
     #[serde(default)]
     pub logs_sub_tab: crate::platform::LogsSubTab,
+    /// Persisted mission/combat log. Replaces the old in-RAM Vec<String> on OperatorApp.
+    /// Capped at 50 entries; newest entry first.
+    #[serde(default)]
+    pub combat_log: Vec<LogEntry>,
 }
 
 impl Default for GameState {
@@ -163,6 +167,7 @@ impl Default for GameState {
             missions_sub_tab: crate::platform::MissionsSubTab::default(),
             map_sub_tab: crate::platform::MapSubTab::default(),
             logs_sub_tab: crate::platform::LogsSubTab::default(),
+            combat_log: Vec::new(),
         }
     }
 }
@@ -229,7 +234,6 @@ impl GameState {
             let prev_bank = self.bank;
             self.bank = (self.bank - cost).max(floor);
             actual_cost = prev_bank - self.bank;
-            println!("DEBUG: cost={}, floor={}, prev_bank={}, new_bank={}, actual_cost={}", cost, floor, prev_bank, self.bank, actual_cost);
             self.last_upkeep_at = now;
         }
 
@@ -273,7 +277,11 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
     let raw = fs::read_to_string(path)?;
     // v3 → v4 migration: rename culture_expr → culture_alleles on each slime
     let raw = migrate_v3_to_v4(&raw);
-    let state: GameState = serde_json::from_str(&raw)?;
+    let mut state: GameState = serde_json::from_str(&raw)?;
+    // v8 → v9 migration: combat_log moved from RAM into GameState.
+    // Existing saves won't have this field; serde(default) handles it,
+    // so no explicit migration needed beyond the field being present.
+    // Future breaking changes: add explicit migration arms here.
     Ok(state)
 }
 
