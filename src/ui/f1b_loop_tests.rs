@@ -15,9 +15,9 @@ fn setup_app_with_mission() -> OperatorApp {
         req_strength: 0,
         req_agility: 0,
         req_intelligence: 0,
-        difficulty: 0.1,
+        difficulty: 0.0,
         duration_secs: 10,
-        reward: 100,
+        reward: 10000,
         affinity: None,
     });
     app
