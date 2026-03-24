@@ -50,9 +50,14 @@ impl SafeArea {
 
     /// Shrink `screen` by the inset margins, returning the safe usable rect.
     pub fn apply(&self, screen: Rect) -> Rect {
+        let min_x = (screen.min.x + self.left).min(screen.max.x);
+        let min_y = (screen.min.y + self.top).min(screen.max.y);
+        let max_x = (screen.max.x - self.right).max(min_x);
+        let max_y = (screen.max.y - self.bottom).max(min_y);
+        
         Rect::from_min_max(
-            Pos2::new(screen.min.x + self.left,  screen.min.y + self.top),
-            Pos2::new(screen.max.x - self.right, screen.max.y - self.bottom),
+            Pos2::new(min_x, min_y),
+            Pos2::new(max_x, max_y),
         )
     }
 }
@@ -98,8 +103,8 @@ impl LayoutCalculator {
             Rect::from_min_size(Pos2::ZERO, screen_size)
         );
         Self {
-            screen_width:  safe_rect.width(),
-            screen_height: safe_rect.height(),
+            screen_width:  safe_rect.width().max(0.0),
+            screen_height: safe_rect.height().max(0.0),
             origin:        safe_rect.min,
         }
     }
