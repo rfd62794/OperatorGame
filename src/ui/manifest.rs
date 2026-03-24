@@ -26,8 +26,12 @@ impl OperatorApp {
                 ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
                 
                 for op in &self.state.slimes {
-                    if render_operator_card(ui, op, &staged, selected_mission_id, card_width) {
+                    let (stage_clicked, card_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
+                    if stage_clicked {
                         toggle_stage = Some(op.genome.id);
+                    }
+                    if card_clicked {
+                        self.selected_slime_id = Some(op.genome.id);
                     }
                 }
             });
@@ -168,23 +172,47 @@ impl OperatorApp {
     }
 
     pub(crate) fn render_slime_detail(&mut self, ui: &mut egui::Ui) {
-        ui.label("Slime Detail Panel (Under Construction)");
-        if ui.button("Back to Roster").clicked() {
+        if let Some(id) = self.selected_slime_id {
+            if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
+                // Task D.3 Render slide-in detail panel
+                ui.horizontal(|ui| {
+                    if ui.button("◀ Back to Roster").clicked() {
+                        self.selected_slime_id = None;
+                    }
+                    ui.label(egui::RichText::new(&op.genome.name).strong().size(18.0));
+                });
+                ui.separator();
+                
+                ui.heading("VITAL STATISTICS");
+                ui.label(format!("Level: {} (XP: {}/{})", op.level, op.total_xp, op.xp_to_next()));
+                ui.label(format!("Base HP: {}", op.genome.base_hp));
+                ui.label(format!("Base Mind: {}", op.genome.base_mind));
+                ui.add_space(8.0);
+                
+                ui.heading("CULTURAL GENOME");
+                ui.label(format!("Dominant: {:?}", op.genome.dominant_culture()));
+                ui.label(format!("Pattern: {:?}", op.genome.pattern));
+                
+                let expr = crate::genetics::culture_expression(&op.genome.culture_alleles);
+                render_culture_spectrum(ui, &expr, 0.8);
+            }
+        } else {
             self.selected_slime_id = None;
         }
     }
 }
 
 /// Renders an individual operator as a card (Phase F.1).
-/// Returns true if the [STAGE] button was clicked.
+/// Returns true if the [STAGE] button was clicked, and true if the card was tapped.
 fn render_operator_card(
     ui: &mut egui::Ui,
     op: &crate::models::Operator,
     staged: &std::collections::HashSet<uuid::Uuid>,
     _selected_mission_id: Option<uuid::Uuid>,
     card_width: f32,
-) -> bool {
-    let mut clicked = false;
+) -> (bool, bool) {
+    let mut stage_clicked = false;
+    let mut card_clicked = false;
     let genome = &op.genome;
     let is_staged = staged.contains(&genome.id);
     let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
@@ -219,7 +247,9 @@ fn render_operator_card(
             // Level & XP bar
             ui.horizontal(|ui| {
                 ui.label(format!("Lv: {}", op.level));
-                let xp_pct = (op.total_xp % 100) as f32 / 100.0;
+                let needed = op.xp_to_next().max(1) as f32;
+                let current_tier = (op.total_xp as f32) % needed;
+                let xp_pct = (current_tier / needed).clamp(0.0, 1.0);
                 ui.add(egui::ProgressBar::new(xp_pct).show_percentage().desired_height(4.0));
             });
 
@@ -238,7 +268,7 @@ fn render_operator_card(
 
             // HP and Stage Button
             ui.horizontal(|ui| {
-                let hp = 25; // Placeholder for HP math (ADR-037 logic uses current/max)
+                let hp = op.genome.base_hp; // Task C.2
                 ui.label(format!("HP:{}", hp));
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -253,13 +283,21 @@ fn render_operator_card(
                         let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
                         let btn = ui.add(egui::Button::new(btn_label).small());
                         if btn.clicked() {
-                            clicked = true;
+                            stage_clicked = true;
                         }
                     }
                 });
             });
         });
-    clicked
+
+    // Task D.1 Add click sense to card frame
+    let card_rect = response.response.rect;
+    let interact = ui.interact(card_rect, ui.id().with(op.id()), egui::Sense::click());
+    if interact.clicked() {
+        card_clicked = true;
+    }
+
+    (stage_clicked, card_clicked)
 }
 
 /// Helper for Sprint 6: Renders a segmented horizontal bar representing the Culture genome.
