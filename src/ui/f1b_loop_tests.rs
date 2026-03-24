@@ -10,11 +10,11 @@ use crate::ui::OperatorApp;
 fn test_f1b_01_recruit_sub_tab_initialization() {
     let mut app = OperatorApp::new_dummy();
     assert_eq!(app.active_tab, crate::platform::BottomTab::Roster);
-    assert_eq!(app.active_sub_tab(app.active_tab), 0); // Default is Manifest
+    assert_eq!(app.roster_sub_tab, crate::platform::RosterSubTab::Collection); // Default is Collection
     
     // Switch to Recruit tab
-    app.set_sub_tab(crate::platform::BottomTab::Roster, 2); // Recruit is idx 2
-    assert_eq!(app.active_sub_tab(crate::platform::BottomTab::Roster), 2);
+    app.roster_sub_tab = crate::platform::RosterSubTab::Recruit;
+    assert_eq!(app.roster_sub_tab, crate::platform::RosterSubTab::Recruit);
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
     app.launch_mission(mission);
     
     // Fast forward time
-    app.state.deployments[0].started_at -= Duration::hours(1);
+    app.state.deployments[0].completes_at -= Duration::hours(1);
     
     // Resolve manually as would happen in render_active_ops
     let dep_id = app.state.deployments[0].id;
@@ -84,7 +84,7 @@ fn test_f1b_05_aar_contains_xp_gained() {
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
-    app.state.deployments[0].started_at -= Duration::hours(1);
+    app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
     app.resolve_deployment(dep_id);
@@ -104,7 +104,7 @@ fn test_f1b_06_aar_awards_xp_to_operator() {
     
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
-    app.state.deployments[0].started_at -= Duration::hours(1);
+    app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
     app.resolve_deployment(dep_id);
@@ -127,7 +127,7 @@ fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
     
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
-    app.state.deployments[0].started_at -= Duration::hours(1);
+    app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
     app.resolve_deployment(dep_id); // This applies outcome AND resets state if no injury
@@ -146,7 +146,7 @@ fn test_f1b_08_log_entry_persisted_in_game_state() {
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
-    app.state.deployments[0].started_at -= Duration::hours(1);
+    app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
     let initial_log_count = app.state.combat_log.len();
@@ -176,7 +176,7 @@ fn test_f1b_09_operator_level_up_triggers_system_log() {
     
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
-    app.state.deployments[0].started_at -= Duration::hours(1);
+    app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
     app.resolve_deployment(dep_id);
