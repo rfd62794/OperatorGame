@@ -7,7 +7,7 @@ impl OperatorApp {
         ui.label(egui::RichText::new("── CARGO BAY ──").strong().size(14.0));
         ui.add_space(8.0);
         
-        egui::Grid::new("cargo_grid").num_columns(3).spacing([40.0, 16.0]).show(ui, |ui| {
+        egui::Grid::new("cargo_grid").num_columns(3).spacing([12.0, 12.0]).show(ui, |ui| {
             ui.label(egui::RichText::new("RESOURCE").strong().color(egui::Color32::GRAY));
             ui.label(egui::RichText::new("QUANTITY").strong().color(egui::Color32::GRAY));
             ui.label(egui::RichText::new("UTILITY").strong().color(egui::Color32::GRAY));
@@ -34,7 +34,7 @@ impl OperatorApp {
         ui.add_space(8.0);
         
         let buy_gear = |ui: &mut egui::Ui, state: &mut crate::persistence::GameState, gear: crate::models::Gear, cost: u64| {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(format!("{} (${})", gear.name(), cost));
                 let (s, a, i) = gear.stat_bonus();
                 let txt = if s > 0 { format!("+{} STR", s) } else if a > 0 { format!("+{} AGI", a) } else { format!("+{} INT", i) };

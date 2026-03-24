@@ -129,7 +129,7 @@ impl OperatorApp {
         ui.separator();
         
         if self.pending_aar.is_some() {
-            ui.horizontal(|ui| {
+            ui.horizontal(|ui| { // TODO: reflow if clips on narrow
                 ui.label(egui::RichText::new("Awaiting commander acknowledgment of AAR...").color(egui::Color32::YELLOW));
             });
             return;

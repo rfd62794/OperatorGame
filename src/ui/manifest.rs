@@ -71,7 +71,7 @@ impl OperatorApp {
                 .fill(egui::Color32::from_rgba_unmultiplied(20, 30, 40, 150))
                 .inner_margin(egui::Margin::same(8.0))
                 .show(ui, |ui| {
-                    ui.horizontal(|ui| {
+                    ui.horizontal(|ui| { // TODO: reflow if clips on narrow
                         ui.label(egui::RichText::new("🧪").size(24.0));
                         ui.vertical(|ui| {
                             ui.label(egui::RichText::new(format!("Synthesizing: {}", inc.operator.name())).strong());
@@ -273,7 +273,7 @@ fn render_operator_card(
             // Hard Stats
             let (s, a, i, _, _, _) = op.total_stats();
             ui.vertical(|ui| {
-                ui.horizontal(|ui| {
+                ui.horizontal(|ui| { // TODO: reflow if clips on narrow
                     ui.small(format!("STR:{}", s));
                     ui.add_space(4.0);
                     ui.small(format!("AGI:{}", a));

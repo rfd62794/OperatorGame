@@ -31,7 +31,7 @@ impl OperatorApp {
                 .show(ui, |ui| {
                     ui.label(egui::RichText::new(&mission.name).strong().size(14.0).color(egui::Color32::WHITE));
 
-                    ui.horizontal(|ui| {
+                    ui.horizontal_wrapped(|ui| {
                         if let Some(aff) = mission.affinity {
                             let (r, g, b) = crate::genetics::culture_display_color_standalone(aff);
                             ui.colored_label(egui::Color32::from_rgb(r, g, b), format!("[{aff:?}]"));
@@ -41,7 +41,7 @@ impl OperatorApp {
                         ui.label(egui::RichText::new(format!("INT:{}", mission.req_intelligence)).color(egui::Color32::LIGHT_GRAY));
                     });
 
-                    ui.horizontal(|ui| {
+                    ui.horizontal_wrapped(|ui| {
                         let diff_color = if mission.difficulty < 0.3 {
                             egui::Color32::from_rgb(80, 200, 120)
                         } else if mission.difficulty < 0.5 {

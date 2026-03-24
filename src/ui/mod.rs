@@ -577,7 +577,7 @@ impl eframe::App for OperatorApp {
                     })
             )
             .show(ctx, |ui| {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(
                     egui::RichText::new("OPERATOR: COMMAND DECK")
                         .strong()
