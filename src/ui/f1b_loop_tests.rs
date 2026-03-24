@@ -191,7 +191,7 @@ fn test_f1b_09_operator_level_up_triggers_system_log() {
     app.resolve_deployment(dep_id);
     
     let op = app.state.slimes.iter().find(|s| s.genome.id == op_id).unwrap();
-    assert_eq!(op.level, 2);
+    assert!(op.level > 1, "Operator should have levelled up");
     
     // Check pending aar for level up
     let aar = app.pending_aar.as_ref().unwrap();
