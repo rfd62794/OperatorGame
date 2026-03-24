@@ -193,7 +193,7 @@ impl OperatorApp {
                 ui.label(format!("Dominant: {:?}", op.genome.dominant_culture()));
                 ui.label(format!("Pattern: {:?}", op.genome.pattern));
                 
-                let expr = crate::genetics::culture_expression(&op.genome.culture_alleles);
+                let expr = op.genome.culture_alleles.dominant.0;
                 render_culture_spectrum(ui, &expr, 0.8);
             }
         } else {
