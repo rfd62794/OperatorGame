@@ -193,8 +193,8 @@ impl OperatorApp {
                     ui.add_space(8.0);
                     
                     ui.heading("CULTURAL GENOME");
-                    ui.label(egui::RichText::new(format!("Dominance: {:?}", op.genome.dominant_culture())).wrap(true));
-                    ui.label(egui::RichText::new(format!("Pattern: {:?}", op.genome.pattern)).wrap(true));
+                    ui.add(egui::Label::new(egui::RichText::new(format!("Dominance: {:?}", op.genome.dominant_culture()))).wrap(true));
+                    ui.add(egui::Label::new(egui::RichText::new(format!("Pattern: {:?}", op.genome.pattern))).wrap(true));
                     
                     let expr = op.genome.culture_alleles.dominant.0;
                     render_culture_spectrum(ui, &expr, 0.8);
