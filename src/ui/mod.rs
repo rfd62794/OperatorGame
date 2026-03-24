@@ -284,7 +284,7 @@ impl OperatorApp {
         let avg_mnd: f32 = squad.iter().map(|s| s.genome.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
         let mut narrative = generate_narrative(&outcome, &mission, &squad.iter().map(|o| &o.genome).collect::<Vec<_>>(), &mut rand::thread_rng());
         if dep.is_emergency {
-            narrative.push_str("\nFIELD OPS PROTOCOL \u00a77 ACTIVE: Personnel operating outside approved medical clearance. Deployment authorized with +15 Critical Stress Penalty.");
+            narrative.push_str("\nFIELD OPS PROTOCOL \u{00a7}7 ACTIVE: Personnel operating outside approved medical clearance. Deployment authorized with +15 Critical Stress Penalty.");
         }
         
         self.state.deployments[dep_idx].resolved = true;
@@ -373,7 +373,7 @@ impl OperatorApp {
         // Injured operator names for the result panel
         let injured_names: Vec<String> = newly_injured.iter()
             .filter_map(|(id, _)| self.state.slimes.iter().find(|s| s.genome.id == *id))
-            .map(|op| op.name().to_string())
+            .map(|op: &crate::models::Operator| op.name().to_string())
             .collect();
 
         // Push narrative log entry to GameState (persisted)
@@ -402,10 +402,10 @@ impl OperatorApp {
                 self.state.bank += *reward as i64;
                 
                 let debt_warning = if self.state.bank < 0 { 
-                    "\nNOTE: Current operational balance is negative. Deployment authorized under Emergency Continuity Protocol \u00a74.2."
+                    "\nNOTE: Current operational balance is negative. Deployment authorized under Emergency Continuity Protocol \u{00a7}4.2."
                 } else { "" };
 
-                self.status_msg = format!("\u2705 '{}' \u2014 VICTORY (+${}).{}", mission.name, reward, debt_warning);
+                self.status_msg = format!("\u{2705} '{}' \u{2014} VICTORY (+${}).{}", mission.name, reward, debt_warning);
                 
                 // Play Tide Bowl (Plate Resonance) based on pre-calculated Mind
                 let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
@@ -422,22 +422,22 @@ impl OperatorApp {
             }
             AarOutcome::Failure { .. } | AarOutcome::CriticalFailure { .. } => {
                 let is_crit = matches!(outcome, AarOutcome::CriticalFailure { .. });
-                let symbol = if is_crit { "\u2620" } else { "\u274c" };
+                let symbol = if is_crit { "\u{2620}" } else { "\u{274c}" };
                 let label = if is_crit { "CRITICAL FAILURE" } else { "FAILURE" };
 
                 if !newly_injured.is_empty() {
                     let (id, until) = newly_injured[0];
                     let op = self.state.slimes.iter().find(|s| s.genome.id == id);
-                    let name = op.map(|s| s.name()).unwrap_or("Operator");
+                    let name = op.map(|s: &crate::models::Operator| s.name()).unwrap_or("Operator");
                     
-                    let remaining = until - Utc::now();
+                    let remaining = until - chrono::Utc::now();
                     let h = remaining.num_hours();
                     let m = remaining.num_minutes() % 60;
                     
-                    self.status_msg = format!("{} '{}' \u2014 {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved. RTD estimated {}h {}m.", 
+                    self.status_msg = format!("{} '{}' \u{2014} {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved. RTD estimated {}h {}m.", 
                         symbol, mission.name, label, name, h, m);
                 } else {
-                    self.status_msg = format!("{} '{}' \u2014 {}. The squad retreated intact.", symbol, mission.name, label);
+                    self.status_msg = format!("{} '{}' \u{2014} {}. The squad retreated intact.", symbol, mission.name, label);
                 }
                 
                 let audio_event = if is_crit {
