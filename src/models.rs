@@ -440,20 +440,51 @@ impl std::fmt::Display for Mission {
 ///
 /// Each variant carries the three per-stat D20 rolls (STR / AGI / INT) so the
 /// narrative log can display individual check results.
+// ---------------------------------------------------------------------------
+// Log persistence types (Sprint F.1b Task F.1)
+// ---------------------------------------------------------------------------
+
+/// Outcome category for a persisted log entry — used for colour-coding in the
+/// Logs tab without resorting to string-search heuristics.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum LogOutcome {
+    Victory,
+    Failure,
+    CritFail,
+    System,
+}
+
+/// A persisted log line stored in `GameState.combat_log`.
+///
+/// Replaces the old in-RAM `Vec<String>` on `OperatorApp`. Includes a
+/// structured outcome so the Logs tab can colour entries without string search.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogEntry {
+    /// Unix timestamp (seconds) when the entry was created.
+    pub timestamp: u64,
+    /// Formatted human-readable message produced by `log_engine`.
+    pub message: String,
+    /// Category used for colour selection in the Logs tab.
+    pub outcome: LogOutcome,
+}
+
 #[derive(Debug, Clone)]
 pub enum AarOutcome {
     Victory {
         reward: u64,
         success_rate: f64,
         rolls: Vec<D20Result>,
+        xp_gained: u32,
     },
     Failure {
         injured_ids: Vec<Uuid>,
         rolls: Vec<D20Result>,
+        xp_gained: u32,
     },
     CriticalFailure {
         injured_ids: Vec<Uuid>,
         rolls: Vec<D20Result>,
+        xp_gained: u32,
     },
 }
 
@@ -549,16 +580,19 @@ impl Deployment {
                 reward: mission.reward,
                 success_rate: mission.calculate_success_rate(squad),
                 rolls,
+                xp_gained: 0, // Populated by resolve_deployment() after award_squad_xp()
             }
         } else if any_crit_fail && successes == 0 {
             AarOutcome::CriticalFailure {
                 injured_ids: Vec::new(), // Populated by apply_outcome_injuries
                 rolls,
+                xp_gained: 0, // Populated by resolve_deployment() after award_squad_xp()
             }
         } else {
             AarOutcome::Failure {
                 injured_ids: Vec::new(), // Populated by apply_outcome_injuries
                 rolls,
+                xp_gained: 0, // Populated by resolve_deployment() after award_squad_xp()
             }
         }
     }
@@ -980,7 +1014,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_victory_no_injury() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mut outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![] };
+        let mut outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![], xp_gained: 0 };
         let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let op = Operator::new(genome);
         let squad = vec![op.id()];
@@ -994,7 +1028,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_failure_10_percent_chance() {
         let mut rng = SmallRng::seed_from_u64(1); // Seed chosen to trigger the 10%
-        let outcome = AarOutcome::Failure { injured_ids: vec![], rolls: vec![] };
+        let outcome = AarOutcome::Failure { injured_ids: vec![], rolls: vec![], xp_gained: 0 };
         let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let op = Operator::new(genome);
         let squad = vec![op.id()];
@@ -1018,7 +1052,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_roster_guard_prevents_zero_available() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
+        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![], xp_gained: 0 };
         let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let mut op = Operator::new(genome);
         op.state = SlimeState::Deployed(Uuid::new_v4());
@@ -1055,7 +1089,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_crit_fail_squad_cap() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![] };
+        let mut outcome = AarOutcome::CriticalFailure { injured_ids: vec![], rolls: vec![], xp_gained: 0 };
         let id1 = Uuid::new_v4();
         let id2 = Uuid::new_v4();
         let id3 = Uuid::new_v4();
@@ -1132,12 +1166,12 @@ mod tests {
         let mut op = Operator::new(genome);
         op.total_xp = 195; // Level 1, near level 2
         
-        let outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![] };
+        let outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![], xp_gained: 0 };
         
         // Ember match: base 1 XP (100 / 100) + 25% = 1 XP (clamped)
         // Wait, reward 1000 -> base 10.
         // Let's use 1000 reward to get 12 XP.
-        let outcome = AarOutcome::Victory { reward: 1000, success_rate: 1.0, rolls: vec![] };
+        let outcome = AarOutcome::Victory { reward: 1000, success_rate: 1.0, rolls: vec![], xp_gained: 0 };
         let results = dep.award_squad_xp(&mission, &mut [&mut op], &outcome);
         
         assert_eq!(results[0].1, 12);
