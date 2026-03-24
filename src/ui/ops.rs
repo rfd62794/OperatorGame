@@ -7,6 +7,52 @@ use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_active_ops(&mut self, ui: &mut egui::Ui) {
+        // Task B.5: Render AAR Result panel if one is pending
+        if let Some(aar) = self.pending_aar.clone() {
+            ui.label(egui::RichText::new("── AFTER ACTION REPORT ──").strong().size(16.0));
+            ui.add_space(8.0);
+
+            egui::Frame::none()
+                .fill(egui::Color32::from_rgb(20, 20, 25))
+                .stroke(egui::Stroke::new(1.0, aar.outcome_color))
+                .inner_margin(egui::Margin::same(12.0))
+                .show(ui, |ui| {
+                    ui.heading(egui::RichText::new(&aar.mission_name).color(egui::Color32::WHITE));
+                    ui.colored_label(aar.outcome_color, egui::RichText::new(&aar.outcome_label).size(18.0).strong());
+                    ui.add_space(8.0);
+                    
+                    ui.label(format!("Squad Experience Gained: {}", aar.xp_gained));
+                    if !aar.level_ups.is_empty() {
+                        ui.add_space(4.0);
+                        ui.label(egui::RichText::new("PROMOTIONS:").strong().color(egui::Color32::from_rgb(100, 200, 255)));
+                        for lvl in &aar.level_ups {
+                            ui.label(format!(" • {}", lvl));
+                        }
+                    }
+
+                    if !aar.injured_names.is_empty() {
+                        ui.add_space(4.0);
+                        ui.label(egui::RichText::new("CASUALTIES:").strong().color(egui::Color32::from_rgb(255, 100, 100)));
+                        for inj in &aar.injured_names {
+                            ui.label(format!(" • {} (Medical Leave)", inj));
+                        }
+                    }
+
+                    ui.add_space(8.0);
+                    ui.collapsing("View Encounter Dice Rolls", |ui| {
+                        for roll in &aar.roll_lines {
+                            ui.label(roll);
+                        }
+                    });
+
+                    ui.add_space(16.0);
+                    if ui.button(egui::RichText::new("ACKNOWLEDGE & DISMISS").size(14.0)).clicked() {
+                        self.pending_aar = None;
+                    }
+                });
+            return;
+        }
+
         ui.label(egui::RichText::new("── ACTIVE OPERATIONS ──").strong().size(14.0));
         ui.add_space(4.0);
 
@@ -75,6 +121,14 @@ impl OperatorApp {
 
     pub(crate) fn render_launch_bar(&mut self, ui: &mut egui::Ui) {
         ui.separator();
+        
+        if self.pending_aar.is_some() {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("Awaiting commander acknowledgment of AAR...").color(egui::Color32::YELLOW));
+            });
+            return;
+        }
+        
         ui.horizontal(|ui| {
             if let Some(mission_id) = self.selected_mission {
                 let mission = self
