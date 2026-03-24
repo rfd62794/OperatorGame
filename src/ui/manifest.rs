@@ -173,10 +173,6 @@ impl OperatorApp {
             self.selected_slime_id = None;
         }
     }
-
-    pub(crate) fn render_recruit(&mut self, ui: &mut egui::Ui) {
-        ui.label("Recruitment Agency (Under Construction)");
-    }
 }
 
 /// Renders an individual operator as a card (Phase F.1).

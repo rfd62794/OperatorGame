@@ -277,7 +277,7 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
     let raw = fs::read_to_string(path)?;
     // v3 → v4 migration: rename culture_expr → culture_alleles on each slime
     let raw = migrate_v3_to_v4(&raw);
-    let mut state: GameState = serde_json::from_str(&raw)?;
+    let state: GameState = serde_json::from_str(&raw)?;
     // v8 → v9 migration: combat_log moved from RAM into GameState.
     // Existing saves won't have this field; serde(default) handles it,
     // so no explicit migration needed beyond the field being present.
