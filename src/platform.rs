@@ -126,7 +126,8 @@ impl LayoutCalculator {
     ///
     /// Sits immediately above the soft button inset within the safe area.
     pub fn bottom_tab_rect(&self, _safe_area: &SafeArea) -> egui::Rect {
-        let tab_height = 48.0; // Standard Android bottom nav height
+        // Standard Android bottom nav height — also exported as TAB_BAR_HEIGHT
+        let tab_height = TAB_BAR_HEIGHT;
         
         // Position tabs above soft button area at the bottom of the safe area.
         // Origin.y + screen_height is the bottom of the safe rect.
@@ -217,6 +218,12 @@ pub fn apply_interaction_scale(ctx: &egui::Context, layout: ResponsiveLayout) {
 // Bottom Tab Bar (Compact / Mobile)
 // ---------------------------------------------------------------------------
 
+/// Standard Android bottom navigation bar height in logical pixels.
+///
+/// Used by `LayoutCalculator::bottom_tab_rect()` and by `render_radar()` to
+/// subtract reserved chrome from the map's available draw height.
+pub const TAB_BAR_HEIGHT: f32 = 48.0;
+
 /// Tab bar height in logical pixels for the Compact layout.
 ///
 /// Sits immediately above the `safe_area.bottom` boundary:
@@ -262,7 +269,7 @@ impl BottomTab {
 pub enum RosterSubTab {
     Collection,   // All slimes, genetics tree
     Breeding,     // Pair selection, timers, hatch notifications
-    // Reserved for future expansion
+    Recruit,      // Recruitment agency — purchase_recruit / claim_elders_gift
 }
 
 impl Default for RosterSubTab {
