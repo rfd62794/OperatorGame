@@ -430,7 +430,7 @@ impl OperatorApp {
                     let op = self.state.slimes.iter().find(|s| s.genome.id == id);
                     let name = op.map(|s: &crate::models::Operator| s.name()).unwrap_or("Operator");
                     
-                    let remaining = until - chrono::Utc::now();
+                    let remaining = until - Utc::now();
                     let h = remaining.num_hours();
                     let m = remaining.num_minutes() % 60;
                     
