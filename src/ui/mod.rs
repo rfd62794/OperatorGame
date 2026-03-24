@@ -19,6 +19,9 @@ use crate::log_engine::{format_log_entry, generate_narrative};
 use crate::models::{AarOutcome, Deployment, LogEntry, LogOutcome, Mission, SlimeState};
 use crate::persistence::{save, GameState};
 
+#[cfg(test)]
+mod f1b_loop_tests;
+
 // ---------------------------------------------------------------------------
 // Stitch Design System — Color Tokens
 // ---------------------------------------------------------------------------

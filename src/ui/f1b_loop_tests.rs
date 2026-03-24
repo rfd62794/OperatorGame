@@ -1,19 +1,20 @@
 // tests/f1b_loop.rs
 
 use chrono::{Duration, Utc};
-use operator::models::{AarOutcome, AarSummary, LogOutcome, Operator, SlimeState};
-use operator::state::GameState;
-use operator::ui::OperatorApp;
+use crate::models::{AarOutcome, LogOutcome, Operator, SlimeState};
+use crate::ui::AarSummary;
+use crate::persistence::GameState;
+use crate::ui::OperatorApp;
 
 #[test]
 fn test_f1b_01_recruit_sub_tab_initialization() {
     let mut app = OperatorApp::default();
-    assert_eq!(app.active_tab, operator::platform::BottomTab::Roster);
+    assert_eq!(app.active_tab, crate::platform::BottomTab::Roster);
     assert_eq!(app.active_sub_tab(app.active_tab), 0); // Default is Manifest
     
     // Switch to Recruit tab
-    app.set_sub_tab(operator::platform::BottomTab::Roster, 2); // Recruit is idx 2
-    assert_eq!(app.active_sub_tab(operator::platform::BottomTab::Roster), 2);
+    app.set_sub_tab(crate::platform::BottomTab::Roster, 2); // Recruit is idx 2
+    assert_eq!(app.active_sub_tab(crate::platform::BottomTab::Roster), 2);
 }
 
 #[test]
@@ -22,10 +23,10 @@ fn test_f1b_02_recruit_slime_deducts_funds() {
     state.bank = 1000;
     
     let initial_count = state.slimes.len();
-    let id = operator::recruitment::purchase_recruit(&mut state, "Rookie").expect("Failed to draft");
+    let id = crate::recruitment::purchase_recruit(&mut state, "Rookie").expect("Failed to draft");
     
     assert_eq!(state.slimes.len(), initial_count + 1);
-    assert_eq!(state.bank, 1000 - operator::recruitment::STANDARD_RECRUIT_COST as i64);
+    assert_eq!(state.bank, 1000 - crate::recruitment::STANDARD_RECRUIT_COST as i64);
     assert!(state.slimes.iter().any(|s| s.genome.id == id));
 }
 
@@ -35,7 +36,7 @@ fn test_f1b_03_stage_and_launch_mission() {
     
     // Setup state
     app.state.bank = 1000;
-    let op_id = operator::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
+    let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
     let mission = app.state.missions[0].clone();
     
@@ -59,7 +60,7 @@ fn test_f1b_03_stage_and_launch_mission() {
 fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
     let mut app = OperatorApp::default();
     app.state.bank = 1000;
-    let op_id = operator::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
+    let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     let mission = app.state.missions[0].clone();
     
     app.staged_operators.insert(op_id);
@@ -80,7 +81,7 @@ fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
 fn test_f1b_05_aar_contains_xp_gained() {
     let mut app = OperatorApp::default();
     app.state.bank = 1000;
-    let op_id = operator::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
+    let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
     app.state.deployments[0].started_at -= Duration::hours(1);
@@ -96,7 +97,7 @@ fn test_f1b_05_aar_contains_xp_gained() {
 fn test_f1b_06_aar_awards_xp_to_operator() {
     let mut app = OperatorApp::default();
     app.state.bank = 1000;
-    let op_id = operator::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
+    let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
     // Record initial XP
     let initial_xp = app.state.slimes.iter().find(|s| s.genome.id == op_id).unwrap().total_xp;
@@ -116,7 +117,7 @@ fn test_f1b_06_aar_awards_xp_to_operator() {
 fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
     let mut app = OperatorApp::default();
     app.state.bank = 1000;
-    let op_id = operator::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
+    let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     
     // Make sure they have a lot of HP/stats so they don't get injured (likely victory)
     if let Some(op) = app.state.slimes.iter_mut().find(|s| s.genome.id == op_id) {
@@ -142,7 +143,7 @@ fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
 fn test_f1b_08_log_entry_persisted_in_game_state() {
     let mut app = OperatorApp::default();
     app.state.bank = 1000;
-    let op_id = operator::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
+    let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
     app.state.deployments[0].started_at -= Duration::hours(1);
@@ -165,7 +166,7 @@ fn test_f1b_08_log_entry_persisted_in_game_state() {
 fn test_f1b_09_operator_level_up_triggers_system_log() {
     let mut app = OperatorApp::default();
     app.state.bank = 1000;
-    let op_id = operator::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
+    let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
     // Put operator right on the brink of levelling up
     if let Some(op) = app.state.slimes.iter_mut().find(|s| s.genome.id == op_id) {
@@ -217,7 +218,7 @@ fn test_f1b_10_dismissing_aar_clears_pending_state() {
 #[test]
 fn test_f1b_11_radar_tab_bar_height_constant_exists() {
     // E.1 Ensure TAB_BAR_HEIGHT constant exported from platform.rs
-    let h = operator::platform::TAB_BAR_HEIGHT;
+    let h = crate::platform::TAB_BAR_HEIGHT;
     assert_eq!(h, 48.0);
 }
 
@@ -237,7 +238,7 @@ fn test_f1b_13_combat_log_truncation() {
     
     // Fill the combat log beyond 50 entries
     for i in 0..60 {
-        app.state.combat_log.insert(0, operator::models::LogEntry {
+        app.state.combat_log.insert(0, crate::models::LogEntry {
             timestamp: i,
             message: format!("Log {}", i),
             outcome: LogOutcome::System,
@@ -245,7 +246,7 @@ fn test_f1b_13_combat_log_truncation() {
     }
     
     // Mock a deployment resolution to trigger truncate
-    app.state.deployments.push(operator::models::Deployment {
+    app.state.deployments.push(crate::models::Deployment {
         id: uuid::Uuid::new_v4(),
         mission_id: uuid::Uuid::new_v4(), // Won't resolve if mission missing, so we inject
         operator_ids: vec![],
