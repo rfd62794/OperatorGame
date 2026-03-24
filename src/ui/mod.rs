@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 use crate::garden::Garden;
 use crate::log_engine::{format_log_entry, generate_narrative};
-use crate::models::{AarOutcome, Deployment, Mission, SlimeState};
+use crate::models::{AarOutcome, Deployment, LogEntry, LogOutcome, Mission, SlimeState};
 use crate::persistence::{save, GameState};
 
 // ---------------------------------------------------------------------------
@@ -42,6 +42,19 @@ pub mod radar;
 // App State
 // ---------------------------------------------------------------------------
 
+/// Summary of a resolved AAR result — stored on OperatorApp so the panel
+/// persists across tab switches until the player taps DISMISS.
+#[derive(Debug, Clone)]
+pub struct AarSummary {
+    pub mission_name: String,
+    pub outcome_label: String,
+    pub outcome_color: egui::Color32,
+    pub xp_gained: u32,
+    pub level_ups: Vec<String>,     // "{name} reached Level {n}"
+    pub roll_lines: Vec<String>,    // compact per-roll summary
+    pub injured_names: Vec<String>, // names of newly-injured operators
+}
+
 pub struct OperatorApp {
     state: GameState,
     save_path: PathBuf,
@@ -51,12 +64,12 @@ pub struct OperatorApp {
     staged_operators: HashSet<Uuid>,
     /// One-line feedback shown at the bottom of the screen.
     status_msg: String,
-    /// Scrollable narrative log. New entries prepended (newest first).
-    combat_log: Vec<String>,
     /// The living Shepherd's Garden background simulation.
     garden: Garden,
-    /// Slime selected via clicking the garden.
+    /// Slime selected via clicking a roster card — opens the detail panel.
     pub selected_slime_id: Option<Uuid>,
+    /// Pending AAR result displayed after PROCESS AAR until DISMISS is tapped.
+    pub pending_aar: Option<AarSummary>,
     /// Which panel is active on the left: Roster (Manifest) or Incubator.
     pub left_tab: LeftTab,
     /// Which panel is active on the right: Contracts or Radar.
@@ -109,9 +122,9 @@ impl OperatorApp {
             selected_mission: None,
             staged_operators: HashSet::new(),
             status_msg: String::from("Welcome to OPERATOR. Select a contract, then stage your squad."),
-            combat_log: Vec::new(),
             garden,
             selected_slime_id: None,
+            pending_aar: None,
             left_tab: LeftTab::Manifest,
             right_tab: RightTab::Contracts,
             mobile_tab: MobileTab::Manifest,
@@ -135,9 +148,9 @@ impl OperatorApp {
             selected_mission: None,
             staged_operators: HashSet::new(),
             status_msg: String::new(),
-            combat_log: Vec::new(),
             garden,
             selected_slime_id: None,
+            pending_aar: None,
             left_tab: LeftTab::Manifest,
             right_tab: RightTab::Contracts,
             mobile_tab: MobileTab::Manifest,
@@ -242,9 +255,7 @@ impl OperatorApp {
         self.staged_operators.clear();
         self.selected_mission = None;
         self.persist();
-    }
-
-    fn resolve_deployment(&mut self, dep_id: Uuid) {
+     fn resolve_deployment(&mut self, dep_id: Uuid) {
         let dep_idx = self.state.deployments.iter().position(|d| d.id == dep_id);
         let Some(dep_idx) = dep_idx else { return; };
 
@@ -271,17 +282,14 @@ impl OperatorApp {
         let avg_mnd: f32 = squad.iter().map(|s| s.genome.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
         let mut narrative = generate_narrative(&outcome, &mission, &squad.iter().map(|o| &o.genome).collect::<Vec<_>>(), &mut rand::thread_rng());
         if dep.is_emergency {
-            narrative.push_str("\nFIELD OPS PROTOCOL §7 ACTIVE: Personnel operating outside approved medical clearance. Deployment authorized with +15 Critical Stress Penalty.");
+            narrative.push_str("\nFIELD OPS PROTOCOL \u00a77 ACTIVE: Personnel operating outside approved medical clearance. Deployment authorized with +15 Critical Stress Penalty.");
         }
         
-        // Drop the immutable borrow by finishing use of squad
-        let log_entry = format_log_entry(&mission.name, &outcome, &narrative);
-        self.combat_log.insert(0, log_entry); // newest first
-        if self.combat_log.len() > 50 { self.combat_log.truncate(50); }
-
         self.state.deployments[dep_idx].resolved = true;
 
-        // Sprint 8: Award XP to the squad
+        // Sprint 8/F.1b: Award XP to the squad; capture total and level-ups
+        let mut total_xp_gained: u32 = 0;
+        let mut level_ups: Vec<String> = Vec::new();
         {
             let mut mut_squad: Vec<&mut crate::models::Operator> = self
                 .state
@@ -291,18 +299,32 @@ impl OperatorApp {
                 .collect();
                 
             let xp_results = dep.award_squad_xp(&mission, &mut mut_squad, &outcome);
-            for (id, _xp, leveled) in xp_results {
+            for (id, xp, leveled) in xp_results {
+                total_xp_gained += xp;
                 if leveled {
                     if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
-                        let msg = format!(">> EXCELLENCE RECOGNIZED: {} has reached Level {}!", op.name(), op.level);
-                        self.combat_log.insert(0, msg);
+                        let msg = format!("{} has reached Level {}!", op.name(), op.level);
+                        level_ups.push(msg.clone());
+                        // Also push a system log entry
+                        let sys_entry = LogEntry {
+                            timestamp: chrono::Utc::now().timestamp() as u64,
+                            message: format!(">> EXCELLENCE RECOGNIZED: {}", msg),
+                            outcome: LogOutcome::System,
+                        };
+                        self.state.combat_log.insert(0, sys_entry);
                     }
                 }
             }
         }
 
+        // Stamp xp_gained on the outcome before injury resolution
+        match &mut outcome {
+            AarOutcome::Victory { xp_gained, .. } => *xp_gained = total_xp_gained,
+            AarOutcome::Failure { xp_gained, .. } => *xp_gained = total_xp_gained,
+            AarOutcome::CriticalFailure { xp_gained, .. } => *xp_gained = total_xp_gained,
+        }
+
         // Phase A: Apply injuries (probabilistic)
-        // This requires &mut self.state.slimes
         let newly_injured = crate::models::apply_outcome_injuries(
             &mut outcome,
             &mut self.state.slimes,
@@ -311,15 +333,77 @@ impl OperatorApp {
         );
         let newly_injured_ids: Vec<Uuid> = newly_injured.iter().map(|(id, _)| *id).collect();
 
-        match outcome {
-            AarOutcome::Victory { reward, success_rate: _, .. } => {
-                self.state.bank += reward as i64;
+        // Build the AAR summary for the result panel
+        let (outcome_label, outcome_color, log_outcome) = match &outcome {
+            AarOutcome::Victory { reward, .. } => (
+                format!("VICTORY (+${})", reward),
+                egui::Color32::from_rgb(80, 200, 120),
+                LogOutcome::Victory,
+            ),
+            AarOutcome::CriticalFailure { .. } => (
+                "CRITICAL FAILURE".to_string(),
+                egui::Color32::from_rgb(220, 80, 80),
+                LogOutcome::CritFail,
+            ),
+            AarOutcome::Failure { .. } => (
+                "FAILURE".to_string(),
+                egui::Color32::from_rgb(220, 180, 80),
+                LogOutcome::Failure,
+            ),
+        };
+
+        // Build roll summary lines
+        let roll_lines: Vec<String> = {
+            let rolls = match &outcome {
+                AarOutcome::Victory { rolls, .. } => rolls,
+                AarOutcome::Failure { rolls, .. } => rolls,
+                AarOutcome::CriticalFailure { rolls, .. } => rolls,
+            };
+            let labels = ["STR", "AGI", "INT"];
+            rolls.iter().enumerate().map(|(i, r)| {
+                let label = labels.get(i).copied().unwrap_or("?");
+                let result = if r.success { "HIT" } else { "MISS" };
+                let nat = if r.nat_twenty { " (NAT20!)" } else if r.nat_one { " (NAT1)" } else { "" };
+                format!("{} {}: {} d={}{}", label, r.roll, result, r.dc, nat)
+            }).collect()
+        };
+
+        // Injured operator names for the result panel
+        let injured_names: Vec<String> = newly_injured.iter()
+            .filter_map(|(id, _)| self.state.slimes.iter().find(|s| s.genome.id == *id))
+            .map(|op| op.name().to_string())
+            .collect();
+
+        // Push narrative log entry to GameState (persisted)
+        let log_message = format_log_entry(&mission.name, &outcome, &narrative);
+        let log_entry = LogEntry {
+            timestamp: chrono::Utc::now().timestamp() as u64,
+            message: log_message,
+            outcome: log_outcome,
+        };
+        self.state.combat_log.insert(0, log_entry);
+        if self.state.combat_log.len() > 50 { self.state.combat_log.truncate(50); }
+
+        // Store the pending AAR for display
+        self.pending_aar = Some(AarSummary {
+            mission_name: mission.name.clone(),
+            outcome_label: outcome_label.clone(),
+            outcome_color,
+            xp_gained: total_xp_gained,
+            level_ups,
+            roll_lines,
+            injured_names,
+        });
+
+        match &outcome {
+            AarOutcome::Victory { reward, .. } => {
+                self.state.bank += *reward as i64;
                 
                 let debt_warning = if self.state.bank < 0 { 
-                    "\nNOTE: Current operational balance is negative. Deployment authorized under Emergency Continuity Protocol §4.2."
+                    "\nNOTE: Current operational balance is negative. Deployment authorized under Emergency Continuity Protocol \u00a74.2."
                 } else { "" };
 
-                self.status_msg = format!("✅ '{}' — VICTORY (+${}).{}", mission.name, reward, debt_warning);
+                self.status_msg = format!("\u2705 '{}' \u2014 VICTORY (+${}).{}", mission.name, reward, debt_warning);
                 
                 // Play Tide Bowl (Plate Resonance) based on pre-calculated Mind
                 let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
@@ -336,7 +420,7 @@ impl OperatorApp {
             }
             AarOutcome::Failure { .. } | AarOutcome::CriticalFailure { .. } => {
                 let is_crit = matches!(outcome, AarOutcome::CriticalFailure { .. });
-                let symbol = if is_crit { "☠" } else { "❌" };
+                let symbol = if is_crit { "\u2620" } else { "\u274c" };
                 let label = if is_crit { "CRITICAL FAILURE" } else { "FAILURE" };
 
                 if !newly_injured.is_empty() {
@@ -348,10 +432,10 @@ impl OperatorApp {
                     let h = remaining.num_hours();
                     let m = remaining.num_minutes() % 60;
                     
-                    self.status_msg = format!("{} '{}' — {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved. RTD estimated {}h {}m.", 
+                    self.status_msg = format!("{} '{}' \u2014 {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved. RTD estimated {}h {}m.", 
                         symbol, mission.name, label, name, h, m);
                 } else {
-                    self.status_msg = format!("{} '{}' — {}. The squad retreated intact.", symbol, mission.name, label);
+                    self.status_msg = format!("{} '{}' \u2014 {}. The squad retreated intact.", symbol, mission.name, label);
                 }
                 
                 let audio_event = if is_crit {
@@ -370,6 +454,8 @@ impl OperatorApp {
         }
 
         self.persist();
+    }
+}f.persist();
     }
 }
 
@@ -406,7 +492,12 @@ impl eframe::App for OperatorApp {
         }
         for name in cleared_names {
             let msg = format!("{} has been cleared for deployment by Medical.", name);
-            self.combat_log.insert(0, msg);
+            let entry = LogEntry {
+                timestamp: chrono::Utc::now().timestamp() as u64,
+                message: msg.clone(),
+                outcome: LogOutcome::System,
+            };
+            self.state.combat_log.insert(0, entry);
             self.status_msg = format!("{} cleared for duty.", name);
         }
 
@@ -414,14 +505,24 @@ impl eframe::App for OperatorApp {
         let (deducted, idle_count) = self.state.apply_daily_upkeep(Utc::now());
         if deducted > 0 {
             let msg = format!("Deducted ${} in maintenance costs for {} idle operator(s).", deducted, idle_count);
-            self.combat_log.insert(0, msg);
+            let entry = LogEntry {
+                timestamp: chrono::Utc::now().timestamp() as u64,
+                message: msg,
+                outcome: LogOutcome::System,
+            };
+            self.state.combat_log.insert(0, entry);
             self.persist();
         }
 
         // Sprint 8: Refresh mission pool
         if self.state.refresh_missions_if_needed(Utc::now()) {
             let msg = format!("MISSION POOL REFRESHED: New contracts available for {} UTC.", Utc::now().date_naive());
-            self.combat_log.insert(0, msg);
+            let entry = LogEntry {
+                timestamp: chrono::Utc::now().timestamp() as u64,
+                message: msg,
+                outcome: LogOutcome::System,
+            };
+            self.state.combat_log.insert(0, entry);
             self.persist();
         }
 
@@ -509,48 +610,28 @@ impl eframe::App for OperatorApp {
             });
         });
 
-        // Combat log panel — sits above the launch bar
-        if self.active_tab == crate::platform::BottomTab::Missions {
-            egui::TopBottomPanel::bottom("combat_log_panel")
-                .resizable(true)
-                .min_height(80.0)
-                .max_height(200.0)
-                .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new("── COMBAT LOG ──").strong());
-                        if !self.combat_log.is_empty() {
-                            if ui.small_button("Clear").clicked() {
-                                self.combat_log.clear();
-                            }
-                        }
-                    });
-                egui::ScrollArea::vertical()
-                    .id_source("combat_log_scroll")
-                    .stick_to_bottom(false)
-                    .show(ui, |ui| {
-                        if self.combat_log.is_empty() {
-                            ui.label(
-                                egui::RichText::new("No actions yet. Deploy a squad to begin.")
-                                    .color(egui::Color32::GRAY)
-                                    .italics(),
-                            );
-                        } else {
-                            for entry in &self.combat_log {
-                                let color = if entry.contains("VICTORY") {
-                                    egui::Color32::from_rgb(80, 200, 120)
-                                } else if entry.contains("CRITICAL") {
-                                    egui::Color32::from_rgb(220, 80, 80)
-                                } else {
-                                    egui::Color32::YELLOW
+            // Combat log panel — sits above the launch bar
+            if self.active_tab == crate::platform::BottomTab::Missions {
+                // Missions tab: show a compact last-result line if no pending AAR
+                if self.pending_aar.is_none() && !self.state.combat_log.is_empty() {
+                    egui::TopBottomPanel::bottom("combat_log_panel")
+                        .resizable(true)
+                        .min_height(40.0)
+                        .max_height(120.0)
+                        .show(ctx, |ui| {
+                            ui.label(egui::RichText::new("── LAST ACTION ──").strong());
+                            if let Some(entry) = self.state.combat_log.first() {
+                                let color = match entry.outcome {
+                                    LogOutcome::Victory => egui::Color32::from_rgb(80, 200, 120),
+                                    LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
+                                    LogOutcome::Failure => egui::Color32::from_rgb(220, 180, 80),
+                                    LogOutcome::System => egui::Color32::from_rgb(160, 160, 180),
                                 };
-                                ui.colored_label(color, entry);
+                                ui.colored_label(color, &entry.message);
                             }
-                        }
-                    });
-            });
-
-            // Bottom launch / status bar
-            egui::TopBottomPanel::bottom("bottom_bar")
+                        });
+                }
+            }
                 .frame(
                     egui::Frame::none()
                         .inner_margin(egui::Margin {
@@ -689,10 +770,18 @@ impl eframe::App for OperatorApp {
                                 match self.active_tab {
                                     crate::platform::BottomTab::Roster => match self.roster_sub_tab {
                                         crate::platform::RosterSubTab::Collection => {
-                                            self.render_manifest(ui);
+                                            // If a slime is selected, show detail view; otherwise card grid
+                                            if self.selected_slime_id.is_some() {
+                                                self.render_slime_detail(ui);
+                                            } else {
+                                                self.render_manifest(ui);
+                                            }
                                         }
                                         crate::platform::RosterSubTab::Breeding => {
                                             self.render_incubator(ui);
+                                        }
+                                        crate::platform::RosterSubTab::Recruit => {
+                                            self.render_recruit(ui);
                                         }
                                     },
                                     crate::platform::BottomTab::Missions => match self.missions_sub_tab {
@@ -710,15 +799,22 @@ impl eframe::App for OperatorApp {
                                     },
                                     crate::platform::BottomTab::Logs => match self.logs_sub_tab {
                                         crate::platform::LogsSubTab::MissionHistory => {
-                                            for entry in &self.combat_log {
-                                                let color = if entry.contains("VICTORY") {
-                                                    egui::Color32::from_rgb(80, 200, 120)
-                                                } else if entry.contains("CRITICAL") {
-                                                    egui::Color32::from_rgb(220, 80, 80)
-                                                } else {
-                                                    egui::Color32::YELLOW
-                                                };
-                                                ui.colored_label(color, entry);
+                                            if self.state.combat_log.is_empty() {
+                                                ui.label(
+                                                    egui::RichText::new("No mission history. Deploy your first squad to begin.")
+                                                        .color(egui::Color32::GRAY)
+                                                        .italics(),
+                                                );
+                                            } else {
+                                                for entry in &self.state.combat_log {
+                                                    let color = match entry.outcome {
+                                                        LogOutcome::Victory  => egui::Color32::from_rgb(100, 220, 100),
+                                                        LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
+                                                        LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
+                                                        LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
+                                                    };
+                                                    ui.colored_label(color, &entry.message);
+                                                }
                                             }
                                         }
                                         crate::platform::LogsSubTab::CultureHistory => {
@@ -809,6 +905,14 @@ fn render_sub_tabs(
                     app.roster_sub_tab == crate::platform::RosterSubTab::Breeding,
                 ) {
                     app.roster_sub_tab = crate::platform::RosterSubTab::Breeding;
+                }
+
+                if sub_tab_button(
+                    ui,
+                    "Recruit",
+                    app.roster_sub_tab == crate::platform::RosterSubTab::Recruit,
+                ) {
+                    app.roster_sub_tab = crate::platform::RosterSubTab::Recruit;
                 }
             }
 
