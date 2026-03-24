@@ -255,7 +255,9 @@ impl OperatorApp {
         self.staged_operators.clear();
         self.selected_mission = None;
         self.persist();
-     fn resolve_deployment(&mut self, dep_id: Uuid) {
+    }
+
+    fn resolve_deployment(&mut self, dep_id: Uuid) {
         let dep_idx = self.state.deployments.iter().position(|d| d.id == dep_id);
         let Some(dep_idx) = dep_idx else { return; };
 
