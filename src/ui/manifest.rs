@@ -175,7 +175,8 @@ impl OperatorApp {
         if let Some(id) = self.selected_slime_id {
             if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
                 // Task D.3 Render slide-in detail panel
-                ui.horizontal(|ui| {
+                // Header area: wrap if name is long
+                ui.horizontal_wrapped(|ui| {
                     if ui.button("◀ Back").clicked() {
                         self.selected_slime_id = None;
                     }
@@ -187,9 +188,23 @@ impl OperatorApp {
                     ui.set_max_width(ui.available_width());
                     
                     ui.heading("VITAL STATISTICS");
-                    ui.label(format!("Level: {} (XP: {}/{})", op.level, op.total_xp, op.xp_to_next()));
-                    ui.label(format!("Base HP: {}", op.genome.base_hp));
-                    ui.label(format!("Base Mind: {}", op.genome.base_mind));
+                    egui::Grid::new("slime_stats_grid")
+                        .num_columns(2)
+                        .spacing([20.0, 4.0])
+                        .show(ui, |ui| {
+                            ui.label("Level:");
+                            ui.label(format!("{} (XP: {}/{})", op.level, op.total_xp, op.xp_to_next()));
+                            ui.end_row();
+
+                            ui.label("Base HP:");
+                            ui.label(format!("{}", op.genome.base_hp));
+                            ui.end_row();
+
+                            ui.label("Base Mind:");
+                            ui.label(format!("{}", op.genome.base_mind));
+                            ui.end_row();
+                        });
+                    
                     ui.add_space(8.0);
                     
                     ui.heading("CULTURAL GENOME");
