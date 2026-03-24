@@ -304,7 +304,7 @@ impl OperatorApp {
             for (id, xp, leveled) in xp_results {
                 total_xp_gained += xp;
                 if leveled {
-                    if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
+                    if let Some(op) = self.state.slimes.iter().find(|s: &&crate::models::Operator| s.genome.id == id) {
                         let msg = format!("{} has reached Level {}!", op.name(), op.level);
                         level_ups.push(msg.clone());
                         // Also push a system log entry
@@ -321,9 +321,9 @@ impl OperatorApp {
 
         // Stamp xp_gained on the outcome before injury resolution
         match &mut outcome {
-            AarOutcome::Victory { xp_gained, .. } => *xp_gained = total_xp_gained,
-            AarOutcome::Failure { xp_gained, .. } => *xp_gained = total_xp_gained,
-            AarOutcome::CriticalFailure { xp_gained, .. } => *xp_gained = total_xp_gained,
+            AarOutcome::Victory { ref mut xp_gained, .. } => *xp_gained = total_xp_gained,
+            AarOutcome::Failure { ref mut xp_gained, .. } => *xp_gained = total_xp_gained,
+            AarOutcome::CriticalFailure { ref mut xp_gained, .. } => *xp_gained = total_xp_gained,
         }
 
         // Phase A: Apply injuries (probabilistic)
@@ -366,7 +366,7 @@ impl OperatorApp {
                 let label = labels.get(i).copied().unwrap_or("?");
                 let result = if r.success { "HIT" } else { "MISS" };
                 let nat = if r.nat_twenty { " (NAT20!)" } else if r.nat_one { " (NAT1)" } else { "" };
-                format!("{} {}: {} d={}{}", label, r.roll, result, r.dc, nat)
+                format!("{} {}: {} d={}{}", label, r.rolls, result, r.dc, nat)
             }).collect()
         };
 
