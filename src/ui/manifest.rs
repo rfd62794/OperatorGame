@@ -253,11 +253,9 @@ fn render_operator_card(
             ui.set_width(card_width); // Card width with responsive calculation
             
             // Header: Name and Culture
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(egui::RichText::new(&genome.name).strong().color(color));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).small().color(color));
-                });
+                ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).small().color(color));
             });
 
             // Pattern

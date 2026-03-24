@@ -135,7 +135,7 @@ impl OperatorApp {
             return;
         }
         
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             if let Some(mission_id) = self.selected_mission {
                 let mission = self
                     .state
