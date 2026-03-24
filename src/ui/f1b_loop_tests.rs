@@ -6,6 +6,23 @@ use crate::ui::AarSummary;
 use crate::persistence::GameState;
 use crate::ui::OperatorApp;
 
+fn setup_app_with_mission() -> OperatorApp {
+    let mut app = OperatorApp::new_dummy();
+    app.state.bank = 1000;
+    app.state.missions.push(crate::models::Mission {
+        id: uuid::Uuid::new_v4(),
+        name: "Test Mission".to_string(),
+        req_strength: 0,
+        req_agility: 0,
+        req_intelligence: 0,
+        difficulty: 0.1,
+        duration_secs: 10,
+        reward: 100,
+        affinity: None,
+    });
+    app
+}
+
 #[test]
 fn test_f1b_01_recruit_sub_tab_initialization() {
     let mut app = OperatorApp::new_dummy();
@@ -32,10 +49,8 @@ fn test_f1b_02_recruit_slime_deducts_funds() {
 
 #[test]
 fn test_f1b_03_stage_and_launch_mission() {
-    let mut app = OperatorApp::new_dummy();
+    let mut app = setup_app_with_mission();
     
-    // Setup state
-    app.state.bank = 1000;
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
     let mission = app.state.missions[0].clone();
@@ -58,8 +73,7 @@ fn test_f1b_03_stage_and_launch_mission() {
 
 #[test]
 fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
-    let mut app = OperatorApp::new_dummy();
-    app.state.bank = 1000;
+    let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     let mission = app.state.missions[0].clone();
     
@@ -79,8 +93,7 @@ fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
 
 #[test]
 fn test_f1b_05_aar_contains_xp_gained() {
-    let mut app = OperatorApp::new_dummy();
-    app.state.bank = 1000;
+    let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
@@ -95,8 +108,7 @@ fn test_f1b_05_aar_contains_xp_gained() {
 
 #[test]
 fn test_f1b_06_aar_awards_xp_to_operator() {
-    let mut app = OperatorApp::new_dummy();
-    app.state.bank = 1000;
+    let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
     // Record initial XP
@@ -115,8 +127,7 @@ fn test_f1b_06_aar_awards_xp_to_operator() {
 
 #[test]
 fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
-    let mut app = OperatorApp::new_dummy();
-    app.state.bank = 1000;
+    let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     
     // Make sure they have a lot of HP/stats so they don't get injured (likely victory)
@@ -141,8 +152,7 @@ fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
 
 #[test]
 fn test_f1b_08_log_entry_persisted_in_game_state() {
-    let mut app = OperatorApp::new_dummy();
-    app.state.bank = 1000;
+    let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     app.staged_operators.insert(op_id);
     app.launch_mission(app.state.missions[0].clone());
@@ -164,8 +174,7 @@ fn test_f1b_08_log_entry_persisted_in_game_state() {
 
 #[test]
 fn test_f1b_09_operator_level_up_triggers_system_log() {
-    let mut app = OperatorApp::new_dummy();
-    app.state.bank = 1000;
+    let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
     // Put operator right on the brink of levelling up
