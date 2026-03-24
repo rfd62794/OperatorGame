@@ -17,8 +17,9 @@ impl OperatorApp {
                 .stroke(egui::Stroke::new(1.0, aar.outcome_color))
                 .inner_margin(egui::Margin::same(12.0))
                 .show(ui, |ui| {
-                    ui.heading(egui::RichText::new(&aar.mission_name).color(egui::Color32::WHITE));
-                    ui.colored_label(aar.outcome_color, egui::RichText::new(&aar.outcome_label).size(18.0).strong());
+                    ui.set_max_width(ui.available_width());
+                    ui.heading(egui::RichText::new(&aar.mission_name).color(egui::Color32::WHITE).wrap(true));
+                    ui.colored_label(aar.outcome_color, egui::RichText::new(&aar.outcome_label).size(18.0).strong().wrap(true));
                     ui.add_space(8.0);
                     
                     egui::ScrollArea::vertical()

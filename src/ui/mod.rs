@@ -758,9 +758,11 @@ impl eframe::App for OperatorApp {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     // Left sidebar: sub-tab navigation (Responsive: 80dp on narrow, 100dp standard)
-                    let sidebar_width = if ui.available_width() < 450.0 { 80.0 } else { 100.0 };
+                    let sidebar_width = if ui.available_width() < 450.0 { 80.0f32 } else { 100.0f32 };
                     ui.vertical(|ui| {
-                        ui.set_width(sidebar_width);
+                        // Ensure sidebar doesn't exceed 33% of available width on very narrow screens
+                        let max_sidebar = ui.available_width() * 0.33f32;
+                        ui.set_width(sidebar_width.min(max_sidebar).max(60.0f32));
                         render_sub_tabs(ui, self.active_tab, self);
                     });
 
@@ -768,6 +770,7 @@ impl eframe::App for OperatorApp {
 
                     // Main Content Area
                     ui.vertical(|ui| {
+                        ui.set_max_width(ui.available_width());
                         egui::ScrollArea::vertical()
                             .id_source(format!("main_scroll_{:?}", self.active_tab))
                             .show(ui, |ui| {

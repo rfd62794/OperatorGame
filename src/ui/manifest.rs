@@ -176,25 +176,29 @@ impl OperatorApp {
             if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
                 // Task D.3 Render slide-in detail panel
                 ui.horizontal(|ui| {
-                    if ui.button("◀ Back to Roster").clicked() {
+                    if ui.button("◀ Back").clicked() {
                         self.selected_slime_id = None;
                     }
                     ui.label(egui::RichText::new(&op.genome.name).strong().size(18.0));
                 });
                 ui.separator();
                 
-                ui.heading("VITAL STATISTICS");
-                ui.label(format!("Level: {} (XP: {}/{})", op.level, op.total_xp, op.xp_to_next()));
-                ui.label(format!("Base HP: {}", op.genome.base_hp));
-                ui.label(format!("Base Mind: {}", op.genome.base_mind));
-                ui.add_space(8.0);
-                
-                ui.heading("CULTURAL GENOME");
-                ui.label(format!("Dominant: {:?}", op.genome.dominant_culture()));
-                ui.label(format!("Pattern: {:?}", op.genome.pattern));
-                
-                let expr = op.genome.culture_alleles.dominant.0;
-                render_culture_spectrum(ui, &expr, 0.8);
+                ui.vertical(|ui| {
+                    ui.set_max_width(ui.available_width());
+                    
+                    ui.heading("VITAL STATISTICS");
+                    ui.label(format!("Level: {} (XP: {}/{})", op.level, op.total_xp, op.xp_to_next()));
+                    ui.label(format!("Base HP: {}", op.genome.base_hp));
+                    ui.label(format!("Base Mind: {}", op.genome.base_mind));
+                    ui.add_space(8.0);
+                    
+                    ui.heading("CULTURAL GENOME");
+                    ui.label(egui::RichText::new(format!("Dominance: {:?}", op.genome.dominant_culture())).wrap(true));
+                    ui.label(egui::RichText::new(format!("Pattern: {:?}", op.genome.pattern)).wrap(true));
+                    
+                    let expr = op.genome.culture_alleles.dominant.0;
+                    render_culture_spectrum(ui, &expr, 0.8);
+                });
             }
         } else {
             self.selected_slime_id = None;
@@ -306,7 +310,7 @@ fn render_culture_spectrum(ui: &mut egui::Ui, expr: &[f32; 9], opacity: f32) {
     if segments.is_empty() { return; }
 
     let height = 4.0;
-    let width = 120.0; // Standard manifest width for spectrum
+    let width = ui.available_width().min(120.0); // Limit to 120 but shrink if needed
     
     let (rect, _) = ui.allocate_at_least(egui::vec2(width, height), egui::Sense::hover());
     let mut current_x = rect.min.x;

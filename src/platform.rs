@@ -38,8 +38,8 @@ impl SafeArea {
         Self {
             top:    48.0,
             bottom: 56.0,  // 48dp nav bar + 8dp primary action guard
-            left:   0.0,
-            right:  0.0,
+            left:   8.0,   // Gutter for Moto G horizontal clipping
+            right:  8.0,   // Gutter for Moto G horizontal clipping
         }
     }
 
@@ -213,6 +213,14 @@ pub fn apply_interaction_scale(ctx: &egui::Context, layout: ResponsiveLayout) {
         };
     });
 }
+
+// ---------------------------------------------------------------------------
+// Layout Constants
+// ---------------------------------------------------------------------------
+
+/// Maximum width for center-aligned content panels to ensure readability
+/// on large screens while maintaining mobile constraints.
+pub const MAX_CONTENT_WIDTH: f32 = 600.0;
 
 // ---------------------------------------------------------------------------
 // Bottom Tab Bar (Compact / Mobile)
@@ -438,5 +446,13 @@ mod tests {
         assert!(result.is_err(), "ProcAssetProvider must always return Err");
         let msg = result.unwrap_err();
         assert!(!msg.is_empty(), "Error message must not be empty");
+    }
+
+    #[test]
+    fn test_platform_integrity_gutters() {
+        let sa = SafeArea::android_default();
+        assert!(sa.left > 0.0, "Android must have a left gutter");
+        assert!(sa.right > 0.0, "Android must have a right gutter");
+        assert_eq!(MAX_CONTENT_WIDTH, 600.0);
     }
 }
