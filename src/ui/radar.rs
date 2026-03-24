@@ -5,7 +5,9 @@ use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
-        let frame_size = ui.available_size();
+        let mut frame_size = ui.available_size();
+        frame_size.y -= crate::platform::TAB_BAR_HEIGHT; // Prevents bottom tab overlap
+        
         let map_dim = frame_size.x.min(frame_size.y);
         let scale = (map_dim / 600.0).clamp(0.4, 1.2);
         
