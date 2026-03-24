@@ -225,7 +225,7 @@ fn render_operator_card(
         egui::Color32::from_rgb(26, 26, 34) // Panel background
     };
 
-    egui::Frame::none()
+    let response = egui::Frame::none()
         .fill(frame_color)
         .stroke(egui::Stroke::new(1.0, if is_staged { egui::Color32::GREEN } else { egui::Color32::from_gray(60) }))
         .inner_margin(egui::Margin::same(8.0))
