@@ -366,7 +366,7 @@ impl OperatorApp {
                 let label = labels.get(i).copied().unwrap_or("?");
                 let result = if r.success { "HIT" } else { "MISS" };
                 let nat = if r.nat_twenty { " (NAT20!)" } else if r.nat_one { " (NAT1)" } else { "" };
-                format!("{} {}: {} d={}{}", label, r.rolls, result, r.dc, nat)
+                format!("{} {:?}: {} d={}{}", label, r.rolls, result, r.dc, nat)
             }).collect()
         };
 
