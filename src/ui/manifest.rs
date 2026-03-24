@@ -166,6 +166,17 @@ impl OperatorApp {
             });
         });
     }
+
+    pub(crate) fn render_slime_detail(&mut self, ui: &mut egui::Ui) {
+        ui.label("Slime Detail Panel (Under Construction)");
+        if ui.button("Back to Roster").clicked() {
+            self.selected_slime_id = None;
+        }
+    }
+
+    pub(crate) fn render_recruit(&mut self, ui: &mut egui::Ui) {
+        ui.label("Recruitment Agency (Under Construction)");
+    }
 }
 
 /// Renders an individual operator as a card (Phase F.1).
