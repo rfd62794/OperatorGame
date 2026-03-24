@@ -631,8 +631,6 @@ impl eframe::App for OperatorApp {
                             }
                         });
                 }
-            }
-
         // Bottom launch / status bar
         egui::TopBottomPanel::bottom("bottom_bar")
                 .frame(
