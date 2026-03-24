@@ -8,7 +8,7 @@ use crate::ui::OperatorApp;
 
 #[test]
 fn test_f1b_01_recruit_sub_tab_initialization() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     assert_eq!(app.active_tab, crate::platform::BottomTab::Roster);
     assert_eq!(app.active_sub_tab(app.active_tab), 0); // Default is Manifest
     
@@ -32,7 +32,7 @@ fn test_f1b_02_recruit_slime_deducts_funds() {
 
 #[test]
 fn test_f1b_03_stage_and_launch_mission() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     
     // Setup state
     app.state.bank = 1000;
@@ -58,7 +58,7 @@ fn test_f1b_03_stage_and_launch_mission() {
 
 #[test]
 fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     app.state.bank = 1000;
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     let mission = app.state.missions[0].clone();
@@ -79,7 +79,7 @@ fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
 
 #[test]
 fn test_f1b_05_aar_contains_xp_gained() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     app.state.bank = 1000;
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     app.staged_operators.insert(op_id);
@@ -95,7 +95,7 @@ fn test_f1b_05_aar_contains_xp_gained() {
 
 #[test]
 fn test_f1b_06_aar_awards_xp_to_operator() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     app.state.bank = 1000;
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
@@ -115,7 +115,7 @@ fn test_f1b_06_aar_awards_xp_to_operator() {
 
 #[test]
 fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     app.state.bank = 1000;
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     
@@ -141,7 +141,7 @@ fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
 
 #[test]
 fn test_f1b_08_log_entry_persisted_in_game_state() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     app.state.bank = 1000;
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     app.staged_operators.insert(op_id);
@@ -164,7 +164,7 @@ fn test_f1b_08_log_entry_persisted_in_game_state() {
 
 #[test]
 fn test_f1b_09_operator_level_up_triggers_system_log() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     app.state.bank = 1000;
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     
@@ -197,7 +197,7 @@ fn test_f1b_09_operator_level_up_triggers_system_log() {
 
 #[test]
 fn test_f1b_10_dismissing_aar_clears_pending_state() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     
     app.pending_aar = Some(AarSummary {
         mission_name: "Test".to_string(),
@@ -224,7 +224,7 @@ fn test_f1b_11_radar_tab_bar_height_constant_exists() {
 
 #[test]
 fn test_f1b_12_operator_detail_selection_wiring() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     assert!(app.selected_slime_id.is_none());
     
     let id = uuid::Uuid::new_v4();
@@ -234,7 +234,7 @@ fn test_f1b_12_operator_detail_selection_wiring() {
 
 #[test]
 fn test_f1b_13_combat_log_truncation() {
-    let mut app = OperatorApp::default();
+    let mut app = OperatorApp::new_dummy();
     
     // Fill the combat log beyond 50 entries
     for i in 0..60 {
@@ -245,26 +245,22 @@ fn test_f1b_13_combat_log_truncation() {
         });
     }
     
-    // Mock a deployment resolution to trigger truncate
+        // Mock a deployment resolution to trigger truncate
     app.state.deployments.push(crate::models::Deployment {
         id: uuid::Uuid::new_v4(),
         mission_id: uuid::Uuid::new_v4(), // Won't resolve if mission missing, so we inject
         operator_ids: vec![],
-        started_at: Utc::now() - Duration::hours(1),
-        duration_secs: 10,
+        completes_at: Utc::now() - Duration::hours(1), // Fix: Deployment uses completes_at
         resolved: false,
         is_emergency: false,
     });
     
     // Inject a blank mission so resolve_deployment proceeds
-    app.state.missions.push(operator::models::Mission {
+    app.state.missions.push(crate::models::Mission {
         id: app.state.deployments[0].mission_id,
         name: "Truncate Mission".to_string(),
         description: "".to_string(),
         reward: 100,
-        target_id: uuid::Uuid::new_v4(),
-        affinity: Default::default(),
-        expires_at: Utc::now() + Duration::hours(1),
     });
     
     app.resolve_deployment(app.state.deployments[0].id);
