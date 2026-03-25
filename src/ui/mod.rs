@@ -731,6 +731,7 @@ impl eframe::App for OperatorApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
+                    ui.set_min_height(ui.available_height()); // Force expansion
                     // Left sidebar: sub-tab navigation (Responsive: 80dp on narrow, 100dp standard)
                     let sidebar_width = if ui.available_width() < 450.0 { 80.0f32 } else { 100.0f32 };
                     ui.vertical(|ui| {
