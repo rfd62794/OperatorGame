@@ -5,20 +5,15 @@ use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
-        let available_size = ui.available_size();
+        let available_rect = ui.available_rect_before_wrap();
         
-        // Map should be a square, centered in the available space.
-        // On mobile, width is the constraint. On desktop, height might be.
-        let map_dim = available_size.x.min(available_size.y - 20.0).max(100.0);
-        let scale = (map_dim / 600.0).clamp(0.4, 1.2);
+        // Map sizing: Ring 3 has a radius of about 320.0dp at scale 1.0.
+        // We want the whole map (diameter ~640.0dp) to fit within the smaller dimension.
+        let map_size = available_rect.width().min(available_rect.height());
+        let scale = (map_size / 680.0).clamp(0.4, 1.2); // 680 to give some margin for the 320 radius rings
         
-        // Center vertically in the remaining space
-        let vertical_space = (available_size.y - map_dim) / 2.0;
-        if vertical_space > 0.0 {
-            ui.add_space(vertical_space);
-        }
-        
-        let (rect, resp) = ui.allocate_exact_size(egui::vec2(available_size.x, map_dim), egui::Sense::hover());
+        // Allocate the square area for the map, centered in the available space
+        let (rect, resp) = ui.allocate_at_least(egui::vec2(available_rect.width(), map_size), egui::Sense::hover());
         let painter = ui.painter();
         
         let map_center = rect.center();

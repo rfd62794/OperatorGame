@@ -14,18 +14,15 @@ impl OperatorApp {
         let mut toggle_stage: Option<uuid::Uuid> = None;
 
         let available_width = ui.available_width();
-        let card_width = if available_width < 450.0 {
-            (available_width - 16.0) / 2.0 // Exactly 2 cards per row on mobile
-        } else {
-            160.0 // Comfort size for larger screens
-        }.max(100.0);
+        let card_width = available_width; // Force full width for mobile hierarchy
 
-        // Use a wrapping layout for the card grid
+        // Use a vertical layout for the card list inside the scroll area
         egui::ScrollArea::vertical()
             .id_source("roster_scroll")
+            .auto_shrink([false, false]) // Fill available space
             .show(ui, |ui| {
-                ui.horizontal_wrapped(|ui| {
-                    ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
+                ui.vertical(|ui| {
+                    ui.spacing_mut().item_spacing = egui::vec2(0.0, 8.0);
                     
                     for op in &self.state.slimes {
                         let (stage_clicked, card_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
@@ -254,14 +251,29 @@ fn render_operator_card(
         .show(ui, |ui| {
             ui.set_width(card_width); // Card width with responsive calculation
             
-            // Header: Name and Culture + VIEW button
-            ui.horizontal(|ui| {
+            // Header: Left (Name, Culture) | Right (STAGE, VIEW)
+            ui.horizontal_wrapped(|ui| {
                 ui.label(egui::RichText::new(&genome.name).strong().color(color));
                 ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).small().color(color));
-                
+
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button(egui::RichText::new("▶").small()).clicked() {
                         card_clicked = true;
+                    }
+                    
+                    let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
+                    let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
+
+                    if is_injured {
+                        ui.add_enabled(false, egui::Button::new("INJURED").small());
+                    } else if is_dispatched {
+                        ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
+                    } else {
+                        let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
+                        let btn = ui.add(egui::Button::new(btn_label).small());
+                        if btn.clicked() {
+                            stage_clicked = true;
+                        }
                     }
                 });
             });
@@ -291,28 +303,9 @@ fn render_operator_card(
 
             ui.add_space(4.0);
 
-            // HP and Stage Button
-            ui.horizontal(|ui| {
-                let hp = op.genome.base_hp; // Task C.2
-                ui.label(format!("HP:{}", hp));
-                
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
-                    let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
-
-                    if is_injured {
-                        ui.add_enabled(false, egui::Button::new("INJURED").small());
-                    } else if is_dispatched {
-                        ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
-                    } else {
-                        let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
-                        let btn = ui.add(egui::Button::new(btn_label).small());
-                        if btn.clicked() {
-                            stage_clicked = true;
-                        }
-                    }
-                });
-            });
+            // HP status directly under pattern/stats to save space
+            let hp = op.genome.base_hp;
+            ui.label(egui::RichText::new(format!("HP: {}", hp)).small().color(egui::Color32::LIGHT_GRAY));
         });
 
     (stage_clicked, card_clicked)
