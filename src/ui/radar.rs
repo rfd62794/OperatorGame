@@ -5,31 +5,32 @@ use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
-        let available_size = ui.available_size();
+        let screen_rect = ui.ctx().screen_rect();
+        let safe_area = crate::platform::read_window_insets();
+        let safe_rect = safe_area.apply(screen_rect);
         
-        // Degenerate frame safety check: don't render if dimensions are suspicious
+        let available_size = ui.available_size();
         if available_size.x < 50.0 || available_size.y < 50.0 {
             return;
         }
 
-        let map_dim = available_size.x.min(available_size.y).max(100.0);
-        let scale = (map_dim / 640.0).clamp(0.4, 1.0);
-        let scaled_diameter = 320.0 * scale * 2.0;
+        // Map sizing: 640dp diameter base
+        let map_dim = safe_rect.width().min(safe_rect.height()).min(400.0);
+        let scale = map_dim / 640.0;
+        let scaled_radius = 320.0 * scale;
 
-        // Push map to bottom — space above equals full available height minus diameter minus 8dp gutter
-        let push_down = (available_size.y - scaled_diameter - 8.0).max(0.0);
-        ui.add_space(push_down);
-
-        let (rect, resp) = ui.allocate_exact_size(
-            egui::vec2(available_size.x, scaled_diameter + 8.0),
-            egui::Sense::hover()
+        // The "bottom tab system" sits at safe_rect.bottom() - TAB_BAR_HEIGHT
+        let tab_bar_top = safe_rect.bottom() - crate::platform::TAB_BAR_HEIGHT;
+        
+        // Target: Horizontally centered ON SCREEN, sitting 8dp above the tab bar
+        let map_center = egui::pos2(
+            screen_rect.center().x,
+            tab_bar_top - scaled_radius - 8.0
         );
-        let painter = ui.painter();
 
-        // Horizontal Tuning: Sidebar is ~80dp. On 360dp screen, content center is ~220. 
-        // Screen center is 180. Shift left by 40dp to align with Top Bar.
-        let x_offset = if available_size.x < 300.0 { -24.0 } else { 0.0 };
-        let map_center = egui::pos2(rect.center().x + x_offset, rect.top() + scaled_diameter / 2.0);
+        // We still allocate to let egui know we've taken space, though we draw freehand
+        let (_rect, resp) = ui.allocate_at_least(egui::vec2(available_size.x, available_size.y), egui::Sense::hover());
+        let painter = ui.painter();
 
         // Draw Rings
         for r in 1..=3 {
