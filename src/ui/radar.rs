@@ -16,17 +16,20 @@ impl OperatorApp {
         let scale = (map_dim / 640.0).clamp(0.4, 1.0);
         let scaled_diameter = 320.0 * scale * 2.0;
 
-        // Push map to bottom half — space above equals full available height minus diameter minus 20dp padding
-        let push_down = (available_size.y - scaled_diameter - 20.0).max(0.0);
+        // Push map to bottom — space above equals full available height minus diameter minus 8dp gutter
+        let push_down = (available_size.y - scaled_diameter - 8.0).max(0.0);
         ui.add_space(push_down);
 
         let (rect, resp) = ui.allocate_exact_size(
-            egui::vec2(available_size.x, scaled_diameter + 20.0),
+            egui::vec2(available_size.x, scaled_diameter + 8.0),
             egui::Sense::hover()
         );
         let painter = ui.painter();
 
-        let map_center = egui::pos2(rect.center().x, rect.top() + scaled_diameter / 2.0);
+        // Horizontal Tuning: Sidebar is ~80dp. On 360dp screen, content center is ~220. 
+        // Screen center is 180. Shift left by 40dp to align with Top Bar.
+        let x_offset = if available_size.x < 300.0 { -24.0 } else { 0.0 };
+        let map_center = egui::pos2(rect.center().x + x_offset, rect.top() + scaled_diameter / 2.0);
 
         // Draw Rings
         for r in 1..=3 {
