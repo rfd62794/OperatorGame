@@ -632,7 +632,7 @@ impl eframe::App for OperatorApp {
         egui::TopBottomPanel::bottom("bottom_tabs")
             .frame(
                 egui::Frame::none()
-                    .fill(COLOR_SURFACE_LOW)
+                    .fill(egui::Color32::from_rgb(19, 19, 24)) // Forced opaque for layering
                     .inner_margin(egui::Margin {
                         left: safe_area.left,
                         right: safe_area.right,
@@ -700,7 +700,7 @@ impl eframe::App for OperatorApp {
                     .max_height(120.0)
                     .frame(
                         egui::Frame::none()
-                            .fill(egui::Color32::from_rgba_unmultiplied(20, 20, 25, 200))
+                            .fill(egui::Color32::from_rgb(20, 20, 25)) // Forced opaque
                             .inner_margin(egui::Margin::symmetric(8.0, 4.0))
                     )
                     .show(ctx, |ui| {
@@ -742,12 +742,10 @@ impl eframe::App for OperatorApp {
 
                     ui.separator();
 
-                    // Main Content Area
-                    ui.vertical(|ui| {
-                        ui.set_max_width(ui.available_width());
-                        
-                        // Map tab is fixed-position (not scrollable) to allow for stable 
-                        // bottom-anchored coordinate calculations in radar.rs.
+                    // Main Content Area: Use explicit allocation to force vertical fill
+                    let content_rect = ui.available_rect_before_wrap();
+                    ui.allocate_ui_at_rect(content_rect, |ui| {
+                        // Map tab handles its own positioning (centered/bottom anchored)
                         if self.active_tab == crate::platform::BottomTab::Map {
                             match self.map_sub_tab {
                                 crate::platform::MapSubTab::Zones => {
