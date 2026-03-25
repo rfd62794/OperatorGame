@@ -755,38 +755,39 @@ impl eframe::App for OperatorApp {
                                 }
                             }
                         } else {
-                            egui::ScrollArea::vertical()
-                                .id_source(format!("main_scroll_{:?}", self.active_tab))
-                                .auto_shrink([false, false])
-                                .show(ui, |ui| {
-                                    match self.active_tab {
-                                        crate::platform::BottomTab::Roster => match self.roster_sub_tab {
-                                            crate::platform::RosterSubTab::Collection => {
-                                                // If a slime is selected, show detail view; otherwise card grid
-                                                if self.selected_slime_id.is_some() {
-                                                    self.render_slime_detail(ui);
-                                                } else {
-                                                    self.render_manifest(ui);
-                                                }
-                                            }
-                                            crate::platform::RosterSubTab::Breeding => {
-                                                self.render_incubator(ui);
-                                            }
-                                            crate::platform::RosterSubTab::Recruit => {
-                                                self.render_recruit(ui);
-                                            }
-                                        },
-                                        crate::platform::BottomTab::Missions => match self.missions_sub_tab {
-                                            crate::platform::MissionsSubTab::Active => {
-                                                self.render_active_ops(ui);
-                                            }
-                                            crate::platform::MissionsSubTab::QuestBoard => {
-                                                self.render_contracts(ui);
-                                            }
-                                        },
-                                        crate::platform::BottomTab::Map => unreachable!(),
-                                        crate::platform::BottomTab::Logs => match self.logs_sub_tab {
-                                            crate::platform::LogsSubTab::MissionHistory => {
+                            // Unified 4-tab content area
+                            match self.active_tab {
+                                crate::platform::BottomTab::Roster => match self.roster_sub_tab {
+                                    crate::platform::RosterSubTab::Collection => {
+                                        // If a slime is selected, show detail view; otherwise card grid
+                                        if self.selected_slime_id.is_some() {
+                                            self.render_slime_detail(ui);
+                                        } else {
+                                            self.render_manifest(ui);
+                                        }
+                                    }
+                                    crate::platform::RosterSubTab::Breeding => {
+                                        self.render_incubator(ui);
+                                    }
+                                    crate::platform::RosterSubTab::Recruit => {
+                                        self.render_recruit(ui);
+                                    }
+                                },
+                                crate::platform::BottomTab::Missions => match self.missions_sub_tab {
+                                    crate::platform::MissionsSubTab::Active => {
+                                        self.render_active_ops(ui);
+                                    }
+                                    crate::platform::MissionsSubTab::QuestBoard => {
+                                        self.render_contracts(ui);
+                                    }
+                                },
+                                crate::platform::BottomTab::Map => unreachable!(),
+                                crate::platform::BottomTab::Logs => match self.logs_sub_tab {
+                                    crate::platform::LogsSubTab::MissionHistory => {
+                                        egui::ScrollArea::vertical()
+                                            .id_source("logs_scroll")
+                                            .auto_shrink([false, false])
+                                            .show(ui, |ui| {
                                                 if self.state.combat_log.is_empty() {
                                                     ui.label(
                                                         egui::RichText::new("No mission history. Deploy your first squad to begin.")
@@ -804,13 +805,13 @@ impl eframe::App for OperatorApp {
                                                         ui.colored_label(color, &entry.message);
                                                     }
                                                 }
-                                            }
-                                            crate::platform::LogsSubTab::CultureHistory => {
-                                                ui.label(egui::RichText::new("Awaiting deployment and culture synchronization...").italics().color(egui::Color32::GRAY));
-                                            }
-                                        },
+                                            });
                                     }
-                                });
+                                    crate::platform::LogsSubTab::CultureHistory => {
+                                        ui.label(egui::RichText::new("Awaiting deployment and culture synchronization...").italics().color(egui::Color32::GRAY));
+                                    }
+                                },
+                            }
                         }
                     });
                 });
