@@ -6,6 +6,12 @@ use crate::ui::OperatorApp;
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
         let available_size = ui.available_size();
+        
+        // Degenerate frame safety check: don't render if dimensions are suspicious
+        if available_size.x < 50.0 || available_size.y < 50.0 {
+            return;
+        }
+
         let map_dim = available_size.x.min(available_size.y).max(100.0);
         let scale = (map_dim / 640.0).clamp(0.4, 1.0);
         let scaled_diameter = 320.0 * scale * 2.0;
