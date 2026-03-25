@@ -14,8 +14,9 @@ impl OperatorApp {
             return;
         }
 
-        // Map sizing: 640dp diameter base
-        let map_dim = safe_rect.width().min(safe_rect.height()).min(400.0);
+        // Map sizing: 640dp diameter base. 
+        // We subtract 16dp from the available width to ensure breathing room on the sides.
+        let map_dim = (safe_rect.width() - 16.0).min(safe_rect.height()).min(400.0);
         let scale = map_dim / 640.0;
         let scaled_radius = 320.0 * scale;
 
