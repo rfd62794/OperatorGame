@@ -6,22 +6,21 @@ use crate::ui::OperatorApp;
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
         let available_size = ui.available_size();
-        
-        // Map should be a square, centered in the available space.
-        // On mobile, width is the constraint. On desktop, height might be.
-        let map_dim = available_size.x.min(available_size.y - 20.0).max(100.0);
-        let scale = (map_dim / 600.0).clamp(0.4, 1.2);
-        
-        // Center vertically in the remaining space
-        let vertical_space = (available_size.y - map_dim) / 2.0;
-        if vertical_space > 0.0 {
-            ui.add_space(vertical_space);
-        }
-        
-        let (rect, resp) = ui.allocate_exact_size(egui::vec2(available_size.x, map_dim), egui::Sense::hover());
+        let map_dim = available_size.x.min(available_size.y).max(100.0);
+        let scale = (map_dim / 640.0).clamp(0.4, 1.0);
+        let scaled_diameter = 320.0 * scale * 2.0;
+
+        // Push map to bottom half — space above equals full available height minus diameter minus 20dp padding
+        let push_down = (available_size.y - scaled_diameter - 20.0).max(0.0);
+        ui.add_space(push_down);
+
+        let (rect, resp) = ui.allocate_exact_size(
+            egui::vec2(available_size.x, scaled_diameter + 20.0),
+            egui::Sense::hover()
+        );
         let painter = ui.painter();
-        
-        let map_center = rect.center();
+
+        let map_center = egui::pos2(rect.center().x, rect.top() + scaled_diameter / 2.0);
 
         // Draw Rings
         for r in 1..=3 {
