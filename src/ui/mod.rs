@@ -783,6 +783,7 @@ impl eframe::App for OperatorApp {
                         } else {
                             egui::ScrollArea::vertical()
                                 .id_source(format!("main_scroll_{:?}", self.active_tab))
+                                .auto_shrink([false, false])
                                 .show(ui, |ui| {
                                     match self.active_tab {
                                         crate::platform::BottomTab::Roster => match self.roster_sub_tab {
