@@ -49,13 +49,19 @@ impl OperatorApp {
 
     pub(crate) fn render_incubator(&mut self, ui: &mut egui::Ui) {
         if self.state.incubating.is_empty() {
-            ui.label(egui::RichText::new("Incubator is empty.").italics().color(egui::Color32::GRAY));
-            ui.add_space(8.0);
-            ui.label(egui::RichText::new("To breed two slimes, open your external terminal and type:").color(egui::Color32::LIGHT_GRAY));
-            ui.add_space(4.0);
-            ui.code("operator splice [First ID] [Second ID] \"Name\"");
-            ui.add_space(4.0);
-            ui.label(egui::RichText::new("Example: operator splice 1a2b 3c4d \"Nova\"").small().color(egui::Color32::from_gray(150)));
+            ui.vertical_centered(|ui| {
+                ui.add_space(40.0);
+                ui.label(egui::RichText::new("INCUBATOR OFFLINE").strong().size(20.0).color(egui::Color32::GRAY));
+                ui.add_space(8.0);
+                ui.label("No active synthesis detected.");
+                ui.add_space(20.0);
+                
+                if ui.button(egui::RichText::new("➕ SELECT BREEDING PAIR").strong()).clicked() {
+                    self.status_msg = "Breeding UI requires Phase G.1 (Dice Drama) integration.".to_string();
+                }
+                ui.add_space(8.0);
+                ui.label(egui::RichText::new("(Select donors from Bio-Manifest to begin)").small().color(egui::Color32::from_gray(120)));
+            });
             return;
         }
 

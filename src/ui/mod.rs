@@ -621,6 +621,16 @@ impl eframe::App for OperatorApp {
                         .resizable(true)
                         .min_height(40.0)
                         .max_height(120.0)
+                        .frame(
+                            egui::Frame::none()
+                                .inner_margin(egui::Margin {
+                                    left: 8.0,
+                                    right: 8.0,
+                                    top: 4.0,
+                                    bottom: crate::platform::TAB_BAR_HEIGHT + safe_area.bottom,
+                                })
+                                .fill(egui::Color32::from_rgba_unmultiplied(20, 20, 25, 200)) // Semi-transparency for layering
+                        )
                         .show(ctx, |ui| {
                             ui.label(egui::RichText::new("── LAST ACTION ──").strong());
                             if let Some(entry) = self.state.combat_log.first() {
