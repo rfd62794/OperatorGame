@@ -613,79 +613,44 @@ impl eframe::App for OperatorApp {
             });
         });
 
-            // Combat log panel — sits above the launch bar
-            if self.active_tab == crate::platform::BottomTab::Missions {
-                // Missions tab: show a compact last-result line if no pending AAR
-                if self.pending_aar.is_none() && !self.state.combat_log.is_empty() {
-                    egui::TopBottomPanel::bottom("combat_log_panel")
-                        .resizable(true)
-                        .min_height(40.0)
-                        .max_height(120.0)
-                        .frame(
-                            egui::Frame::none()
-                                .inner_margin(egui::Margin {
-                                    left: 8.0,
-                                    right: 8.0,
-                                    top: 4.0,
-                                    bottom: crate::platform::TAB_BAR_HEIGHT + safe_area.bottom,
-                                })
-                                .fill(egui::Color32::from_rgba_unmultiplied(20, 20, 25, 200)) // Semi-transparency for layering
-                        )
-                        .show(ctx, |ui| {
-                            ui.label(egui::RichText::new("── LAST ACTION ──").strong());
-                            if let Some(entry) = self.state.combat_log.first() {
-                                let color = match entry.outcome {
-                                    LogOutcome::Victory => egui::Color32::from_rgb(80, 200, 120),
-                                    LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
-                                    LogOutcome::Failure => egui::Color32::from_rgb(220, 180, 80),
-                                    LogOutcome::System => egui::Color32::from_rgb(160, 160, 180),
-                                };
-                                ui.colored_label(color, &entry.message);
-                            }
-                        });
-                }
-        // Bottom launch / status bar
+        // 1. Launch Bar (Outer-most bottom)
         egui::TopBottomPanel::bottom("bottom_bar")
-                .frame(
-                    egui::Frame::none()
-                        .inner_margin(egui::Margin {
-                            left: safe_area.left,
-                            right: safe_area.right,
-                            top: 0.0,
-                            bottom: safe_area.bottom,
-                        })
-                )
-                .show(ctx, |ui| {
-                    self.render_launch_bar(ui);
-                });
-        }
-
-        // Bottom Navigation Tab Bar — Stitch Design (Phase B / Phase F polish)
-        let layout = crate::platform::LayoutCalculator::new(
-            egui::vec2(ctx.screen_rect().width(), ctx.screen_rect().height()),
-            safe_area,
-        );
-        let tab_rect = layout.bottom_tab_rect(&safe_area);
-
-        egui::Area::new(egui::Id::new("bottom_tabs"))
-            .fixed_pos(tab_rect.min)
+            .frame(
+                egui::Frame::none()
+                    .inner_margin(egui::Margin {
+                        left: safe_area.left,
+                        right: safe_area.right,
+                        top: 0.0,
+                        bottom: safe_area.bottom,
+                    })
+            )
             .show(ctx, |ui| {
-                ui.set_min_size(egui::vec2(tab_rect.width(), tab_rect.height()));
+                self.render_launch_bar(ui);
+            });
 
-                // Paint the tab bar background (solid dark surface)
-                ui.painter().rect_filled(
-                    egui::Rect::from_min_size(tab_rect.min, egui::vec2(tab_rect.width(), tab_rect.height())),
-                    egui::Rounding::ZERO,
-                    COLOR_SURFACE_LOW,
-                );
+        // 2. Navigation Tab Bar — Stitch Design (Outer-middle)
+        egui::TopBottomPanel::bottom("bottom_tabs")
+            .frame(
+                egui::Frame::none()
+                    .fill(COLOR_SURFACE_LOW)
+                    .inner_margin(egui::Margin {
+                        left: safe_area.left,
+                        right: safe_area.right,
+                        top: 0.0,
+                        bottom: 0.0,
+                    })
+            )
+            .show(ctx, |ui| {
+                ui.set_height(crate::platform::TAB_BAR_HEIGHT);
+                
                 // Top border line separating the bar from content
+                let (rect, _) = ui.allocate_at_least(ui.available_size(), egui::Sense::hover());
                 ui.painter().hline(
-                    tab_rect.min.x..=tab_rect.max.x,
-                    tab_rect.min.y,
+                    rect.min.x..=rect.max.x,
+                    rect.min.y,
                     egui::Stroke::new(1.0, COLOR_SURFACE_HIGH),
                 );
 
-                // Tab definitions: (variant, icon, label)
                 let tabs = [
                     (crate::platform::BottomTab::Roster,   "🧬", "Roster"),
                     (crate::platform::BottomTab::Missions, "🚀", "Missions"),
@@ -693,66 +658,65 @@ impl eframe::App for OperatorApp {
                     (crate::platform::BottomTab::Logs,     "📜", "Logs"),
                 ];
 
-                let tab_w = tab_rect.width() / tabs.len() as f32;
-                let tab_h = tab_rect.height();
+                let tab_w = rect.width() / tabs.len() as f32;
+                let tab_h = crate::platform::TAB_BAR_HEIGHT;
 
                 for (i, (tab, icon, label)) in tabs.iter().enumerate() {
                     let is_active = self.active_tab == *tab;
+                    let slot_rect = egui::Rect::from_min_size(
+                        egui::pos2(rect.min.x + i as f32 * tab_w, rect.min.y),
+                        egui::vec2(tab_w, tab_h)
+                    );
 
-                    // Rect for this individual tab button
-                    let slot_min = egui::pos2(tab_rect.min.x + i as f32 * tab_w, tab_rect.min.y);
-                    let slot_rect = egui::Rect::from_min_size(slot_min, egui::vec2(tab_w, tab_h));
-
-                    // Active: fill + left accent strip
                     if is_active {
-                        // Vision Priority Fix: Increased contrast feedback for selected bottom navigation tab
                         ui.painter().rect_filled(slot_rect, egui::Rounding::ZERO, egui::Color32::from_rgb(45, 55, 75));
                         let accent_rect = egui::Rect::from_min_size(
-                            egui::pos2(slot_min.x, slot_min.y + tab_h - 4.0),
+                            egui::pos2(slot_rect.min.x, slot_rect.max.y - 4.0),
                             egui::vec2(tab_w, 4.0),
                         );
                         ui.painter().rect_filled(accent_rect, egui::Rounding::ZERO, COLOR_PRIMARY);
                     }
 
-                    // Render stacked icon + label inside the slot
-                    let _response = ui.allocate_ui_at_rect(slot_rect, |ui| {
-                        ui.set_min_size(egui::vec2(tab_w, tab_h));
+                    ui.allocate_ui_at_rect(slot_rect, |ui| {
                         ui.vertical_centered(|ui| {
                             ui.add_space(6.0);
-                            ui.label(
-                                egui::RichText::new(*icon)
-                                    .size(18.0)
-                                    .color(egui::Color32::WHITE),
-                            );
+                            ui.label(egui::RichText::new(*icon).size(18.0).color(egui::Color32::WHITE));
                             ui.add_space(2.0);
-                            ui.label(
-                                egui::RichText::new(*label)
-                                    .size(10.0)
-                                    .color(if is_active { COLOR_PRIMARY } else { COLOR_TEXT }),
-                            );
+                            ui.label(egui::RichText::new(*label).size(10.0).color(if is_active { COLOR_PRIMARY } else { COLOR_TEXT }));
                         });
                     });
 
-                    // Sense clicks over the full slot rect
-                    let click_response = ui.interact(
-                        slot_rect,
-                        egui::Id::new(format!("bottom_tab_{}", label)),
-                        egui::Sense::click(),
-                    );
-                    if click_response.clicked() {
-                        self.active_tab = *tab;
-                    }
-
-                    // Hover feedback: subtle highlight
-                    if click_response.hovered() && !is_active {
-                        ui.painter().rect_filled(
-                            slot_rect,
-                            egui::Rounding::ZERO,
-                            egui::Color32::from_rgba_premultiplied(255, 255, 255, 8),
-                        );
-                    }
+                    let click_resp = ui.interact(slot_rect, egui::Id::new(format!("tab_{}", label)), egui::Sense::click());
+                    if click_resp.clicked() { self.active_tab = *tab; }
                 }
             });
+
+        // 3. Last Action Log (Inner-most bottom / sits above tabs)
+        if self.active_tab == crate::platform::BottomTab::Missions {
+            if self.pending_aar.is_none() && !self.state.combat_log.is_empty() {
+                egui::TopBottomPanel::bottom("combat_log_panel")
+                    .resizable(true)
+                    .min_height(40.0)
+                    .max_height(120.0)
+                    .frame(
+                        egui::Frame::none()
+                            .fill(egui::Color32::from_rgba_unmultiplied(20, 20, 25, 200))
+                            .inner_margin(egui::Margin::symmetric(8.0, 4.0))
+                    )
+                    .show(ctx, |ui| {
+                        ui.label(egui::RichText::new("── LAST ACTION ──").strong());
+                        if let Some(entry) = self.state.combat_log.first() {
+                            let color = match entry.outcome {
+                                LogOutcome::Victory  => egui::Color32::from_rgb(80, 200, 120),
+                                LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
+                                LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
+                                LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
+                            };
+                            ui.colored_label(color, &entry.message);
+                        }
+                    });
+            }
+        }
 
         // Unified 4-tab layout with vertical sub-tab sidebar
         egui::CentralPanel::default()
