@@ -7,16 +7,21 @@ impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
         let available_rect = ui.available_rect_before_wrap();
         
-        // Map sizing: Ring 3 has a radius of about 320.0dp at scale 1.0.
-        // We want the whole map (diameter ~640.0dp) to fit within the smaller dimension.
-        let map_size = available_rect.width().min(available_rect.height());
-        let scale = (map_size / 680.0).clamp(0.4, 1.2); // 680 to give some margin for the 320 radius rings
+        // Map sizing: Ring 3 has a radius of 320.0dp.
+        // Scale to fit the minimum screen dimension.
+        let scale = (available_rect.width().min(available_rect.height()) / 640.0).clamp(0.4, 1.2);
+        let scaled_radius = 320.0 * scale;
         
-        // Allocate the square area for the map, centered in the available space
-        let (rect, resp) = ui.allocate_at_least(egui::vec2(available_rect.width(), map_size), egui::Sense::hover());
+        // Target: Horizontally centered, bottom half of content area.
+        // Anchored 10% above the bottom edge to provide breathing room.
+        let map_center = egui::pos2(
+            available_rect.center().x,
+            available_rect.bottom() - (scaled_radius * 1.1)
+        );
+        
+        // We still allocate to let egui know we've taken space, though we draw freehand
+        let (_rect, resp) = ui.allocate_at_least(egui::vec2(available_rect.width(), scaled_radius * 2.0), egui::Sense::hover());
         let painter = ui.painter();
-        
-        let map_center = rect.center();
 
         // Draw Rings
         for r in 1..=3 {
