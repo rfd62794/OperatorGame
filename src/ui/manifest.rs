@@ -14,7 +14,7 @@ impl OperatorApp {
         let mut toggle_stage: Option<uuid::Uuid> = None;
 
         let available_width = ui.available_width();
-        let card_width = available_width; // Force full width for mobile hierarchy
+        let card_width = available_width - 4.0; // Visual gutter for scrollbar/clipping safety
 
         // Use a vertical layout for the card list inside the scroll area
         egui::ScrollArea::vertical()
@@ -287,14 +287,12 @@ fn render_operator_card(
             // Pattern
             ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).small().color(egui::Color32::GRAY));
 
-            // Level & XP bar
-            ui.horizontal(|ui| {
-                ui.label(format!("Lv: {}", op.level));
-                let needed = op.xp_to_next().max(1) as f32;
-                let current_tier = (op.total_xp as f32) % needed;
-                let xp_pct = (current_tier / needed).clamp(0.0, 1.0);
-                ui.add(egui::ProgressBar::new(xp_pct).show_percentage().desired_height(4.0));
-            });
+            // Level & XP bar (Distinct rows to prevent overlap)
+            ui.label(egui::RichText::new(format!("Lv: {}", op.level)).small());
+            let needed = op.xp_to_next().max(1) as f32;
+            let current_tier = (op.total_xp as f32) % needed;
+            let xp_pct = (current_tier / needed).clamp(0.0, 1.0);
+            ui.add(egui::ProgressBar::new(xp_pct).show_percentage().desired_height(4.0));
 
             // Hard Stats
             let (s, a, i, _, _, _) = op.total_stats();
@@ -311,7 +309,7 @@ fn render_operator_card(
 
             // HP status directly under pattern/stats to save space
             let hp = op.genome.base_hp;
-            ui.label(egui::RichText::new(format!("HP: {}", hp)).small().color(egui::Color32::LIGHT_GRAY));
+            ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).small().color(egui::Color32::LIGHT_GRAY));
         });
 
     (stage_clicked, card_clicked)
