@@ -718,106 +718,102 @@ impl eframe::App for OperatorApp {
             }
         }
 
-        // Unified 4-tab layout with vertical sub-tab sidebar
+        // 4. Sidebar navigation (Sub-tabs)
+        egui::SidePanel::left("left_sidebar")
+            .frame(
+                egui::Frame::none()
+                    .fill(egui::Color32::from_rgb(19, 19, 24)) // Consistent opaque surface
+                    .inner_margin(egui::Margin {
+                        left: safe_area.left,
+                        right: 0.0,
+                        top: 0.0,
+                        bottom: 0.0,
+                    })
+            )
+            .resizable(false)
+            .default_width(if ctx.screen_rect().width() < 450.0 { 80.0 } else { 100.0 })
+            .show(ctx, |ui| {
+                ui.add_space(8.0);
+                render_sub_tabs(ui, self.active_tab, self);
+            });
+
+        // 5. Main Content Area (CentralPanel fills the remaining gap perfectly)
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::none()
                     .inner_margin(egui::Margin {
-                        left: safe_area.left,
+                        left: 4.0, // Breathing room after separator
                         right: safe_area.right,
                         top: 0.0,
                         bottom: 0.0,
                     })
             )
             .show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.set_min_height(ui.available_height()); // Force expansion
-                    // Left sidebar: sub-tab navigation (Responsive: 80dp on narrow, 100dp standard)
-                    let sidebar_width = if ui.available_width() < 450.0 { 80.0f32 } else { 100.0f32 };
-                    ui.vertical(|ui| {
-                        // Ensure sidebar doesn't exceed 33% of available width on very narrow screens
-                        let max_sidebar = ui.available_width() * 0.33f32;
-                        ui.set_width(sidebar_width.min(max_sidebar).max(60.0f32));
-                        render_sub_tabs(ui, self.active_tab, self);
-                    });
-
-                    ui.separator();
-
-                    // Main Content Area: Respect individual tab scrolling
-                    ui.vertical(|ui| {
-                        ui.set_max_width(ui.available_width());
-                        
-                        // Map tab handles its own positioning (centered/bottom anchored)
-                        if self.active_tab == crate::platform::BottomTab::Map {
-                            match self.map_sub_tab {
-                                crate::platform::MapSubTab::Zones => {
-                                    self.render_radar(ui);
+                // Map tab handles its own positioning
+                if self.active_tab == crate::platform::BottomTab::Map {
+                    match self.map_sub_tab {
+                        crate::platform::MapSubTab::Zones => {
+                            self.render_radar(ui);
+                        }
+                    }
+                } else {
+                    // Unified 4-tab content area
+                    match self.active_tab {
+                        crate::platform::BottomTab::Roster => match self.roster_sub_tab {
+                            crate::platform::RosterSubTab::Collection => {
+                                // If a slime is selected, show detail view; otherwise card grid
+                                if self.selected_slime_id.is_some() {
+                                    self.render_slime_detail(ui);
+                                } else {
+                                    // Force Roster (internal ScrollArea) to fill available gap
+                                    ui.allocate_ui_at_rect(ui.available_rect_before_wrap(), |ui| {
+                                        self.render_manifest(ui);
+                                    });
                                 }
                             }
-                        } else {
-                            // Unified 4-tab content area
-                            match self.active_tab {
-                                crate::platform::BottomTab::Roster => match self.roster_sub_tab {
-                                    crate::platform::RosterSubTab::Collection => {
-                                        // If a slime is selected, show detail view; otherwise card grid
-                                        if self.selected_slime_id.is_some() {
-                                            self.render_slime_detail(ui);
-                                        } else {
-                                            // Force Roster (which has its own ScrollArea) to fill available gap
-                                            ui.allocate_ui_at_rect(ui.available_rect_before_wrap(), |ui| {
-                                                self.render_manifest(ui);
-                                            });
-                                        }
-                                    }
-                                    crate::platform::RosterSubTab::Breeding => {
-                                        self.render_incubator(ui);
-                                    }
-                                    crate::platform::RosterSubTab::Recruit => {
-                                        self.render_recruit(ui);
-                                    }
-                                },
-                                crate::platform::BottomTab::Missions => match self.missions_sub_tab {
-                                    crate::platform::MissionsSubTab::Active => {
-                                        self.render_active_ops(ui);
-                                    }
-                                    crate::platform::MissionsSubTab::QuestBoard => {
-                                        self.render_contracts(ui);
-                                    }
-                                },
-                                crate::platform::BottomTab::Map => unreachable!(),
-                                crate::platform::BottomTab::Logs => match self.logs_sub_tab {
-                                    crate::platform::LogsSubTab::MissionHistory => {
-                                        egui::ScrollArea::vertical()
-                                            .id_source("logs_scroll")
-                                            .auto_shrink([false, false])
-                                            .show(ui, |ui| {
-                                                if self.state.combat_log.is_empty() {
-                                                    ui.label(
-                                                        egui::RichText::new("No mission history. Deploy your first squad to begin.")
-                                                            .color(egui::Color32::GRAY)
-                                                            .italics(),
-                                                    );
-                                                } else {
-                                                    for entry in &self.state.combat_log {
-                                                        let color = match entry.outcome {
-                                                            LogOutcome::Victory  => egui::Color32::from_rgb(100, 220, 100),
-                                                            LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
-                                                            LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
-                                                            LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
-                                                        };
-                                                        ui.colored_label(color, &entry.message);
-                                                    }
-                                                }
-                                            });
-                                    }
-                                    crate::platform::LogsSubTab::CultureHistory => {
-                                        ui.label(egui::RichText::new("Awaiting deployment and culture synchronization...").italics().color(egui::Color32::GRAY));
-                                    }
-                                },
+                            crate::platform::RosterSubTab::Breeding => {
+                                self.render_incubator(ui);
                             }
-                        }
-                    });
-                });
+                            crate::platform::RosterSubTab::Recruit => {
+                                self.render_recruit(ui);
+                            }
+                        },
+                        crate::platform::BottomTab::Missions => match self.missions_sub_tab {
+                            crate::platform::MissionsSubTab::Active => {
+                                self.render_active_ops(ui);
+                            }
+                            crate::platform::MissionsSubTab::QuestBoard => {
+                                self.render_contracts(ui);
+                            }
+                        },
+                        crate::platform::BottomTab::Logs => match self.logs_sub_tab {
+                            crate::platform::LogsSubTab::MissionHistory => {
+                                egui::ScrollArea::vertical()
+                                    .id_source("logs_scroll")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        if self.state.combat_log.is_empty() {
+                                            ui.label(egui::RichText::new("No mission history. Deploy your first squad to begin.").color(egui::Color32::GRAY).italics());
+                                        } else {
+                                            for entry in &self.state.combat_log {
+                                                let color = match entry.outcome {
+                                                    LogOutcome::Victory  => egui::Color32::from_rgb(100, 220, 100),
+                                                    LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
+                                                    LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
+                                                    LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
+                                                };
+                                                ui.colored_label(color, &entry.message);
+                                            }
+                                        }
+                                    });
+                            }
+                            crate::platform::LogsSubTab::CultureHistory => {
+                                ui.label(egui::RichText::new("Awaiting deployment and culture synchronization...").italics().color(egui::Color32::GRAY));
+                            }
+                        },
+                        _ => {}
+                    }
+                }
             });
     }
 }
