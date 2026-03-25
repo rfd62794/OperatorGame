@@ -5,13 +5,20 @@ use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
-        let mut frame_size = ui.available_size();
-        frame_size.y -= crate::platform::TAB_BAR_HEIGHT; // Prevents bottom tab overlap
+        let available_size = ui.available_size();
         
-        let map_dim = frame_size.x.min(frame_size.y);
+        // Map should be a square, centered in the available space.
+        // On mobile, width is the constraint. On desktop, height might be.
+        let map_dim = available_size.x.min(available_size.y - 20.0).max(100.0);
         let scale = (map_dim / 600.0).clamp(0.4, 1.2);
         
-        let (rect, resp) = ui.allocate_exact_size(egui::vec2(frame_size.x, map_dim), egui::Sense::hover());
+        // Center vertically in the remaining space
+        let vertical_space = (available_size.y - map_dim) / 2.0;
+        if vertical_space > 0.0 {
+            ui.add_space(vertical_space);
+        }
+        
+        let (rect, resp) = ui.allocate_exact_size(egui::vec2(available_size.x, map_dim), egui::Sense::hover());
         let painter = ui.painter();
         
         let map_center = rect.center();

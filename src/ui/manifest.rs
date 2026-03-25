@@ -21,21 +21,23 @@ impl OperatorApp {
         }.max(100.0);
 
         // Use a wrapping layout for the card grid
-        ui.vertical(|ui| {
-            ui.horizontal_wrapped(|ui| {
-                ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
-                
-                for op in &self.state.slimes {
-                    let (stage_clicked, card_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
-                    if stage_clicked {
-                        toggle_stage = Some(op.genome.id);
+        egui::ScrollArea::vertical()
+            .id_source("roster_scroll")
+            .show(ui, |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
+                    
+                    for op in &self.state.slimes {
+                        let (stage_clicked, card_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
+                        if stage_clicked {
+                            toggle_stage = Some(op.genome.id);
+                        }
+                        if card_clicked {
+                            self.selected_slime_id = Some(op.genome.id);
+                        }
                     }
-                    if card_clicked {
-                        self.selected_slime_id = Some(op.genome.id);
-                    }
-                }
+                });
             });
-        });
 
         if let Some(id) = toggle_stage {
             if self.staged_operators.contains(&id) {
@@ -252,10 +254,16 @@ fn render_operator_card(
         .show(ui, |ui| {
             ui.set_width(card_width); // Card width with responsive calculation
             
-            // Header: Name and Culture
-            ui.horizontal_wrapped(|ui| {
+            // Header: Name and Culture + VIEW button
+            ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(&genome.name).strong().color(color));
                 ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).small().color(color));
+                
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button(egui::RichText::new("▶").small()).clicked() {
+                        card_clicked = true;
+                    }
+                });
             });
 
             // Pattern
@@ -306,13 +314,6 @@ fn render_operator_card(
                 });
             });
         });
-
-    // Task D.1 Add click sense to card frame
-    let card_rect = response.response.rect;
-    let interact = ui.interact(card_rect, ui.id().with(op.id()), egui::Sense::click());
-    if interact.clicked() {
-        card_clicked = true;
-    }
 
     (stage_clicked, card_clicked)
 }
