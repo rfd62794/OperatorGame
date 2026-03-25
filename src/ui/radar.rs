@@ -5,23 +5,23 @@ use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_radar(&mut self, ui: &mut egui::Ui) {
-        let available_rect = ui.available_rect_before_wrap();
+        let available_size = ui.available_size();
         
-        // Map sizing: Ring 3 has a radius of 320.0dp.
-        // Scale to fit the minimum screen dimension.
-        let scale = (available_rect.width().min(available_rect.height()) / 640.0).clamp(0.4, 1.2);
-        let scaled_radius = 320.0 * scale;
+        // Map should be a square, centered in the available space.
+        // On mobile, width is the constraint. On desktop, height might be.
+        let map_dim = available_size.x.min(available_size.y - 20.0).max(100.0);
+        let scale = (map_dim / 600.0).clamp(0.4, 1.2);
         
-        // Target: Horizontally centered, bottom half of content area.
-        // Anchored 10% above the bottom edge to provide breathing room.
-        let map_center = egui::pos2(
-            available_rect.center().x,
-            available_rect.bottom() - (scaled_radius * 1.1)
-        );
+        // Center vertically in the remaining space
+        let vertical_space = (available_size.y - map_dim) / 2.0;
+        if vertical_space > 0.0 {
+            ui.add_space(vertical_space);
+        }
         
-        // We still allocate to let egui know we've taken space, though we draw freehand
-        let (_rect, resp) = ui.allocate_at_least(egui::vec2(available_rect.width(), scaled_radius * 2.0), egui::Sense::hover());
+        let (rect, resp) = ui.allocate_exact_size(egui::vec2(available_size.x, map_dim), egui::Sense::hover());
         let painter = ui.painter();
+        
+        let map_center = rect.center();
 
         // Draw Rings
         for r in 1..=3 {
