@@ -742,9 +742,10 @@ impl eframe::App for OperatorApp {
 
                     ui.separator();
 
-                    // Main Content Area: Use explicit allocation to force vertical fill
-                    let content_rect = ui.available_rect_before_wrap();
-                    ui.allocate_ui_at_rect(content_rect, |ui| {
+                    // Main Content Area: Respect individual tab scrolling
+                    ui.vertical(|ui| {
+                        ui.set_max_width(ui.available_width());
+                        
                         // Map tab handles its own positioning (centered/bottom anchored)
                         if self.active_tab == crate::platform::BottomTab::Map {
                             match self.map_sub_tab {
@@ -761,7 +762,10 @@ impl eframe::App for OperatorApp {
                                         if self.selected_slime_id.is_some() {
                                             self.render_slime_detail(ui);
                                         } else {
-                                            self.render_manifest(ui);
+                                            // Force Roster (which has its own ScrollArea) to fill available gap
+                                            ui.allocate_ui_at_rect(ui.available_rect_before_wrap(), |ui| {
+                                                self.render_manifest(ui);
+                                            });
                                         }
                                     }
                                     crate::platform::RosterSubTab::Breeding => {
