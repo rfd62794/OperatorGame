@@ -14,7 +14,7 @@ New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 Write-Host "[OK] Output directory: $outDir`n" -ForegroundColor Green
 
 Write-Host "Verifying app deployment and residency..." -ForegroundColor Yellow
-$pidNum = Launch-OperatorApp -Device $dev -WaitSeconds 8
+$pidNum = Launch-OperatorApp -Device $dev -TimeoutSeconds 8
 Write-Host "[OK] Architecture online (PID: $pidNum)`n" -ForegroundColor Green
 
 $tabs = @(
