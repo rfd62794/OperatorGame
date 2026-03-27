@@ -72,9 +72,9 @@ fn test_g1_anchor_4_tier_ranges() {
     for m in missions {
         match m.tier {
             MissionTier::Starter  => assert!((4..=6).contains(&m.base_dc), "Starter DC out of range"),
-            MissionTier::Standard => assert!((8..=12).contains(&m.base_dc), "Standard DC out of range"),
-            MissionTier::Advanced => assert!((14..=16).contains(&m.base_dc), "Advanced DC out of range"),
-            MissionTier::Elite    => assert!((18..=20).contains(&m.base_dc), "Elite DC out of range"),
+            MissionTier::Standard => assert!((6..=8).contains(&m.base_dc), "Standard DC out of range"),
+            MissionTier::Advanced => assert!((10..=14).contains(&m.base_dc), "Advanced DC out of range"),
+            MissionTier::Elite    => assert!((12..=15).contains(&m.base_dc), "Elite DC out of range"),
         }
     }
 }
@@ -119,7 +119,7 @@ fn test_g1_anchor_8_tier_coverage() {
 
 #[test]
 fn test_g1_anchor_10_level_scaling_preview() {
-    let mut m = Mission::new("T3 Test", MissionTier::Elite, 20, 1, 100, 100, 100, 0.5, 3600, 5000, None);
+    let mut m = Mission::new("T3 Test", MissionTier::Elite, 12, 6, 100, 100, 100, 0.5, 3600, 5000, None);
     // Even without a squad, we verified the struct construction works with the new DC field.
-    assert_eq!(m.base_dc, 20);
+    assert_eq!(m.base_dc, 12);
 }
