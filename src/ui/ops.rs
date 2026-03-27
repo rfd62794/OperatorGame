@@ -69,65 +69,70 @@ impl OperatorApp {
 
         let mut to_resolve: Vec<Uuid> = vec![];
 
-        for dep in &self.state.deployments {
-            if dep.resolved { continue; }
+        egui::ScrollArea::vertical()
+            .id_source("active_ops_scroll")
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                for dep in &self.state.deployments {
+                    if dep.resolved { continue; }
 
-            let mission_name = self
-                .state
-                .missions
-                .iter()
-                .find(|m| m.id == dep.mission_id)
-                .map(|m| m.name.clone())
-                .unwrap_or_else(|| "Unknown".to_string());
+                    let mission_name = self
+                        .state
+                        .missions
+                        .iter()
+                        .find(|m| m.id == dep.mission_id)
+                        .map(|m| m.name.clone())
+                        .unwrap_or_else(|| "Unknown".to_string());
 
-            let (progress, remaining_secs) = self.progress_for(dep);
+                    let (progress, remaining_secs) = self.progress_for(dep);
 
-            egui::Frame::none()
-                .fill(egui::Color32::from_rgb(25, 35, 50))
-                .inner_margin(egui::Margin::same(6.0))
-                .rounding(egui::Rounding::same(4.0))
-                .show(ui, |ui| {
-                    let is_orphan = mission_name.contains("[ORPHANED]");
-                    
-                    ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new(&mission_name).strong());
-                        if is_orphan {
-                            ui.label(egui::RichText::new("⚠️ ORPHANED").color(egui::Color32::from_rgb(255, 100, 100)).small());
-                        }
-                    });
+                    egui::Frame::none()
+                        .fill(egui::Color32::from_rgb(25, 35, 50))
+                        .inner_margin(egui::Margin::same(6.0))
+                        .rounding(egui::Rounding::same(4.0))
+                        .show(ui, |ui| {
+                            let is_orphan = mission_name.contains("[ORPHANED]");
+                            
+                            ui.horizontal(|ui| {
+                                ui.label(egui::RichText::new(&mission_name).strong());
+                                if is_orphan {
+                                    ui.label(egui::RichText::new("⚠️ ORPHANED").color(egui::Color32::from_rgb(255, 100, 100)).small());
+                                }
+                            });
 
-                    if is_orphan {
-                        ui.label(egui::RichText::new("Save corruption detected. This operation can still be resolved, but original details are lost.").small().color(egui::Color32::GRAY));
-                    }
+                            if is_orphan {
+                                ui.label(egui::RichText::new("Save corruption detected. This operation can still be resolved, but original details are lost.").small().color(egui::Color32::GRAY));
+                            }
 
-                    if progress < 1.0 {
-                        ui.add(
-                            egui::ProgressBar::new(progress)
-                                .show_percentage()
-                                .animate(true),
-                        );
-                        ui.small(format!("ETA: {}s", remaining_secs));
-                    } else {
-                        ui.colored_label(
-                            egui::Color32::from_rgb(80, 200, 120),
-                            "✅ COMPLETE — Awaiting AAR",
-                        );
-                        if ui.button("⚡ PROCESS AAR").clicked() {
-                            to_resolve.push(dep.id);
-                        }
-                    }
+                            if progress < 1.0 {
+                                ui.add(
+                                    egui::ProgressBar::new(progress)
+                                        .show_percentage()
+                                        .animate(true),
+                                );
+                                ui.small(format!("ETA: {}s", remaining_secs));
+                            } else {
+                                ui.colored_label(
+                                    egui::Color32::from_rgb(80, 200, 120),
+                                    "✅ COMPLETE — Awaiting AAR",
+                                );
+                                if ui.button("⚡ PROCESS AAR").clicked() {
+                                    to_resolve.push(dep.id);
+                                }
+                            }
 
-                    // Squad IDs
-                    ui.small(
-                        egui::RichText::new(format!(
-                            "Squad: {} operator(s)",
-                            dep.operator_ids.len()
-                        ))
-                        .color(egui::Color32::GRAY),
-                    );
-                });
-            ui.add_space(4.0);
-        }
+                            // Squad IDs
+                            ui.small(
+                                egui::RichText::new(format!(
+                                    "Squad: {} operator(s)",
+                                    dep.operator_ids.len()
+                                ))
+                                .color(egui::Color32::GRAY),
+                            );
+                        });
+                    ui.add_space(4.0);
+                }
+            });
 
         // Process any AAR clicks
         for dep_id in to_resolve {
