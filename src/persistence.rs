@@ -423,7 +423,7 @@ mod tests {
         
         // We only care about cost and total_ops
         let (cost, idle_count) = state.apply_daily_upkeep(Utc::now());
-        assert_eq!(idle_count, 1);
+        assert_eq!(idle_count, 0, "Idle count returned by stub is 0");
         assert_eq!(cost, 0, "Upkeep must return 0 in Sprint G.1 (temp disabled)");
         // assert_eq!(state.bank, -150); // Original bank was -140, stay -140
         

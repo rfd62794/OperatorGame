@@ -865,7 +865,7 @@ mod tests {
     use rand::rngs::SmallRng;
 
     fn make_mission(rs: u32, ra: u32, ri: u32, diff: f64) -> Mission {
-        Mission::new("Test Mission", rs, ra, ri, diff, 60, 100, None)
+        Mission::new("Test Mission", MissionTier::Starter, 5, 1, rs, ra, ri, diff, 60, 100, None)
     }
 
     #[test]
@@ -878,7 +878,7 @@ mod tests {
 
     #[test]
     fn test_deployment_is_complete_future() {
-        let m = Mission::new("Far Future", 10, 10, 10, 0.0, 9999, 0, None);
+        let m = Mission::new("Far Future", MissionTier::Starter, 10, 1, 10, 10, 10, 0.0, 9999, 0, None);
         let d = Deployment::start(&m, vec![], false);
         assert!(!d.is_complete(), "Should not be complete for future timestamp");
     }
