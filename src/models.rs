@@ -284,6 +284,10 @@ pub struct Mission {
     pub duration_secs: u64,
     pub reward: u64,
     pub affinity: Option<crate::genetics::Culture>,
+    #[serde(default)]
+    pub node_id: Option<usize>,
+    #[serde(default)]
+    pub is_scout: bool,
 }
 
 impl Mission {
@@ -300,21 +304,25 @@ impl Mission {
         duration_secs: u64,
         reward: u64,
         affinity: Option<crate::genetics::Culture>,
+        node_id: Option<usize>,
+        is_scout: bool,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),
             name: name.into(),
-            description: "A standard operational contract.".to_string(), // Default
+            description: "High-priority contract from the Orbitals.".into(),
             tier,
             base_dc,
             min_roster_level: min_level,
             req_strength: req_str,
             req_agility: req_agi,
             req_intelligence: req_int,
-            difficulty: difficulty.clamp(0.0, 0.9),
+            difficulty,
             duration_secs,
             reward,
             affinity,
+            node_id,
+            is_scout,
         }
     }
 
@@ -713,11 +721,11 @@ pub fn apply_outcome_injuries(
 
 pub fn seed_missions() -> Vec<Mission> {
     vec![
-        Mission::new("Bank Heist Recon",    MissionTier::Starter,  5,  1, 20, 30, 10, 0.10, 60,  500,  Some(crate::genetics::Culture::Teal)),
-        Mission::new("Corporate Espionage", MissionTier::Standard, 10, 1, 10, 20, 50, 0.25, 120, 1200, Some(crate::genetics::Culture::Tide)),
-        Mission::new("Harbour Extraction",  MissionTier::Standard, 12, 2, 40, 20, 10, 0.20, 90,  800,  Some(crate::genetics::Culture::Marsh)),
-        Mission::new("Zero-Day Exploit",    MissionTier::Advanced, 15, 3, 10, 10, 70, 0.40, 180, 2500, Some(crate::genetics::Culture::Orange)),
-        Mission::new("Black Site Breach",   MissionTier::Elite,    20, 5, 60, 40, 20, 0.50, 300, 5000, Some(crate::genetics::Culture::Ember)),
+        Mission::new("Bank Heist Recon",    MissionTier::Starter,  5,  1, 20, 30, 10, 0.10, 60,  500,  Some(crate::genetics::Culture::Teal), None, false),
+        Mission::new("Corporate Espionage", MissionTier::Standard, 10, 1, 10, 20, 50, 0.25, 120, 1200, Some(crate::genetics::Culture::Tide), None, false),
+        Mission::new("Harbour Extraction",  MissionTier::Standard, 12, 2, 40, 20, 10, 0.20, 90,  800,  Some(crate::genetics::Culture::Marsh), None, false),
+        Mission::new("Zero-Day Exploit",    MissionTier::Advanced, 15, 3, 10, 10, 70, 0.40, 180, 2500, Some(crate::genetics::Culture::Orange), None, false),
+        Mission::new("Black Site Breach",   MissionTier::Elite,    20, 5, 60, 40, 20, 0.50, 300, 5000, Some(crate::genetics::Culture::Ember), None, false),
     ]
 }
 
