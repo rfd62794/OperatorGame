@@ -863,12 +863,12 @@ pub fn generate_random<R: Rng>(culture: Culture, name: &str, rng: &mut R) -> Sli
         pattern_color: [rng.gen_range(50..=255), rng.gen_range(50..=255), rng.gen_range(50..=255)],
         frequency:     culture.frequency(),
         name:          name.to_string(),
-        base_strength: rng.gen_range(5..=8),
-        base_agility:  rng.gen_range(5..=8),
-        base_intelligence: rng.gen_range(5..=8),
-        base_mind: rng.gen_range(5..=8),
-        base_sensory: rng.gen_range(5..=8),
-        base_tenacity: rng.gen_range(5..=8),
+        base_strength: rng.gen_range(8..=12),
+        base_agility:  rng.gen_range(8..=12),
+        base_intelligence: rng.gen_range(8..=12),
+        base_mind: rng.gen_range(8..=12),
+        base_sensory: rng.gen_range(8..=12),
+        base_tenacity: rng.gen_range(8..=12),
     }
 }
 

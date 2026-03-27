@@ -594,10 +594,10 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
         
         let mut reqs = [rng.gen_range(2..10), rng.gen_range(2..10), rng.gen_range(2..10)];
         let primary_val = match tier {
-            MissionTier::Starter => rng.gen_range(3..=5),
+            MissionTier::Starter => rng.gen_range(4..=8),
             MissionTier::Standard => rng.gen_range(8..=12),
-            MissionTier::Advanced => rng.gen_range(15..=20),
-            MissionTier::Elite => rng.gen_range(45..=55),
+            MissionTier::Advanced => rng.gen_range(14..=20),
+            MissionTier::Elite => rng.gen_range(28..=36),
         };
         reqs[prim_stat] = primary_val;
 
@@ -621,13 +621,13 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
         )
     };
 
-    // 4x Starter (DC 4-6, Req 3-5, L1)
+    // 4x Starter (DC 5, Req 4-8, L1)
     for _ in 0..4 { missions.push(gen(MissionTier::Starter, 4, 6, 1, 150)); }
-    // 4x Standard (DC 6-8, Req 8-12, L1)
+    // 4x Standard (DC 6, Req 8-12, L1)
     for _ in 0..4 { missions.push(gen(MissionTier::Standard, 6, 8, 1, 600)); }
-    // 4x Advanced (DC 10-14, Req 15-20, L3)
+    // 4x Advanced (DC 10, Req 14-20, L3)
     for _ in 0..4 { missions.push(gen(MissionTier::Advanced, 10, 14, 3, 2000)); }
-    // 2x Elite (DC 12-15, Req 45-55, L6)
+    // 2x Elite (DC 12, Req 28-36, L6)
     for _ in 0..2 { missions.push(gen(MissionTier::Elite, 12, 15, 6, 8000)); }
 
     missions

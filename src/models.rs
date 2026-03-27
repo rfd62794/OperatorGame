@@ -358,11 +358,12 @@ impl Mission {
             total_int += i;
         }
 
-        // Calculate average requirement coverage
+        // Calculate average requirement coverage with a "pity floor" (0.3) 
+        // to prevent single-stat RNG from producing mathematically unwinnable missions.
         let coverage = (
-            (total_str as f64 / self.req_strength.max(1) as f64).min(2.0) +
-            (total_agi as f64 / self.req_agility.max(1) as f64).min(2.0) +
-            (total_int as f64 / self.req_intelligence.max(1) as f64).min(2.0)
+            (total_str as f64 / self.req_strength.max(1) as f64).clamp(0.3, 2.0) +
+            (total_agi as f64 / self.req_agility.max(1) as f64).clamp(0.3, 2.0) +
+            (total_int as f64 / self.req_intelligence.max(1) as f64).clamp(0.3, 2.0)
         ) / 3.0;
 
         let modifier = crate::combat::D20::modifier_from_coverage(coverage);
