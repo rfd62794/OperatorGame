@@ -29,7 +29,16 @@ impl OperatorApp {
                 .inner_margin(egui::Margin::same(6.0))
                 .rounding(egui::Rounding::same(4.0))
                 .show(ui, |ui| {
-                    ui.label(egui::RichText::new(&mission.name).strong().size(14.0).color(egui::Color32::WHITE));
+                    ui.horizontal(|ui| {
+                        let tier_color = match mission.tier {
+                            crate::models::MissionTier::Starter  => egui::Color32::from_rgb(150, 255, 150),
+                            crate::models::MissionTier::Standard => egui::Color32::from_rgb(150, 200, 255),
+                            crate::models::MissionTier::Advanced => egui::Color32::from_rgb(255, 200, 100),
+                            crate::models::MissionTier::Elite    => egui::Color32::from_rgb(255, 100, 255),
+                        };
+                        ui.label(egui::RichText::new(format!("{:?}", mission.tier)).color(tier_color).small().strong());
+                        ui.label(egui::RichText::new(&mission.name).strong().size(14.0).color(egui::Color32::WHITE));
+                    });
 
                     ui.horizontal_wrapped(|ui| {
                         if let Some(aff) = mission.affinity {
@@ -42,26 +51,25 @@ impl OperatorApp {
                     });
 
                     ui.horizontal_wrapped(|ui| {
-                        let diff_color = if mission.difficulty < 0.3 {
-                            egui::Color32::from_rgb(80, 200, 120)
-                        } else if mission.difficulty < 0.5 {
-                            egui::Color32::YELLOW
-                        } else {
-                            egui::Color32::from_rgb(220, 80, 80)
-                        };
-                        ui.colored_label(
-                            diff_color,
-                            format!("Diff: {:.0}%", mission.difficulty * 100.0),
-                        );
-
-                        // Show affinity bonus if applicable
+                        ui.label(egui::RichText::new(format!("DC: {}", mission.base_dc)).color(egui::Color32::LIGHT_GRAY));
+                        
+                        // Show real-time success chance based on STAGED operators
                         let staged_ops: Vec<&crate::models::Operator> = self.state.slimes.iter()
                             .filter(|op| self.staged_operators.contains(&op.genome.id))
                             .collect();
-                        let bonus = mission.get_affinity_bonus(&staged_ops);
-                        if bonus < 0.0 {
-                            ui.colored_label(egui::Color32::GREEN, "(-15% SYNERGY)");
-                        }
+                        
+                        let (label, chance) = mission.calculate_success_chance(&staged_ops);
+                        let chance_pct = (chance * 100.0) as u32;
+                        
+                        let chance_color = if chance >= 0.75 {
+                            egui::Color32::from_rgb(80, 255, 120) // Success
+                        } else if chance >= 0.50 {
+                            egui::Color32::YELLOW // Risky
+                        } else {
+                            egui::Color32::from_rgb(255, 100, 100) // Danger
+                        };
+
+                        ui.label(egui::RichText::new(format!("{} - {}%", label, chance_pct)).color(chance_color).strong());
 
                         ui.label(egui::RichText::new(format!("| {}s | ${}", mission.duration_secs, mission.reward)).color(egui::Color32::LIGHT_GRAY));
                     });
@@ -73,7 +81,8 @@ impl OperatorApp {
                     };
                     if ui.button(btn_label).clicked() {
                         new_selection = if is_selected { None } else { Some(mission.id) };
-                        self.staged_operators.clear();
+                        // Task D: DO NOT clear staged_operators here. 
+                        // Allow them to persist if the user is swapping contracts to compare odds.
                     }
                 });
             ui.add_space(4.0);

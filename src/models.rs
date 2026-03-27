@@ -255,22 +255,30 @@ impl std::fmt::Display for SlimeState {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
-pub enum DifficultyBand {
-    Trivial,
-    Moderate,
-    Hard,
-    Extreme,
+pub enum MissionTier {
+    /// DC 5-8. Intro missions for L1-L2 slimes.
+    Starter,
+    /// DC 10-13. Standard contracts for L3-L5 slimes.
+    Standard,
+    /// DC 15-18. High-risk ops for L6-L8 slimes.
+    Advanced,
+    /// DC 20-25. Apex contracts for L9-L10 slimes.
+    Elite,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Mission {
     pub id: Uuid,
     pub name: String,
+    pub description: String,
+    pub tier: MissionTier,
+    pub base_dc: u32,
+    pub min_roster_level: u32,
     pub req_strength: u32,
     pub req_agility: u32,
     pub req_intelligence: u32,
-    /// Scalar difficulty penalty: 0.0 (trivial) → 0.9 (near-impossible).
-    /// Clamped to [0.0, 0.9] at creation.
+    /// Scalar difficulty penalty for legacy logic (0.0-0.9).
+    /// Sprint G.1 uses base_dc for resolution.
     pub difficulty: f64,
     /// Wall-clock seconds this mission takes to complete.
     pub duration_secs: u64,
@@ -282,6 +290,9 @@ impl Mission {
     /// Build a mission, clamping difficulty to the safe range.
     pub fn new(
         name: impl Into<String>,
+        tier: MissionTier,
+        base_dc: u32,
+        min_level: u32,
         req_str: u32,
         req_agi: u32,
         req_int: u32,
@@ -293,6 +304,10 @@ impl Mission {
         Self {
             id: Uuid::new_v4(),
             name: name.into(),
+            description: "A standard operational contract.".to_string(), // Default
+            tier,
+            base_dc,
+            min_roster_level: min_level,
             req_strength: req_str,
             req_agility: req_agi,
             req_intelligence: req_int,
@@ -347,36 +362,59 @@ impl Mission {
     /// on a high-INT mission will score 0.0 on intelligence — the average
     /// pulls the result down hard. This is intentional game design friction.
     /// Core "Mafia Wars" formula (Sprint 9 Version).
-    pub fn calculate_success_rate(&self, squad: &[&Operator]) -> f64 {
+    /// Core "D20" success probability (Sprint G.1 Version).
+    ///
+    /// Predicted chance of success = (1.0 - (DC - Mod - 1)/20) clamped to [0.05, 0.95].
+    /// Nat 20 (5%) and Nat 1 (5%) are always factored in.
+    pub fn calculate_success_chance(&self, squad: &[&Operator]) -> (String, f64) {
+        if squad.is_empty() {
+            return ("UNSTAFFED".to_string(), 0.0);
+        }
+
         let mut total_str = 0u32;
         let mut total_agi = 0u32;
         let mut total_int = 0u32;
 
         for op in squad {
-            // Sprint 9: Use finalized stat computation
             let (s, a, i, _, _, _) = op.total_stats();
             total_str += s;
             total_agi += a;
             total_int += i;
         }
 
-        // Guard: missions with zero threshold in an attribute are treated as
-        // trivially met (score = 1.0) so they don't divide by zero.
-        let score = |total: u32, req: u32| -> f64 {
-            if req == 0 {
-                1.0
-            } else {
-                (total as f64 / req as f64).min(1.0)
-            }
+        // Calculate average requirement coverage
+        let coverage = (
+            (total_str as f64 / self.req_strength.max(1) as f64).min(2.0) +
+            (total_agi as f64 / self.req_agility.max(1) as f64).min(2.0) +
+            (total_int as f64 / self.req_intelligence.max(1) as f64).min(2.0)
+        ) / 3.0;
+
+        let modifier = crate::combat::D20::modifier_from_coverage(coverage);
+        let dc = self.base_dc as i32;
+        
+        // Probability total >= dc
+        // total = roll + modifier; roll >= dc - modifier
+        // Target roll = (dc - modifier).clamp(1, 21)
+        let target_roll = (dc - modifier).clamp(1, 21);
+        
+        // Number of successful faces: 21 - target_roll (capped at 19 for nat 1/20 rules)
+        let mut success_faces = (21 - target_roll).clamp(1, 19);
+        
+        // Handle natural 1/20 (5% crit fail floor, 5% crit success ceiling)
+        // If target_roll <= 1, success_faces = 19 (only 1 fails).
+        // If target_roll >= 20, success_faces = 1 (only 20 succeeds).
+        
+        let chance = success_faces as f64 / 20.0;
+        
+        let label = match chance {
+            c if c >= 0.90 => "GUARANTEED",
+            c if c >= 0.75 => "GOOD ODDS",
+            c if c >= 0.50 => "RISKY",
+            c if c >= 0.25 => "DANGEROUS",
+            _              => "DESPERATE",
         };
 
-        let avg = (score(total_str, self.req_strength)
-            + score(total_agi, self.req_agility)
-            + score(total_int, self.req_intelligence))
-            / 3.0;
-
-        let affinity_bonus = self.get_affinity_bonus(squad);
-        avg * (1.0 - (self.difficulty + affinity_bonus / 100.0).clamp(0.0, 1.0))
+        (label.to_string(), chance)
     }
 }
 
@@ -398,7 +436,7 @@ pub fn compute_final_stat(base: u32, xp: u32, level: u8) -> u32 {
 
 
 /// Internal helper for randomized mission names and primary affinities.
-fn blueprint<R: Rng>(rng: &mut R) -> (String, usize, crate::genetics::Culture) {
+pub(crate) fn blueprint<R: Rng>(rng: &mut R) -> (String, usize, crate::genetics::Culture) {
     let adjs = ["Industrial", "Corporate", "Stealth", "Deep-Sea", "Orbital", "Thermal", "Sub-Zero", "Clandestine"];
     let nouns = ["Extraction", "Espionage", "Sabotage", "Data-Siphon", "Recon", "Breach", "Harvest", "Surveillance"];
     let name = format!("{} {}", adjs.choose(rng).unwrap(), nouns.choose(rng).unwrap());

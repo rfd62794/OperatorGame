@@ -1,0 +1,540 @@
+{
+  "bank": 10975,
+  "deployments": [
+    {
+      "id": "583391b5-0978-4239-8935-1fd670bbaa62",
+      "mission_id": "d7b8038d-4cfb-4fe5-b4da-4e0224e24dec",
+      "operator_ids": [
+        "79c57790-0e8b-49cf-9f06-cbfe6c238eed"
+      ],
+      "completes_at": "2026-03-27T09:51:27.898796100Z",
+      "resolved": true,
+      "is_emergency": false
+    }
+  ],
+  "missions": [
+    {
+      "id": "d7b8038d-4cfb-4fe5-b4da-4e0224e24dec",
+      "name": "Test Mission",
+      "req_strength": 0,
+      "req_agility": 0,
+      "req_intelligence": 0,
+      "difficulty": 0.0,
+      "duration_secs": 10,
+      "reward": 10000,
+      "affinity": null
+    }
+  ],
+  "slimes": [
+    {
+      "genome": {
+        "id": "79c57790-0e8b-49cf-9f06-cbfe6c238eed",
+        "culture_alleles": {
+          "dominant": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "recessive": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_hp": 1000.0,
+        "base_atk": 100.0,
+        "base_spd": 6.1897116,
+        "generation": 1,
+        "parent_ids": null,
+        "curiosity": 0.5046469,
+        "energy": 0.35373974,
+        "affection": 0.3933769,
+        "shyness": 0.42822295,
+        "base_strength": 8,
+        "base_agility": 6,
+        "base_intelligence": 6,
+        "base_mind": 6,
+        "base_sensory": 5,
+        "base_tenacity": 8,
+        "shape": "Crystalline",
+        "body_size": "Large",
+        "pattern": "Solid",
+        "accessory": "Crown",
+        "base_color": [
+          104,
+          218,
+          169
+        ],
+        "pattern_color": [
+          149,
+          115,
+          92
+        ],
+        "frequency": 256.0,
+        "name": "Hero"
+      },
+      "level": 2,
+      "total_xp": 200,
+      "stat_xp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state": "Idle",
+      "training": {
+        "session_counts": {},
+        "last_reset": "1970-01-01T00:00:00Z"
+      },
+      "equipped_gear": [],
+      "synthesis_cooldown_until": null
+    }
+  ],
+  "incubating": [],
+  "tech_tier": 0,
+  "lens_unlocked": false,
+  "world_map": {
+    "nodes": [
+      {
+        "id": 0,
+        "name": "Hidden Meadow",
+        "zone_type": "CrashSiteDefence",
+        "owner": "Void",
+        "influence": 0.85,
+        "adjacent": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "occupied": false,
+        "ring": 0,
+        "position": [
+          0.0,
+          0.0
+        ],
+        "difficulty_dc": 0,
+        "resonance_aura": 2
+      },
+      {
+        "id": 1,
+        "name": "Ember Caldera",
+        "zone_type": "TerritoryDispute",
+        "owner": "Ember",
+        "influence": 0.85,
+        "adjacent": [
+          6,
+          2,
+          0,
+          7
+        ],
+        "occupied": false,
+        "ring": 1,
+        "position": [
+          120.0,
+          0.0
+        ],
+        "difficulty_dc": 10,
+        "resonance_aura": 0
+      },
+      {
+        "id": 2,
+        "name": "Gale Ridge",
+        "zone_type": "TerritoryDispute",
+        "owner": "Gale",
+        "influence": 0.85,
+        "adjacent": [
+          1,
+          3,
+          0,
+          8
+        ],
+        "occupied": false,
+        "ring": 1,
+        "position": [
+          59.999996,
+          103.92305
+        ],
+        "difficulty_dc": 8,
+        "resonance_aura": 0
+      },
+      {
+        "id": 3,
+        "name": "Tide Basin",
+        "zone_type": "TerritoryDispute",
+        "owner": "Tide",
+        "influence": 0.85,
+        "adjacent": [
+          2,
+          4,
+          0,
+          9
+        ],
+        "occupied": false,
+        "ring": 1,
+        "position": [
+          -60.000008,
+          103.92305
+        ],
+        "difficulty_dc": 6,
+        "resonance_aura": 0
+      },
+      {
+        "id": 4,
+        "name": "Ember Caldera",
+        "zone_type": "TerritoryDispute",
+        "owner": "Ember",
+        "influence": 0.85,
+        "adjacent": [
+          3,
+          5,
+          0,
+          10
+        ],
+        "occupied": false,
+        "ring": 1,
+        "position": [
+          -120.0,
+          -0.000010490733
+        ],
+        "difficulty_dc": 9,
+        "resonance_aura": 0
+      },
+      {
+        "id": 5,
+        "name": "Gale Ridge",
+        "zone_type": "TerritoryDispute",
+        "owner": "Gale",
+        "influence": 0.85,
+        "adjacent": [
+          4,
+          6,
+          0,
+          11
+        ],
+        "occupied": false,
+        "ring": 1,
+        "position": [
+          -59.99999,
+          -103.92305
+        ],
+        "difficulty_dc": 7,
+        "resonance_aura": 0
+      },
+      {
+        "id": 6,
+        "name": "Tide Basin",
+        "zone_type": "TerritoryDispute",
+        "owner": "Tide",
+        "influence": 0.85,
+        "adjacent": [
+          5,
+          1,
+          0,
+          12
+        ],
+        "occupied": false,
+        "ring": 1,
+        "position": [
+          59.99999,
+          -103.92305
+        ],
+        "difficulty_dc": 10,
+        "resonance_aura": 0
+      },
+      {
+        "id": 7,
+        "name": "Mire Delta",
+        "zone_type": "BioSurvey",
+        "owner": "Marsh",
+        "influence": 0.26536334,
+        "adjacent": [
+          12,
+          8,
+          1,
+          13
+        ],
+        "occupied": false,
+        "ring": 2,
+        "position": [
+          190.52559,
+          110.0
+        ],
+        "difficulty_dc": 20,
+        "resonance_aura": 0
+      },
+      {
+        "id": 8,
+        "name": "Prism Market",
+        "zone_type": "BioSurvey",
+        "owner": "Crystal",
+        "influence": 0.35537696,
+        "adjacent": [
+          7,
+          9,
+          2,
+          14
+        ],
+        "occupied": false,
+        "ring": 2,
+        "position": [
+          -0.000009616506,
+          220.0
+        ],
+        "difficulty_dc": 18,
+        "resonance_aura": 0
+      },
+      {
+        "id": 9,
+        "name": "Frost Caves",
+        "zone_type": "BioSurvey",
+        "owner": "Tundra",
+        "influence": 0.3513432,
+        "adjacent": [
+          8,
+          10,
+          3,
+          15
+        ],
+        "occupied": false,
+        "ring": 2,
+        "position": [
+          -190.52559,
+          110.000015
+        ],
+        "difficulty_dc": 16,
+        "resonance_aura": 0
+      },
+      {
+        "id": 10,
+        "name": "Mire Delta",
+        "zone_type": "BioSurvey",
+        "owner": "Marsh",
+        "influence": 0.25044203,
+        "adjacent": [
+          9,
+          11,
+          4,
+          16
+        ],
+        "occupied": false,
+        "ring": 2,
+        "position": [
+          -190.52556,
+          -110.00004
+        ],
+        "difficulty_dc": 19,
+        "resonance_aura": 0
+      },
+      {
+        "id": 11,
+        "name": "Prism Market",
+        "zone_type": "BioSurvey",
+        "owner": "Crystal",
+        "influence": 0.38225293,
+        "adjacent": [
+          10,
+          12,
+          5,
+          17
+        ],
+        "occupied": false,
+        "ring": 2,
+        "position": [
+          0.0000026234738,
+          -220.0
+        ],
+        "difficulty_dc": 17,
+        "resonance_aura": 0
+      },
+      {
+        "id": 12,
+        "name": "Frost Caves",
+        "zone_type": "BioSurvey",
+        "owner": "Tundra",
+        "influence": 0.38126928,
+        "adjacent": [
+          11,
+          7,
+          6,
+          18
+        ],
+        "occupied": false,
+        "ring": 2,
+        "position": [
+          190.52557,
+          -110.00004
+        ],
+        "difficulty_dc": 20,
+        "resonance_aura": 0
+      },
+      {
+        "id": 13,
+        "name": "Forbidden Reaches",
+        "zone_type": "Excavation",
+        "owner": "Ember",
+        "influence": 0.5145353,
+        "adjacent": [
+          18,
+          14,
+          7
+        ],
+        "occupied": false,
+        "ring": 3,
+        "position": [
+          320.0,
+          0.0
+        ],
+        "difficulty_dc": 30,
+        "resonance_aura": 0
+      },
+      {
+        "id": 14,
+        "name": "Forbidden Reaches",
+        "zone_type": "Excavation",
+        "owner": "Gale",
+        "influence": 0.57858616,
+        "adjacent": [
+          13,
+          15,
+          8
+        ],
+        "occupied": false,
+        "ring": 3,
+        "position": [
+          159.99998,
+          277.12814
+        ],
+        "difficulty_dc": 28,
+        "resonance_aura": 0
+      },
+      {
+        "id": 15,
+        "name": "Forbidden Reaches",
+        "zone_type": "Excavation",
+        "owner": "Tide",
+        "influence": 0.2446569,
+        "adjacent": [
+          14,
+          16,
+          9
+        ],
+        "occupied": false,
+        "ring": 3,
+        "position": [
+          -160.00002,
+          277.1281
+        ],
+        "difficulty_dc": 26,
+        "resonance_aura": 0
+      },
+      {
+        "id": 16,
+        "name": "Forbidden Reaches",
+        "zone_type": "Excavation",
+        "owner": "Ember",
+        "influence": 0.387351,
+        "adjacent": [
+          15,
+          17,
+          10
+        ],
+        "occupied": false,
+        "ring": 3,
+        "position": [
+          -320.0,
+          -0.00002797529
+        ],
+        "difficulty_dc": 29,
+        "resonance_aura": 0
+      },
+      {
+        "id": 17,
+        "name": "Forbidden Reaches",
+        "zone_type": "Excavation",
+        "owner": "Gale",
+        "influence": 0.3875711,
+        "adjacent": [
+          16,
+          18,
+          11
+        ],
+        "occupied": false,
+        "ring": 3,
+        "position": [
+          -159.99997,
+          -277.12814
+        ],
+        "difficulty_dc": 27,
+        "resonance_aura": 0
+      },
+      {
+        "id": 18,
+        "name": "Forbidden Reaches",
+        "zone_type": "Excavation",
+        "owner": "Tide",
+        "influence": 0.31416008,
+        "adjacent": [
+          17,
+          13,
+          12
+        ],
+        "occupied": false,
+        "ring": 3,
+        "position": [
+          159.99997,
+          -277.12814
+        ],
+        "difficulty_dc": 30,
+        "resonance_aura": 0
+      }
+    ],
+    "tick_accum": 0.0,
+    "startled_level": 0.05
+  },
+  "last_upkeep_at": "2026-03-27T10:51:17.898669300Z",
+  "last_pool_refresh": "2026-03-27T10:51:17.898670600Z",
+  "inventory": {
+    "gear_pool": [],
+    "biomass": 0,
+    "scrap": 0,
+    "reagents": 0
+  },
+  "active_expeditions": [],
+  "active_tab": "Roster",
+  "roster_sub_tab": "Collection",
+  "missions_sub_tab": "Active",
+  "map_sub_tab": "Zones",
+  "logs_sub_tab": "MissionHistory",
+  "combat_log": [
+    {
+      "timestamp": 1774608677,
+      "message": "[Test Mission] ✅ VICTORY (+$10000) — No single moment of brilliance — just relentless preparation paying off.",
+      "outcome": "Victory"
+    },
+    {
+      "timestamp": 1774608677,
+      "message": ">> EXCELLENCE RECOGNIZED: Hero has reached Level 2!",
+      "outcome": "System"
+    }
+  ]
+}

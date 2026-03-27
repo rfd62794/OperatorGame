@@ -5,6 +5,7 @@
 ///           rpgCore `demos/culture_node_wars.py` (see DESIGN_BLUEPRINT.md §2).
 use chrono::Utc;
 use crate::genetics::Culture;
+use crate::models::{Mission, MissionTier};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -576,6 +577,61 @@ impl Default for WorldMap {
 // ---------------------------------------------------------------------------
 // Expedition Targets — Island dispatch sites (Sprint 3)
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Mission Generation (Sprint G.1 Static Pool)
+// ---------------------------------------------------------------------------
+
+/// Generates a fixed pool of 14 missions as specified in the G.1 directive.
+/// 4x Starter, 4x Standard, 4x Advanced, 2x Elite.
+pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
+    let mut missions = Vec::new();
+    
+    // Helper to generate a mission with specific DCs and Tiers
+    let mut gen = |tier: MissionTier, min_dc: u32, max_dc: u32, min_level: u32, reward_base: u64| {
+        let (name, prim_stat, affinity) = crate::models::blueprint(rng);
+        let dc = rng.gen_range(min_dc..=max_dc);
+        
+        let mut reqs = [rng.gen_range(2..10), rng.gen_range(2..10), rng.gen_range(2..10)];
+        let primary_val = match tier {
+            MissionTier::Starter => rng.gen_range(12..20),
+            MissionTier::Standard => rng.gen_range(35..50),
+            MissionTier::Advanced => rng.gen_range(75..110),
+            MissionTier::Elite => rng.gen_range(160..240),
+        };
+        reqs[prim_stat] = primary_val;
+
+        let duration = match tier {
+            MissionTier::Starter => rng.gen_range(60..120),
+            MissionTier::Standard => rng.gen_range(180..600),
+            MissionTier::Advanced => rng.gen_range(900..1800),
+            MissionTier::Elite => rng.gen_range(3600..7200),
+        };
+
+        Mission::new(
+            name,
+            tier,
+            dc,
+            min_level,
+            reqs[0], reqs[1], reqs[2],
+            0.5, // Legacy difficulty fallback
+            duration,
+            reward_base + (dc as u64 * 50),
+            Some(affinity),
+        )
+    };
+
+    // 4x Starter (DC 4-6)
+    for _ in 0..4 { missions.push(gen(MissionTier::Starter, 4, 6, 1, 150)); }
+    // 4x Standard (DC 8-12)
+    for _ in 0..4 { missions.push(gen(MissionTier::Standard, 8, 12, 3, 600)); }
+    // 4x Advanced (DC 14-16)
+    for _ in 0..4 { missions.push(gen(MissionTier::Advanced, 14, 16, 6, 2000)); }
+    // 2x Elite (DC 18-20)
+    for _ in 0..2 { missions.push(gen(MissionTier::Elite, 18, 20, 9, 8000)); }
+
+    missions
+}
 
 /// The resource payload returned by a completed expedition.
 #[derive(Debug, Clone, Serialize, Deserialize)]

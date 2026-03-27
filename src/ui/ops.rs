@@ -87,7 +87,18 @@ impl OperatorApp {
                 .inner_margin(egui::Margin::same(6.0))
                 .rounding(egui::Rounding::same(4.0))
                 .show(ui, |ui| {
-                    ui.label(egui::RichText::new(&mission_name).strong());
+                    let is_orphan = mission_name.contains("[ORPHANED]");
+                    
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new(&mission_name).strong());
+                        if is_orphan {
+                            ui.label(egui::RichText::new("⚠️ ORPHANED").color(egui::Color32::from_rgb(255, 100, 100)).small());
+                        }
+                    });
+
+                    if is_orphan {
+                        ui.label(egui::RichText::new("Save corruption detected. This operation can still be resolved, but original details are lost.").small().color(egui::Color32::GRAY));
+                    }
 
                     if progress < 1.0 {
                         ui.add(
