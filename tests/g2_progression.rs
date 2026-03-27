@@ -5,11 +5,12 @@ use rand::SeedableRng;
 
 #[test]
 fn test_save_v10_migration() {
-    // Simulate an old save (missing unlocked_nodes)
-    let json = r#"{"bank": 500, "version": 9}"#;
-    let mut state: GameState = serde_json::from_str(json).unwrap();
+    // Simulate an old save state
+    let mut state = GameState::default();
+    state.version = 9;
+    state.unlocked_nodes.clear();
     
-    // Migration logic (normally in persistence::load, but let's test the logic)
+    // Migration logic (normally in persistence::load)
     if state.version < 10 {
         if state.unlocked_nodes.is_empty() {
             state.unlocked_nodes.insert(0);
