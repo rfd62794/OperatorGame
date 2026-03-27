@@ -302,6 +302,8 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
             req_strength: 5,
             req_agility: 5,
             req_intelligence: 5,
+            node_id: None,
+            is_scout: false,
         });
     }
 
