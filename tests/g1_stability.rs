@@ -4,6 +4,7 @@ use operator::models::{Mission, MissionTier, Deployment};
 use operator::world_map::generate_static_missions;
 use chrono::{Utc, Duration};
 use uuid::Uuid;
+use std::collections::HashSet;
 use rand::SeedableRng;
 
 #[test]

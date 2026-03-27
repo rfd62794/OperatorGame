@@ -12,6 +12,10 @@ fn setup_app_with_mission() -> OperatorApp {
     app.state.missions.push(crate::models::Mission {
         id: uuid::Uuid::new_v4(),
         name: "Test Mission".to_string(),
+        description: "Test".to_string(),
+        tier: crate::models::MissionTier::Starter,
+        base_dc: 5,
+        min_roster_level: 1,
         req_strength: 0,
         req_agility: 0,
         req_intelligence: 0,
@@ -268,6 +272,10 @@ fn test_f1b_13_combat_log_truncation() {
     app.state.missions.push(crate::models::Mission {
         id: app.state.deployments[0].mission_id,
         name: "Truncate Mission".to_string(),
+        description: "Test".to_string(),
+        tier: crate::models::MissionTier::Starter,
+        base_dc: 5,
+        min_roster_level: 1,
         req_strength: 0,
         req_agility: 0,
         req_intelligence: 0,
