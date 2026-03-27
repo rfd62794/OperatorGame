@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::genetics::GeneticTier;
 use crate::inventory::Inventory;
-use crate::models::{Deployment, Expedition, LogEntry, Mission, MissionTier, ResourceYield};
+use crate::models::{Deployment, Expedition, LogEntry, Mission, ResourceYield};
 use crate::world_map::WorldMap;
 
 // ---------------------------------------------------------------------------
