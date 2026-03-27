@@ -40,6 +40,7 @@ pub mod contracts;
 pub mod manifest;
 pub mod ops;
 pub mod radar;
+pub mod squad;
 
 // ---------------------------------------------------------------------------
 // App State
@@ -777,6 +778,9 @@ impl eframe::App for OperatorApp {
                             crate::platform::RosterSubTab::Recruit => {
                                 self.render_recruit(ui);
                             }
+                            crate::platform::RosterSubTab::Squad => {
+                                self.render_squad(ui);
+                            }
                         },
                         crate::platform::BottomTab::Missions => match self.missions_sub_tab {
                             crate::platform::MissionsSubTab::Active => {
@@ -902,6 +906,14 @@ fn render_sub_tabs(
                     app.roster_sub_tab == crate::platform::RosterSubTab::Recruit,
                 ) {
                     app.roster_sub_tab = crate::platform::RosterSubTab::Recruit;
+                }
+
+                if sub_tab_button(
+                    ui,
+                    "Squad",
+                    app.roster_sub_tab == crate::platform::RosterSubTab::Squad,
+                ) {
+                    app.roster_sub_tab = crate::platform::RosterSubTab::Squad;
                 }
             }
 

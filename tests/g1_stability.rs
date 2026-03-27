@@ -83,7 +83,7 @@ fn test_g1_anchor_4_tier_ranges() {
 fn test_g1_anchor_5_success_chance_labels() {
     // This essentially tests the label mapping logic in calculate_success_chance
     // Using a dummy mission
-    let mut m = Mission::new("Test", MissionTier::Standard, 10, 1, 10, 10, 10, 0.5, 60, 100, None);
+    let mut m = Mission::new("Test", MissionTier::Standard, 6, 1, 10, 10, 10, 0.5, 60, 100, None);
     
     // We can't easily construct a full squad because Operator fields are private,
     // but we can test the probability logic indirectly or via unit tests in models.rs.
