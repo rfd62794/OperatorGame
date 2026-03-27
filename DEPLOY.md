@@ -56,7 +56,8 @@ Run these steps individually if `deploy_moto.ps1` encounters an issue:
 # 2. Confirm device is visible:
 adb devices
 
-# 3. Build and sign the APK:
+# 3. Build and sign the APK (Interactive):
+#    Note: This script will prompt you for your Keystore password.
 .\build_android.ps1
 
 # 4. Install on phone:
