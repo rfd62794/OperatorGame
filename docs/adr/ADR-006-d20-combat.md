@@ -32,16 +32,22 @@ modifier       = round((coverage - 1.0) × 10)
 ```
 
 ### Difficulty Scalar → DC
-| Difficulty (0–1) | DC | Label |
-|-------------------|-----|-------|
-| < 0.15 | 5 | Trivial |
-| 0.15–0.30 | 10 | Easy |
-| 0.30–0.45 | 13 | Moderate |
-| 0.45–0.60 | 15 | Standard |
-| 0.60–0.75 | 18 | Hard |
-| 0.75–0.88 | 20 | Expert |
-| 0.88–0.95 | 25 | Legendary |
-| ≥ 0.95 | 30 | Near-Impossible |
+| < 0.15 | 5 | Starter |
+| 0.15–0.45 | 10 | Standard |
+| 0.45–0.75 | 15 | Advanced |
+| 0.75–0.95 | 20 | Elite |
+
+### Success Chance HUD Labels (Sprint G.1)
+The UI displays a qualitative label based on the calculated success probability (clamped 0-1):
+
+| Probability | Label |
+|-------------|-------|
+| `None` | `UNSTAFFED` |
+| < 25% | `DESPERATE` |
+| 25% – 50% | `DANGEROUS` |
+| 50% – 75% | `RISKY` |
+| 75% – 100% | `GOOD ODDS` |
+| 100% | `GUARANTEED` |
 
 ### Culture-Zone Roll Mode
 ```
