@@ -318,30 +318,6 @@ impl Mission {
         }
     }
 
-    /// Sprint 8: Difficulty bands for dynamic generation
-    pub fn generate<R: Rng>(rng: &mut R, band: DifficultyBand) -> Self {
-        let (name, prim_stat, affinity) = blueprint(rng);
-        
-        let (base_req, diff_range, reward_base) = match band {
-            DifficultyBand::Trivial => (5, 0.0..0.1, 100),
-            DifficultyBand::Moderate => (25, 0.1..0.4, 500),
-            DifficultyBand::Hard => (60, 0.4..0.7, 1500),
-            DifficultyBand::Extreme => (100, 0.7..0.9, 5000),
-        };
-
-        let diff = rng.gen_range(diff_range);
-        let mut reqs = [rng.gen_range(1..base_req/2), rng.gen_range(1..base_req/2), rng.gen_range(1..base_req/2)];
-        reqs[prim_stat] = rng.gen_range(base_req..base_req*2);
-
-        Self::new(
-            name,
-            reqs[0], reqs[1], reqs[2],
-            diff,
-            rng.gen_range(60..600),
-            reward_base + (diff * 2000.0) as u64,
-            Some(affinity),
-        )
-    }
 
     /// Returns -15.0 if the squad matches the mission's culture affinity.
     pub fn get_affinity_bonus(&self, squad: &[&Operator]) -> f64 {
@@ -510,7 +486,7 @@ pub struct LogEntry {
 pub enum AarOutcome {
     Victory {
         reward: u64,
-        success_rate: f64,
+        success_chance: f64,
         rolls: Vec<D20Result>,
         xp_gained: u32,
     },
@@ -616,7 +592,7 @@ impl Deployment {
         if successes >= 2 {
             AarOutcome::Victory {
                 reward: mission.reward,
-                success_rate: mission.calculate_success_rate(squad),
+                success_chance: mission.calculate_success_chance(squad).1,
                 rolls,
                 xp_gained: 0, // Populated by resolve_deployment() after award_squad_xp()
             }
@@ -736,11 +712,11 @@ pub fn apply_outcome_injuries(
 
 pub fn seed_missions() -> Vec<Mission> {
     vec![
-        Mission::new("Bank Heist Recon",    20, 30, 10, 0.10, 60,  500,  Some(crate::genetics::Culture::Teal)),
-        Mission::new("Corporate Espionage", 10, 20, 50, 0.25, 120, 1200, Some(crate::genetics::Culture::Tide)),
-        Mission::new("Harbour Extraction",  40, 20, 10, 0.20, 90,  800,  Some(crate::genetics::Culture::Marsh)),
-        Mission::new("Zero-Day Exploit",    10, 10, 70, 0.40, 180, 2500, Some(crate::genetics::Culture::Orange)),
-        Mission::new("Black Site Breach",   60, 40, 20, 0.50, 300, 5000, Some(crate::genetics::Culture::Ember)),
+        Mission::new("Bank Heist Recon",    MissionTier::Starter,  5,  1, 20, 30, 10, 0.10, 60,  500,  Some(crate::genetics::Culture::Teal)),
+        Mission::new("Corporate Espionage", MissionTier::Standard, 10, 1, 10, 20, 50, 0.25, 120, 1200, Some(crate::genetics::Culture::Tide)),
+        Mission::new("Harbour Extraction",  MissionTier::Standard, 12, 2, 40, 20, 10, 0.20, 90,  800,  Some(crate::genetics::Culture::Marsh)),
+        Mission::new("Zero-Day Exploit",    MissionTier::Advanced, 15, 3, 10, 10, 70, 0.40, 180, 2500, Some(crate::genetics::Culture::Orange)),
+        Mission::new("Black Site Breach",   MissionTier::Elite,    20, 5, 60, 40, 20, 0.50, 300, 5000, Some(crate::genetics::Culture::Ember)),
     ]
 }
 
@@ -1052,7 +1028,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_victory_no_injury() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mut outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![], xp_gained: 0 };
+        let mut outcome = AarOutcome::Victory { reward: 100, success_chance: 1.0, rolls: vec![], xp_gained: 0 };
         let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let op = Operator::new(genome);
         let squad = vec![op.id()];
@@ -1106,7 +1082,7 @@ mod tests {
     #[test]
     fn test_deployment_resolve_emergency_penalty() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mission = Mission::new("Hard", 50, 50, 50, 0.0, 60, 100, None);
+        let mission = Mission::new("Hard", MissionTier::Standard, 15, 1, 50, 50, 50, 0.0, 60, 100, None);
         // Normal deployment
         let dep_normal = Deployment::start(&mission, vec![], false);
         // Emergency deployment
@@ -1183,7 +1159,7 @@ mod tests {
     fn test_mission_affinity_bonus() {
         use crate::genetics::{generate_random, Culture};
         let mut rng = SmallRng::seed_from_u64(1);
-        let mission = Mission::new("T", 0, 0, 0, 0.5, 60, 100, Some(Culture::Ember));
+        let mission = Mission::new("T", MissionTier::Starter, 5, 1, 0, 0, 0, 0.5, 60, 100, Some(Culture::Ember));
         
         let op_ember = Operator::new(generate_random(Culture::Ember, "E", &mut rng));
         let op_tide  = Operator::new(generate_random(Culture::Tide, "T", &mut rng));
@@ -1197,19 +1173,19 @@ mod tests {
     fn test_mission_xp_award_and_level_up() {
         use crate::genetics::{generate_random, Culture};
         let mut rng = SmallRng::seed_from_u64(1);
-        let mission = Mission::new("T", 0, 0, 0, 0.5, 60, 1000, Some(Culture::Ember));
+        let mission = Mission::new("T", MissionTier::Starter, 5, 1, 0, 0, 0, 0.5, 60, 1000, Some(Culture::Ember));
         let dep = Deployment::start(&mission, vec![], false);
         
         let genome = generate_random(Culture::Ember, "E", &mut rng); // Start L1
         let mut op = Operator::new(genome);
         op.total_xp = 195; // Level 1, near level 2
         
-        let outcome = AarOutcome::Victory { reward: 100, success_rate: 1.0, rolls: vec![], xp_gained: 0 };
+        let outcome = AarOutcome::Victory { reward: 100, success_chance: 1.0, rolls: vec![], xp_gained: 0 };
         
         // Ember match: base 1 XP (100 / 100) + 25% = 1 XP (clamped)
         // Wait, reward 1000 -> base 10.
         // Let's use 1000 reward to get 12 XP.
-        let outcome = AarOutcome::Victory { reward: 1000, success_rate: 1.0, rolls: vec![], xp_gained: 0 };
+        let outcome = AarOutcome::Victory { reward: 1000, success_chance: 1.0, rolls: vec![], xp_gained: 0 };
         let results = dep.award_squad_xp(&mission, &mut [&mut op], &outcome);
         
         assert_eq!(results[0].1, 12);
