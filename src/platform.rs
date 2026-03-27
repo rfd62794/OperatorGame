@@ -283,6 +283,7 @@ pub enum RosterSubTab {
     Collection,   // All slimes, genetics tree
     Breeding,     // Pair selection, timers, hatch notifications
     Recruit,      // Recruitment agency — purchase_recruit / claim_elders_gift
+    Squad,        // STAGED squad overview and combined stats
 }
 
 impl Default for RosterSubTab {
