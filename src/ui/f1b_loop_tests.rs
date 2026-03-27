@@ -9,21 +9,17 @@ use crate::ui::OperatorApp;
 fn setup_app_with_mission() -> OperatorApp {
     let mut app = OperatorApp::new_dummy();
     app.state.bank = 1000;
-    app.state.missions.push(crate::models::Mission {
-        id: uuid::Uuid::new_v4(),
-        name: "Test Mission".to_string(),
-        description: "Test".to_string(),
-        tier: crate::models::MissionTier::Starter,
-        base_dc: 5,
-        min_roster_level: 1,
-        req_strength: 0,
-        req_agility: 0,
-        req_intelligence: 0,
-        difficulty: 0.0,
-        duration_secs: 10,
-        reward: 10000,
-        affinity: None,
-    });
+    app.state.missions.push(crate::models::Mission::new(
+        "Test Mission",
+        crate::models::MissionTier::Starter,
+        5,
+        1,
+        0, 0, 0,
+        0.0,
+        10,
+        10000,
+        None
+    ));
     app
 }
 
@@ -269,21 +265,19 @@ fn test_f1b_13_combat_log_truncation() {
     });
     
     // Inject a blank mission so resolve_deployment proceeds
-    app.state.missions.push(crate::models::Mission {
-        id: app.state.deployments[0].mission_id,
-        name: "Truncate Mission".to_string(),
-        description: "Test".to_string(),
-        tier: crate::models::MissionTier::Starter,
-        base_dc: 5,
-        min_roster_level: 1,
-        req_strength: 0,
-        req_agility: 0,
-        req_intelligence: 0,
-        difficulty: 0.1,
-        duration_secs: 10,
-        reward: 100,
-        affinity: None,
-    });
+    let mut mission = crate::models::Mission::new(
+        "Truncate Mission",
+        crate::models::MissionTier::Starter,
+        5,
+        1,
+        0, 0, 0,
+        0.1,
+        10,
+        100,
+        None
+    );
+    mission.id = app.state.deployments[0].mission_id;
+    app.state.missions.push(mission);
     
     app.resolve_deployment(app.state.deployments[0].id);
     
