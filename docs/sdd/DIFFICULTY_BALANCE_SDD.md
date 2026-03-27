@@ -58,9 +58,9 @@ Working backward from **§2** targets using the D20 success formula.
 - **LOCKED VAL**: **DC 10** | **Primary Req: 15 - 20**
 
 ### 3.4 Tier: Elite
-- **Design Target**: Squad (3) L6s (Stat 30) = 60% Success.
-- **Math**: 60% Success @ DC 12 needs `Mod -3`. `Coverage ≈ 0.7`. `Req = 30 / 0.7 ≈ 42`.
-- **LOCKED VAL**: **DC 15** | **Primary Req: 40 - 60**
+- **Design Target**: Squad (3) L6s (Stat 34) = 60% Success.
+- **Math**: 60% Success @ DC 12 needs `Mod -3` (Target 9). `round((34/Req - 1) * 10) = -3`. `Coverage ≈ 0.7`. `Req = 34 / 0.7 ≈ 48`.
+- **LOCKED VAL**: **DC 12** | **Primary Req: 45 - 55**
 
 ---
 
@@ -78,7 +78,13 @@ Working backward from **§2** targets using the D20 success formula.
 | :--- | :--- | :--- | :--- |
 | L1 | Hatchling | 8 - 9 | Starter / Standard |
 | L3 | Juvenile | 15 - 18 | Advanced |
-| L6 | Prime | 28 - 32 | Elite |
+| L6 | Prime | 30 - 34 | Elite |
+
+### 4.3 Tier Dwell Time (Estimates)
+- **Hatchling (L1) → Juvenile (L3)**: 4 Wins (200 XP).
+- **Juvenile (L3) → Prime (L6)**: 6 Wins (300 XP).
+- **Total to Elite Tier**: 10 Wins.
+- **Narrative**: This pacing allows the player to "dwell" in each tier for 4-6 missions before the next tier becomes mathematically viable. At ~5-8 mins per mission, a player reaches the Elite end-game after ~1.5 hours of successful play—ideal for MVP validation.
 
 ---
 
@@ -91,4 +97,4 @@ These values represent the single source of truth for the Sprint G.1 re-balance 
 | **Starter** | 4 - 6 | 3 - 5 | 1 |
 | **Standard** | 6 - 8 | 8 - 12 | 1 |
 | **Advanced** | 10 - 14 | 15 - 20 | 3 |
-| **Elite** | 15 - 20 | 40 - 60 | 6 |
+| **Elite** | 12 - 15 | 45 - 55 | 6 |
