@@ -26,6 +26,10 @@ impl OperatorApp {
                         .max_height(300.0) // Constraint for mobile "feel"
                         .auto_shrink([false; 2])
                         .show(ui, |ui| {
+                            if let Some(reward) = &aar.reward {
+                                ui.label(egui::RichText::new(format!("REWARDS: {}", reward)).strong().color(egui::Color32::from_rgb(255, 215, 0)));
+                                ui.add_space(4.0);
+                            }
                             ui.label(format!("Squad Experience Gained: {}", aar.xp_gained));
                             if !aar.level_ups.is_empty() {
                                 ui.add_space(4.0);

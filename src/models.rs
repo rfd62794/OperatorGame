@@ -1065,7 +1065,7 @@ mod tests {
             culture:        Culture::Tundra,
             distance_secs:  60,
             danger_level:   1.0, // guaranteed nat-1 fails at DC Moderate+
-            resource_yield: crate::world_map::ResourceYield { biomass: 0, scrap: 0, reagents: 0 },
+            resource_yield: ResourceYield { biomass: 0, scrap: 0, reagents: 0 },
         };
         let exp = Expedition::launch(vec![op.id()], target);
         let mut found_injury = false;
@@ -1083,7 +1083,7 @@ mod tests {
 
     #[test]
     fn test_resource_yield_scaled_halved() {
-        let base = crate::world_map::ResourceYield { biomass: 20, scrap: 10, reagents: 4 };
+        let base = ResourceYield { biomass: 20, scrap: 10, reagents: 4 };
         let half = base.scaled(0.5);
         assert_eq!(half.biomass,  10, "biomass should halve");
         assert_eq!(half.scrap,     5, "scrap should halve");
@@ -1093,7 +1093,7 @@ mod tests {
     #[test]
     fn test_apply_outcome_injuries_victory_no_injury() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mut outcome = AarOutcome::Victory { reward: 100, success_chance: 1.0, rolls: vec![], xp_gained: 0 };
+        let mut outcome = AarOutcome::Victory { reward: ResourceYield::scrap(100), success_chance: 1.0, rolls: vec![], xp_gained: 0 };
         let genome = crate::genetics::generate_random(crate::genetics::Culture::Ember, "Test", &mut rng);
         let op = Operator::new(genome);
         let squad = vec![op.id()];

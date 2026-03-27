@@ -57,6 +57,7 @@ pub struct AarSummary {
     pub level_ups: Vec<String>,     // "{name} reached Level {n}"
     pub roll_lines: Vec<String>,    // compact per-roll summary
     pub injured_names: Vec<String>, // names of newly-injured operators
+    pub reward: Option<crate::models::ResourceYield>,
 }
 
 pub struct OperatorApp {
@@ -399,6 +400,7 @@ impl OperatorApp {
             level_ups,
             roll_lines,
             injured_names,
+            reward: if let AarOutcome::Victory { reward, .. } = &outcome { Some(reward.clone()) } else { None },
         });
 
         match &outcome {

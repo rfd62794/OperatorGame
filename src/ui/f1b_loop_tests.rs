@@ -1,7 +1,7 @@
 // tests/f1b_loop.rs
 
 use chrono::{Duration, Utc};
-use crate::models::{AarOutcome, LogOutcome, Operator, SlimeState};
+use crate::models::{AarOutcome, LogOutcome, Operator, SlimeState, ResourceYield, MissionTier};
 use crate::ui::AarSummary;
 use crate::persistence::GameState;
 use crate::ui::OperatorApp;
@@ -11,13 +11,13 @@ fn setup_app_with_mission() -> OperatorApp {
     app.state.bank = 1000;
     app.state.missions.push(crate::models::Mission::new(
         "Test Mission",
-        crate::models::MissionTier::Starter,
+        MissionTier::Starter,
         5,
         1,
         0, 0, 0,
         0.0,
         10,
-        10000,
+        ResourceYield::scrap(10000),
         None,
         None, false
     ));
@@ -268,13 +268,13 @@ fn test_f1b_13_combat_log_truncation() {
     // Inject a blank mission so resolve_deployment proceeds
     let mut mission = crate::models::Mission::new(
         "Truncate Mission",
-        crate::models::MissionTier::Starter,
+        MissionTier::Starter,
         5,
         1,
         0, 0, 0,
         0.1,
         10,
-        100,
+        ResourceYield::scrap(100),
         None,
         None, false
     );
