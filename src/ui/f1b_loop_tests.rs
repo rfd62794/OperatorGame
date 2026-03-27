@@ -18,7 +18,8 @@ fn setup_app_with_mission() -> OperatorApp {
         0.0,
         10,
         10000,
-        None
+        None,
+        None, false
     ));
     app
 }
@@ -274,7 +275,8 @@ fn test_f1b_13_combat_log_truncation() {
         0.1,
         10,
         100,
-        None
+        None,
+        None, false
     );
     mission.id = app.state.deployments[0].mission_id;
     app.state.missions.push(mission);

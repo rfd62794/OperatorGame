@@ -618,6 +618,8 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
             duration,
             reward_base + (dc as u64 * 50),
             Some(affinity),
+            None,
+            false,
         )
     };
 
