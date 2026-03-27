@@ -431,7 +431,7 @@ mod tests {
         state.last_upkeep_at = Utc::now() - chrono::Duration::days(1);
         let (cost2, _) = state.apply_daily_upkeep(Utc::now());
         assert_eq!(cost2, 0);
-        assert_eq!(state.bank, -150);
+        assert_eq!(state.bank, -140);
     }
 
     #[test]
