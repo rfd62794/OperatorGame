@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::genetics::GeneticTier;
 use crate::inventory::Inventory;
-use crate::models::{Deployment, Expedition, LogEntry, Mission};
+use crate::models::{Deployment, Expedition, LogEntry, Mission, MissionTier, ResourceYield};
 use crate::world_map::WorldMap;
 
 // ---------------------------------------------------------------------------
@@ -90,8 +90,8 @@ impl IncubatingGenome {
 // ---------------------------------------------------------------------------
 
 /// Current save format version. Increment with every breaking schema change.
-/// v9 (Sprint F.1b): combat_log moved from OperatorApp RAM into GameState
-pub const SAVE_VERSION: u32 = 9;
+/// v10 (Sprint G.2): added unlocked_nodes HashSet
+pub const SAVE_VERSION: u32 = 10;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -145,10 +145,18 @@ pub struct GameState {
     /// Capped at 50 entries; newest entry first.
     #[serde(default)]
     pub combat_log: Vec<LogEntry>,
+    /// Save format version for migrations.
+    #[serde(default)]
+    pub version: u32,
+    /// Set of unlocked map node IDs.
+    #[serde(default)]
+    pub unlocked_nodes: std::collections::HashSet<usize>,
 }
 
 impl Default for GameState {
     fn default() -> Self {
+        let mut unlocked = std::collections::HashSet::new();
+        unlocked.insert(0); // Center node always unlocked
         Self {
             bank: 500,
             deployments: Vec::new(),
@@ -168,6 +176,8 @@ impl Default for GameState {
             map_sub_tab: crate::platform::MapSubTab::default(),
             logs_sub_tab: crate::platform::LogsSubTab::default(),
             combat_log: Vec::new(),
+            version: SAVE_VERSION,
+            unlocked_nodes: unlocked,
         }
     }
 }
@@ -223,6 +233,7 @@ impl GameState {
         use rand::SeedableRng;
         let mut rng = rand::rngs::SmallRng::from_entropy();
         state.missions = crate::world_map::generate_static_missions(&mut rng);
+        state.unlocked_nodes.insert(0);
         state
     }
 
@@ -296,7 +307,7 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
             base_dc: 10,
             min_roster_level: 1,
             difficulty: 0.5, // Neutral fallback
-            reward: 100,
+            reward: ResourceYield::scrap(100),
             duration_secs: 60,
             affinity: None,
             req_strength: 5,
@@ -305,6 +316,14 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
             node_id: None,
             is_scout: false,
         });
+    }
+
+    // Sprint G.2 Migration: Ensure Center Node (0) is unlocked in all saves.
+    if state.version < SAVE_VERSION {
+        if state.unlocked_nodes.is_empty() {
+            state.unlocked_nodes.insert(0);
+        }
+        state.version = SAVE_VERSION;
     }
 
     Ok(state)

@@ -6,6 +6,61 @@ use uuid::Uuid;
 use crate::combat::{D20Result, D20, RollMode};
 
 // ---------------------------------------------------------------------------
+// Resources
+// ---------------------------------------------------------------------------
+
+/// The resource payload returned by a completed mission or expedition.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
+pub struct ResourceYield {
+    pub biomass:  u32,
+    pub scrap:    u32,
+    pub reagents: u32,
+}
+
+impl ResourceYield {
+    pub fn new(biomass: u32, scrap: u32, reagents: u32) -> Self {
+        Self { biomass, scrap, reagents }
+    }
+
+    pub fn scrap(amount: u32) -> Self {
+        Self { biomass: 0, scrap: amount, reagents: 0 }
+    }
+
+    /// Scale all yields by `factor`, rounding down.
+    pub fn scaled(&self, factor: f32) -> Self {
+        Self {
+            biomass:  (self.biomass  as f32 * factor) as u32,
+            scrap:    (self.scrap    as f32 * factor) as u32,
+            reagents: (self.reagents as f32 * factor) as u32,
+        }
+    }
+
+    pub fn apply_to_inventory(&self, inv: &mut crate::inventory::Inventory) {
+        inv.biomass += self.biomass as u64;
+        inv.scrap   += self.scrap as u64;
+        inv.reagents += self.reagents;
+    }
+
+    pub fn total_value(&self) -> u32 {
+        self.biomass + self.scrap + (self.reagents * 10)
+    }
+}
+
+impl std::fmt::Display for ResourceYield {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.biomass > 0 && self.scrap == 0 && self.reagents == 0 {
+            write!(f, "{} Biomass", self.biomass)
+        } else if self.scrap > 0 && self.biomass == 0 && self.reagents == 0 {
+            write!(f, "${}", self.scrap)
+        } else if self.reagents > 0 && self.biomass == 0 && self.scrap == 0 {
+            write!(f, "{} Reagents", self.reagents)
+        } else {
+            write!(f, "B:{} S:{} R:{}", self.biomass, self.scrap, self.reagents)
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Gear — Industrial Grade Tools
 // ---------------------------------------------------------------------------
 
@@ -282,7 +337,7 @@ pub struct Mission {
     pub difficulty: f64,
     /// Wall-clock seconds this mission takes to complete.
     pub duration_secs: u64,
-    pub reward: u64,
+    pub reward: ResourceYield,
     pub affinity: Option<crate::genetics::Culture>,
     #[serde(default)]
     pub node_id: Option<usize>,
@@ -302,7 +357,7 @@ impl Mission {
         req_int: u32,
         difficulty: f64,
         duration_secs: u64,
-        reward: u64,
+        reward: ResourceYield,
         affinity: Option<crate::genetics::Culture>,
         node_id: Option<usize>,
         is_scout: bool,
@@ -442,7 +497,7 @@ impl std::fmt::Display for Mission {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[{}] {} | STR:{} AGI:{} INT:{} | Diff:{:.0}% | Dur:{}s | Reward:${}",
+            "[{}] {} | STR:{} AGI:{} INT:{} | Diff:{:.0}% | Dur:{}s | Reward:{}",
             &self.id.to_string()[..8],
             self.name,
             self.req_strength,
@@ -494,7 +549,7 @@ pub struct LogEntry {
 #[derive(Debug, Clone)]
 pub enum AarOutcome {
     Victory {
-        reward: u64,
+        reward: ResourceYield,
         success_chance: f64,
         rolls: Vec<D20Result>,
         xp_gained: u32,
@@ -623,9 +678,10 @@ impl Deployment {
     /// XP awarded proportional to reward. Base: 1 XP per $100.
     pub fn award_squad_xp(&self, mission: &Mission, squad: &mut [&mut Operator], outcome: &AarOutcome) -> Vec<(Uuid, u32, bool)> {
         let mut results = Vec::new();
+        let total_val = mission.reward.total_value();
         let base_xp = match outcome {
-            AarOutcome::Victory { .. } => (mission.reward / 100).max(1) as u32,
-            _ => (mission.reward / 400).max(0) as u32, // Consolidation XP
+            AarOutcome::Victory { .. } => (total_val / 100).max(1) as u32,
+            _ => (total_val / 400).max(0) as u32, // Consolidation XP
         };
 
         if base_xp == 0 { return results; }
@@ -721,11 +777,11 @@ pub fn apply_outcome_injuries(
 
 pub fn seed_missions() -> Vec<Mission> {
     vec![
-        Mission::new("Bank Heist Recon",    MissionTier::Starter,  5,  1, 20, 30, 10, 0.10, 60,  500,  Some(crate::genetics::Culture::Teal), None, false),
-        Mission::new("Corporate Espionage", MissionTier::Standard, 10, 1, 10, 20, 50, 0.25, 120, 1200, Some(crate::genetics::Culture::Tide), None, false),
-        Mission::new("Harbour Extraction",  MissionTier::Standard, 12, 2, 40, 20, 10, 0.20, 90,  800,  Some(crate::genetics::Culture::Marsh), None, false),
-        Mission::new("Zero-Day Exploit",    MissionTier::Advanced, 15, 3, 10, 10, 70, 0.40, 180, 2500, Some(crate::genetics::Culture::Orange), None, false),
-        Mission::new("Black Site Breach",   MissionTier::Elite,    20, 5, 60, 40, 20, 0.50, 300, 5000, Some(crate::genetics::Culture::Ember), None, false),
+        Mission::new("Bank Heist Recon",    MissionTier::Starter,  5,  1, 20, 30, 10, 0.10, 60,  ResourceYield::scrap(500),  Some(crate::genetics::Culture::Teal), None, false),
+        Mission::new("Corporate Espionage", MissionTier::Standard, 10, 1, 10, 20, 50, 0.25, 120, ResourceYield::scrap(1200), Some(crate::genetics::Culture::Tide), None, false),
+        Mission::new("Harbour Extraction",  MissionTier::Standard, 12, 2, 40, 20, 10, 0.20, 90,  ResourceYield::scrap(800),  Some(crate::genetics::Culture::Marsh), None, false),
+        Mission::new("Zero-Day Exploit",    MissionTier::Advanced, 15, 3, 10, 10, 70, 0.40, 180, ResourceYield::scrap(2500), Some(crate::genetics::Culture::Orange), None, false),
+        Mission::new("Black Site Breach",   MissionTier::Elite,    20, 5, 60, 40, 20, 0.50, 300, ResourceYield::scrap(5000), Some(crate::genetics::Culture::Ember), None, false),
     ]
 }
 
@@ -856,11 +912,11 @@ impl Expedition {
 #[derive(Debug, Clone)]
 pub enum ExpeditionOutcome {
     /// Nat-20 — 1.5× resource yield.
-    BonusHaul    { yield_: crate::world_map::ResourceYield, roll: D20Result, report: String },
+    BonusHaul    { yield_: ResourceYield, roll: D20Result, report: String },
     /// Clean success — full yield.
-    Success      { yield_: crate::world_map::ResourceYield, roll: D20Result, report: String },
+    Success      { yield_: ResourceYield, roll: D20Result, report: String },
     /// Nat-1 — one slime injured, 0.25× partial yield.
-    SlimeInjured { slime_id: Uuid, partial_yield: crate::world_map::ResourceYield, roll: D20Result, report: String },
+    SlimeInjured { slime_id: Uuid, partial_yield: ResourceYield, roll: D20Result, report: String },
     /// Failure — no yield.
     Failure      {                                           roll: D20Result, report: String },
 }
@@ -874,7 +930,7 @@ mod tests {
     use rand::rngs::SmallRng;
 
     fn make_mission(rs: u32, ra: u32, ri: u32, diff: f64) -> Mission {
-        Mission::new("Test Mission", MissionTier::Starter, 5, 1, rs, ra, ri, diff, 60, 100, None, None, false)
+        Mission::new("Test Mission", MissionTier::Starter, 5, 1, rs, ra, ri, diff, 60, ResourceYield::scrap(100), None, None, false)
     }
 
     #[test]
@@ -887,7 +943,7 @@ mod tests {
 
     #[test]
     fn test_deployment_is_complete_future() {
-        let m = Mission::new("Far Future", MissionTier::Starter, 10, 1, 10, 10, 10, 0.0, 9999, 0, None, None, false);
+        let m = Mission::new("Far Future", MissionTier::Starter, 10, 1, 10, 10, 10, 0.0, 9999, ResourceYield::scrap(0), None, None, false);
         let d = Deployment::start(&m, vec![], false);
         assert!(!d.is_complete(), "Should not be complete for future timestamp");
     }
@@ -1091,7 +1147,7 @@ mod tests {
     #[test]
     fn test_deployment_resolve_emergency_penalty() {
         let mut rng = SmallRng::seed_from_u64(42);
-        let mission = Mission::new("Hard", MissionTier::Standard, 15, 1, 50, 50, 50, 0.0, 60, 100, None, None, false);
+        let mission = Mission::new("Hard", MissionTier::Standard, 15, 1, 50, 50, 50, 0.0, 60, ResourceYield::scrap(100), None, None, false);
         // Normal deployment
         let dep_normal = Deployment::start(&mission, vec![], false);
         // Emergency deployment
@@ -1168,7 +1224,7 @@ mod tests {
     fn test_mission_affinity_bonus() {
         use crate::genetics::{generate_random, Culture};
         let mut rng = SmallRng::seed_from_u64(1);
-        let mission = Mission::new("T", MissionTier::Starter, 5, 1, 0, 0, 0, 0.5, 60, 100, Some(Culture::Ember), None, false);
+        let mission = Mission::new("T", MissionTier::Starter, 5, 1, 0, 0, 0, 0.5, 60, ResourceYield::scrap(100), Some(Culture::Ember), None, false);
         
         let op_ember = Operator::new(generate_random(Culture::Ember, "E", &mut rng));
         let op_tide  = Operator::new(generate_random(Culture::Tide, "T", &mut rng));
@@ -1182,7 +1238,7 @@ mod tests {
     fn test_mission_xp_award_and_level_up() {
         use crate::genetics::{generate_random, Culture};
         let mut rng = SmallRng::seed_from_u64(1);
-        let mission = Mission::new("T", MissionTier::Starter, 5, 1, 0, 0, 0, 0.5, 60, 1000, Some(Culture::Ember), None, false);
+        let mission = Mission::new("T", MissionTier::Starter, 5, 1, 0, 0, 0, 0.5, 60, ResourceYield::scrap(1000), Some(Culture::Ember), None, false);
         let dep = Deployment::start(&mission, vec![], false);
         
         let genome = generate_random(Culture::Ember, "E", &mut rng); // Start L1

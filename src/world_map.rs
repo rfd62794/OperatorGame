@@ -5,7 +5,7 @@
 ///           rpgCore `demos/culture_node_wars.py` (see DESIGN_BLUEPRINT.md §2).
 use chrono::Utc;
 use crate::genetics::Culture;
-use crate::models::{Mission, MissionTier};
+use crate::models::{Mission, MissionTier, ResourceYield};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -616,7 +616,7 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
             reqs[0], reqs[1], reqs[2],
             0.5, // Legacy difficulty fallback
             duration,
-            reward_base + (dc as u64 * 50),
+            ResourceYield::scrap((reward_base + (dc as u64 * 50)) as u32),
             Some(affinity),
             None,
             false,
@@ -634,37 +634,7 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
 
     missions
 }
-
-/// The resource payload returned by a completed expedition.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceYield {
-    pub biomass:  u32,
-    pub scrap:    u32,
-    pub reagents: u32,
-}
-
-impl ResourceYield {
-    /// Scale all yields by `factor`, rounding down.
-    ///
-    /// Used for BonusHaul (×1.5) and partial SlimeInjured returns (×0.25).
-    pub fn scaled(&self, factor: f32) -> Self {
-        Self {
-            biomass:  (self.biomass  as f32 * factor) as u32,
-            scrap:    (self.scrap    as f32 * factor) as u32,
-            reagents: (self.reagents as f32 * factor) as u32,
-        }
-    }
-
-    /// Add this yield to the player's Cargo Bay via the shared Inventory.
-    ///
-    /// Uses `Inventory::add()` to keep a single resource store — avoids
-    /// split-brain between top-level GameState cargo fields and inventory.
-    pub fn apply_to_inventory(&self, inv: &mut crate::inventory::Inventory) {
-        inv.add(crate::inventory::Resource::Biomass,  self.biomass  as u64);
-        inv.add(crate::inventory::Resource::Scrap,    self.scrap    as u64);
-        inv.add(crate::inventory::Resource::Reagents, self.reagents as u64);
-    }
-}
+// ResourceYield moved to models.rs
 
 /// A named location on the 19-node planet map that slimes can be dispatched to.
 ///

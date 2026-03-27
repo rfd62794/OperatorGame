@@ -83,7 +83,7 @@ fn test_g1_anchor_4_tier_ranges() {
 fn test_g1_anchor_5_success_chance_labels() {
     // This essentially tests the label mapping logic in calculate_success_chance
     // Using a dummy mission
-    let mut m = Mission::new("Test", MissionTier::Standard, 6, 1, 10, 10, 10, 0.5, 60, 100, None, None, false);
+    let mut m = Mission::new("Test", MissionTier::Standard, 6, 1, 10, 10, 10, 0.5, 60, ResourceYield::scrap(100), None, None, false);
     
     // We can't easily construct a full squad because Operator fields are private,
     // but we can test the probability logic indirectly or via unit tests in models.rs.
@@ -119,7 +119,7 @@ fn test_g1_anchor_8_tier_coverage() {
 
 #[test]
 fn test_g1_anchor_10_level_scaling_preview() {
-    let mut m = Mission::new("T3 Test", MissionTier::Elite, 12, 6, 100, 100, 100, 0.5, 3600, 5000, None, None, false);
+    let mut m = Mission::new("T3 Test", MissionTier::Elite, 12, 6, 100, 100, 100, 0.5, 3600, ResourceYield::scrap(5000), None, None, false);
     // Even without a squad, we verified the struct construction works with the new DC field.
     assert_eq!(m.base_dc, 12);
 }
