@@ -403,13 +403,28 @@ impl OperatorApp {
 
         match &outcome {
             AarOutcome::Victory { reward, .. } => {
-                self.state.bank += *reward as i64;
+                self.state.bank += reward.scrap as i64;
+                reward.apply_to_inventory(&mut self.state.inventory);
+
+                // Task C.2: Node unlock on scout completion
+                if mission.is_scout {
+                    if let Some(node_id) = mission.node_id {
+                        self.state.unlocked_nodes.insert(node_id);
+                        
+                        let culture_name = format!("{:?}", mission.affinity.unwrap_or(crate::genetics::Culture::Void));
+                        self.state.combat_log.insert(0, LogEntry {
+                            timestamp: chrono::Utc::now().timestamp() as u64,
+                            message: format!("Zone unlocked: {} territory now accessible", culture_name),
+                            outcome: LogOutcome::System,
+                        });
+                    }
+                }
                 
                 let debt_warning = if self.state.bank < 0 { 
                     "\nNOTE: Current operational balance is negative. Deployment authorized under Emergency Continuity Protocol \u{00a7}4.2."
                 } else { "" };
 
-                self.status_msg = format!("\u{2705} '{}' \u{2014} VICTORY (+${}).{}", mission.name, reward, debt_warning);
+                self.status_msg = format!("\u{2705} '{}' \u{2014} VICTORY (+{}).{}", mission.name, reward, debt_warning);
                 
                 // Play Tide Bowl (Plate Resonance) based on pre-calculated Mind
                 let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);

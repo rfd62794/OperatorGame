@@ -585,7 +585,7 @@ impl Default for WorldMap {
 /// Generates a fixed pool of 14 missions as specified in the G.1 directive.
 /// 4x Starter, 4x Standard, 4x Advanced, 2x Elite.
 pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
-    let mut missions = Vec::new();
+    let mut missions = generate_scout_missions();
     
     // Helper to generate a mission with specific DCs and Tiers
     let mut gen = |tier: MissionTier, min_dc: u32, max_dc: u32, min_level: u32, reward_base: u64| {
@@ -633,6 +633,36 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
     for _ in 0..2 { missions.push(gen(MissionTier::Elite, 12, 15, 6, 8000)); }
 
     missions
+}
+
+/// Generates the 6 permanent scouting missions for Ring 1 nodes.
+pub fn generate_scout_missions() -> Vec<Mission> {
+    vec![
+        Mission::new(
+            "Scout: Ember Flats", MissionTier::Starter, 4, 1, 4, 4, 4, 0.20, 120,
+            ResourceYield::new(15, 5, 2), Some(Culture::Ember), Some(10), true
+        ),
+        Mission::new(
+            "Scout: Gale Ridge", MissionTier::Starter, 7, 1, 5, 5, 5, 0.35, 180,
+            ResourceYield::new(8, 3, 8), Some(Culture::Gale), Some(11), true
+        ),
+        Mission::new(
+            "Scout: Tide Basin", MissionTier::Starter, 6, 1, 5, 5, 5, 0.30, 240,
+            ResourceYield::new(12, 10, 6), Some(Culture::Tide), Some(12), true
+        ),
+        Mission::new(
+            "Scout: Marsh Delta", MissionTier::Starter, 4, 1, 3, 3, 3, 0.15, 90,
+            ResourceYield::new(25, 2, 3), Some(Culture::Marsh), Some(13), true
+        ),
+        Mission::new(
+            "Scout: Crystal Spire", MissionTier::Standard, 10, 1, 8, 8, 8, 0.50, 300,
+            ResourceYield::new(5, 8, 15), Some(Culture::Crystal), Some(14), true
+        ),
+        Mission::new(
+            "Scout: Tundra Shelf", MissionTier::Standard, 11, 1, 12, 12, 12, 0.55, 360,
+            ResourceYield::new(10, 20, 5), Some(Culture::Tundra), Some(15), true
+        ),
+    ]
 }
 // ResourceYield moved to models.rs
 
