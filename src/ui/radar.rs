@@ -44,8 +44,13 @@ impl OperatorApp {
 
         // Draw Nodes
         for node in &self.state.world_map.nodes {
-            let [r, g, b, _] = crate::world_map::culture_accent(node.owner);
-            let color = egui::Color32::from_rgb(r, g, b);
+            let unlocked = self.state.unlocked_nodes.contains(&(node.id as usize));
+            let color = if unlocked {
+                let [r, g, b, _] = crate::world_map::culture_accent(node.owner);
+                egui::Color32::from_rgb(r, g, b)
+            } else {
+                egui::Color32::from_rgb(80, 80, 80) // Grayscale locked state
+            };
             
             let pos = egui::pos2(
                 map_center.x + node.position.0 * scale,
@@ -69,6 +74,9 @@ impl OperatorApp {
                 if (hover - pos).length() < radius + 4.0 {
                     egui::show_tooltip_at_pointer(ui.ctx(), ui.id(), |ui| {
                         ui.label(egui::RichText::new(&node.name).strong().color(color));
+                        if !unlocked {
+                            ui.colored_label(egui::Color32::LIGHT_GRAY, "[LOCKED - RECON REQUIRED]");
+                        }
                         ui.label(format!("Culture: {:?}", node.owner));
                         ui.label(format!("Influence: {:.0}%", node.influence * 100.0));
                         ui.label(format!("DC: {}", node.difficulty_dc));
