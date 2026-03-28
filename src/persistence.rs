@@ -300,8 +300,61 @@ impl GameState {
             self.hat_inventory.push(old_hat);
         }
         slime.equipped_hat = Some(hat_id);
-        
         Ok(())
+    }
+
+    /// Complete a mission or expedition, mutate state (XP, Injuries, Roster reset),
+    /// and return the outcome.
+    ///
+    /// BUG FIX: This method ensures operators are reset to Idle (if not injured)
+    /// BEFORE returning, making the resolution atomic and session-resilient.
+    pub fn resolve_deployment(&mut self, dep_id: uuid::Uuid, rng: &mut impl rand::Rng) -> Result<(crate::models::Deployment, crate::models::AarOutcome, Vec<String>), String> {
+        let dep_idx = self.deployments.iter().position(|d| d.id == dep_id)
+            .ok_or_else(|| "Deployment not found".to_string())?;
+        
+        // 1. Extract deployment and mission
+        let dep = self.deployments.remove(dep_idx);
+        let mission = self.missions.iter().find(|m| m.id == dep.mission_id)
+            .ok_or_else(|| "Mission not found".to_string())?;
+
+        // 2. Resolve combat logic
+        let squad: Vec<&crate::models::Operator> = self.slimes.iter()
+            .filter(|o| dep.operator_ids.contains(&o.genome.id))
+            .collect();
+            
+        let mut outcome = dep.resolve(mission, &squad, rng);
+
+        // 3. Award XP
+        let mut level_ups = Vec::new();
+        {
+            let mut mut_squad: Vec<&mut crate::models::Operator> = self.slimes.iter_mut()
+                .filter(|o| dep.operator_ids.contains(&o.genome.id))
+                .collect();
+                
+            let xp_results = dep.award_squad_xp(mission, &mut mut_squad, &outcome);
+            for (id, _xp, leveled) in xp_results {
+                if leveled {
+                    if let Some(op) = mut_squad.iter().find(|o| o.genome.id == id) {
+                        level_ups.push(format!("{} reached Level {}!", op.name(), op.level));
+                    }
+                }
+            }
+        }
+
+        // 4. Apply injuries
+        crate::models::apply_outcome_injuries(&mut outcome, &mut self.slimes, &dep.operator_ids, rng);
+
+        // 5. RELIABILITY FIX: Reset operator states
+        // Ensure all operators involved return to Idle unless they were just injured.
+        for op in self.slimes.iter_mut() {
+            if dep.operator_ids.contains(&op.id()) {
+                if !matches!(op.state, crate::models::operator::SlimeState::Injured(_)) {
+                    op.state = crate::models::operator::SlimeState::Idle;
+                }
+            }
+        }
+
+        Ok((dep, outcome, level_ups))
     }
 
     /// Sprint 7B: Maintenance Pressure
@@ -619,5 +672,40 @@ mod tests {
         state.equip_hat(u2, id_hat).expect("swap to o2");
         assert_eq!(state.slimes[0].equipped_hat, None);
         assert_eq!(state.slimes[1].equipped_hat, Some(id_hat));
+    }
+
+    #[test]
+    fn test_operators_freed_after_resolve() {
+        let mut state = GameState::default();
+        let mut rng = rand::thread_rng();
+
+        // Setup: 2 operators
+        let g1 = crate::genetics::generate_random(crate::genetics::Culture::Ember, "O1", &mut rng);
+        let g2 = crate::genetics::generate_random(crate::genetics::Culture::Tide,  "O2", &mut rng);
+        let u1 = g1.id;
+        let u2 = g2.id;
+        state.slimes.push(crate::models::Operator::new(g1));
+        state.slimes.push(crate::models::Operator::new(g2));
+
+        // Setup: A mission and a deployment
+        let mission = crate::models::Mission::new("Test", crate::models::MissionTier::Starter, 5, 1, 10, 10, 10, 0.1, 60, crate::models::ResourceYield::scrap(100), None, None, false);
+        state.missions.push(mission.clone());
+        let dep = crate::models::Deployment::start(&mission, vec![u1, u2], false);
+        state.deployments.push(dep.clone());
+
+        // Mark operators as deployed
+        state.slimes[0].state = crate::models::operator::SlimeState::Deployed(mission.id);
+        state.slimes[1].state = crate::models::operator::SlimeState::Deployed(mission.id);
+
+        // Resolve (Dice roll happens here)
+        let _ = state.resolve_deployment(dep.id, &mut rng).expect("resolve");
+
+        // After resolve: operators must be Idle (or Injured if fate dictated)
+        use crate::models::operator::SlimeState;
+        assert!(matches!(state.slimes[0].state, SlimeState::Idle | SlimeState::Injured(_)));
+        assert!(matches!(state.slimes[1].state, SlimeState::Idle | SlimeState::Injured(_)));
+
+        // Deployment record must be gone
+        assert!(state.deployments.is_empty());
     }
 }

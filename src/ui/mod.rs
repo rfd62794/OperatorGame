@@ -268,92 +268,40 @@ impl OperatorApp {
     }
 
     fn resolve_deployment(&mut self, dep_id: Uuid) {
-        let dep_idx = self.state.deployments.iter().position(|d| d.id == dep_id);
-        let Some(dep_idx) = dep_idx else { return; };
+        let mut rng = rand::thread_rng();
+        
+        // Use the new centralized resolution logic in GameState (Bug Fix / Refactor)
+        let (dep, mut outcome, level_ups) = match self.state.resolve_deployment(dep_id, &mut rng) {
+            Ok(res) => res,
+            Err(e) => {
+                self.status_msg = format!("\u{26a0} Error: {}", e);
+                return;
+            }
+        };
 
-        let dep = self.state.deployments[dep_idx].clone();
-        let mission = self
-            .state
-            .missions
-            .iter()
-            .find(|m| m.id == dep.mission_id)
-            .cloned();
-        let Some(mission) = mission else { return; };
+        let mission = self.state.missions.iter().find(|m| m.id == dep.mission_id)
+            .expect("Mission in deployment not found in state");
 
-        let squad: Vec<&crate::models::Operator> = self
-            .state
-            .slimes
-            .iter()
+        // UI Layer: Narrative Generation
+        let squad: Vec<&crate::models::Operator> = self.state.slimes.iter()
             .filter(|o| dep.operator_ids.contains(&o.genome.id))
             .collect();
-
-        let mut rng = rand::thread_rng();
-        let mut outcome = dep.resolve(&mission, &squad, &mut rng);
-        
-        // Calculate stats needed for audio/UI before we drop the immutable borrow (squad)
-        let avg_mnd: f32 = squad.iter().map(|s| s.genome.base_mind as f32).sum::<f32>() / squad.len().max(1) as f32;
-        let mut narrative = generate_narrative(&outcome, &mission, &squad.iter().map(|o| &o.genome).collect::<Vec<_>>(), &mut rand::thread_rng());
+            
+        let mut narrative = generate_narrative(&outcome, &mission, &squad.iter().map(|o| &o.genome).collect::<Vec<_>>(), &mut rng);
         if dep.is_emergency {
             narrative.push_str("\nFIELD OPS PROTOCOL \u{00a7}7 ACTIVE: Personnel operating outside approved medical clearance. Deployment authorized with +15 Critical Stress Penalty.");
         }
-        
-        self.state.deployments[dep_idx].resolved = true;
 
-        // Sprint 8/F.1b: Award XP to the squad; capture total and level-ups
-        let mut total_xp_gained: u32 = 0;
-        let mut level_up_ids: Vec<(Uuid, u32)> = Vec::new();
-        {
-            let mut mut_squad: Vec<&mut crate::models::Operator> = self
-                .state
-                .slimes
-                .iter_mut()
-                .filter(|o| dep.operator_ids.contains(&o.genome.id))
-                .collect();
-                
-            let xp_results = dep.award_squad_xp(&mission, &mut mut_squad, &outcome);
-            for (id, xp, leveled) in xp_results {
-                total_xp_gained += xp;
-                if leveled {
-                    // Find the level reached
-                    if let Some(op) = mut_squad.iter().find(|o| o.genome.id == id) {
-                        level_up_ids.push((id, op.level.into()));
-                    }
-                }
-            }
+        // UI Layer: System Logs for Level Ups
+        for msg in &level_ups {
+            self.state.combat_log.insert(0, LogEntry {
+                timestamp: chrono::Utc::now().timestamp() as u64,
+                message: format!(">> EXCELLENCE RECOGNIZED: {}", msg),
+                outcome: LogOutcome::System,
+            });
         }
 
-        // Now process level-up logs outside the squad borrow
-        let mut level_ups = Vec::new();
-        for (id, lv) in level_up_ids {
-            if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
-                let msg = format!("{} has reached Level {}!", op.name(), lv);
-                level_ups.push(msg.clone());
-                let sys_entry = LogEntry {
-                    timestamp: chrono::Utc::now().timestamp() as u64,
-                    message: format!(">> EXCELLENCE RECOGNIZED: {}", msg),
-                    outcome: LogOutcome::System,
-                };
-                self.state.combat_log.insert(0, sys_entry);
-            }
-        }
-
-        // Stamp xp_gained on the outcome before injury resolution
-        match &mut outcome {
-            AarOutcome::Victory { ref mut xp_gained, .. } => *xp_gained = total_xp_gained,
-            AarOutcome::Failure { ref mut xp_gained, .. } => *xp_gained = total_xp_gained,
-            AarOutcome::CriticalFailure { ref mut xp_gained, .. } => *xp_gained = total_xp_gained,
-        }
-
-        // Phase A: Apply injuries (probabilistic)
-        let newly_injured = crate::models::apply_outcome_injuries(
-            &mut outcome,
-            &mut self.state.slimes,
-            &dep.operator_ids,
-            &mut rand::thread_rng(),
-        );
-        let newly_injured_ids: Vec<Uuid> = newly_injured.iter().map(|(id, _)| *id).collect();
-
-        // Build the AAR summary for the result panel
+        // UI Layer: Visual outcome mapping
         let (outcome_label, outcome_color, log_outcome) = match &outcome {
             AarOutcome::Victory { reward, .. } => (
                 format!("VICTORY (+${})", reward),
@@ -372,7 +320,7 @@ impl OperatorApp {
             ),
         };
 
-        // Build roll summary lines
+        // UI Layer: Roll Summary
         let roll_lines: Vec<String> = {
             let rolls = match &outcome {
                 AarOutcome::Victory { rolls, .. } => rolls,
@@ -388,28 +336,36 @@ impl OperatorApp {
             }).collect()
         };
 
-        // Injured operator names for the result panel
-        let injured_names: Vec<String> = newly_injured.iter()
-            .filter_map(|(id, _)| self.state.slimes.iter().find(|s| s.genome.id == *id))
-            .map(|op: &crate::models::Operator| op.name().to_string())
-            .collect();
+        // UI Layer: Injury Summary
+        let injured_names: Vec<String> = match &outcome {
+            AarOutcome::Failure { injured_ids, .. } | AarOutcome::CriticalFailure { injured_ids, .. } => {
+                injured_ids.iter()
+                    .filter_map(|id| self.state.slimes.iter().find(|s| s.genome.id == *id))
+                    .map(|op| op.name().to_string())
+                    .collect()
+            }
+            _ => vec![],
+        };
 
-        // Push narrative log entry to GameState (persisted)
+        // UI Layer: Operational History Log
         let log_message = format_log_entry(&mission.name, &outcome, &narrative);
-        let log_entry = LogEntry {
+        self.state.combat_log.insert(0, LogEntry {
             timestamp: chrono::Utc::now().timestamp() as u64,
             message: log_message,
             outcome: log_outcome,
-        };
-        self.state.combat_log.insert(0, log_entry);
+        });
         if self.state.combat_log.len() > 50 { self.state.combat_log.truncate(50); }
 
         // Store the pending AAR for display
         self.pending_aar = Some(AarSummary {
             mission_name: mission.name.clone(),
-            outcome_label: outcome_label.clone(),
+            outcome_label,
             outcome_color,
-            xp_gained: total_xp_gained,
+            xp_gained: match outcome {
+                AarOutcome::Victory { xp_gained, .. } => xp_gained,
+                AarOutcome::Failure { xp_gained, .. } => xp_gained,
+                AarOutcome::CriticalFailure { xp_gained, .. } => xp_gained,
+            },
             level_ups,
             roll_lines,
             injured_names,
@@ -484,12 +440,6 @@ impl OperatorApp {
                     base_freq: crate::audio::BASE_RESONANCE, 
                     stability 
                 });
-
-                for op in self.state.slimes.iter_mut() {
-                    if dep.operator_ids.contains(&op.id()) {
-                        op.state = SlimeState::Idle;
-                    }
-                }
             }
             AarOutcome::Failure { .. } | AarOutcome::CriticalFailure { .. } => {
                 let is_crit = matches!(outcome, AarOutcome::CriticalFailure { .. });
@@ -504,12 +454,6 @@ impl OperatorApp {
                     crate::audio::PlayEvent::Failure { base_freq: 200.0 }
                 };
                 crate::audio::OperatorSynth::play(audio_event);
-                
-                for op in self.state.slimes.iter_mut() {
-                    if dep.operator_ids.contains(&op.id()) {
-                        op.state = SlimeState::Idle;
-                    }
-                }
             }
         }
 
