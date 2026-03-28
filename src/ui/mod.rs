@@ -516,347 +516,120 @@ impl eframe::App for OperatorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let safe_area = crate::platform::read_window_insets();
 
-        // Redraw every 100ms — animates progress bars without a background thread.
+        // Redraw every 100ms
         ctx.request_repaint_after(std::time::Duration::from_millis(100));
 
-        // Make panels completely opaque to prevent the "dim overlay" feel
+        // Styling
         let mut style = (*ctx.style()).clone();
         style.visuals = egui::Visuals::dark();
-        style.visuals.panel_fill = egui::Color32::from_rgb(15, 15, 20); // Solid dark blue/grey
+        style.visuals.panel_fill = egui::Color32::from_rgb(15, 15, 20);
         style.visuals.window_fill = egui::Color32::from_rgb(15, 15, 20);
         style.visuals.override_text_color = Some(egui::Color32::WHITE);
         ctx.set_style(style);
 
-        // Responsive DPI Scaling (ADR-041)
         if cfg!(target_os = "android") {
-            ctx.set_pixels_per_point(2.0); // Mobile default density
+            ctx.set_pixels_per_point(2.0);
         }
 
-        // Phase C: Tick operator recovery & clearance notifications
+        // Ticks
         let mut cleared_names = Vec::new();
         for op in self.state.slimes.iter_mut() {
-            if let Some(name) = op.tick_recovery() {
-                cleared_names.push(name);
-            }
+            if let Some(name) = op.tick_recovery() { cleared_names.push(name); }
         }
         for name in cleared_names {
-            let msg = format!("{} has been cleared for deployment by Medical.", name);
-            let entry = LogEntry {
-                timestamp: chrono::Utc::now().timestamp() as u64,
-                message: msg.clone(),
-                outcome: LogOutcome::System,
-            };
-            self.state.combat_log.insert(0, entry);
             self.status_msg = format!("{} cleared for duty.", name);
         }
 
-        // Sprint 7B: Tick daily upkeep
-        let (deducted, idle_count) = self.state.apply_daily_upkeep(Utc::now());
-        if deducted > 0 {
-            let msg = format!("Deducted ${} in maintenance costs for {} idle operator(s).", deducted, idle_count);
-            let entry = LogEntry {
-                timestamp: chrono::Utc::now().timestamp() as u64,
-                message: msg,
-                outcome: LogOutcome::System,
-            };
-            self.state.combat_log.insert(0, entry);
-            self.persist();
-        }
-
-        // Sprint 8: Refresh mission pool
-        if self.state.refresh_missions_if_needed(Utc::now()) {
-            let msg = format!("MISSION POOL REFRESHED: New contracts available for {} UTC.", Utc::now().date_naive());
-            let entry = LogEntry {
-                timestamp: chrono::Utc::now().timestamp() as u64,
-                message: msg,
-                outcome: LogOutcome::System,
-            };
-            self.state.combat_log.insert(0, entry);
-            self.persist();
-        }
-
-        /*
-        // Background Garden (Temporarily disabled due to UI layering issues)
-        let t = ctx.input(|i| i.time as f32);
-        let dt = ctx.input(|i| i.stable_dt).min(0.1);
-        let cursor = ctx.input(|i| i.pointer.hover_pos()).map(egui_pos_to_point);
-        let screen_rect = ctx.screen_rect();
-
-        // Advance garden simulation
-        self.garden.tick(dt, cursor, egui_rect_to_bounds(screen_rect));
-
-        // Intercept clicks in empty space for selecting garden slimes
-        if ctx.input(|i| i.pointer.primary_clicked()) && !ctx.wants_pointer_input() {
-            if let Some(pos) = ctx.input(|i| i.pointer.interact_pos()) {
-                if let Some(id) = self.garden.handle_click(egui_pos_to_point(pos)) {
-                    self.selected_slime_id = Some(id);
-                    // Switch to Manifest to show the card
-                    self.left_tab = LeftTab::Manifest;
-                } else {
-                    self.selected_slime_id = None;
-                }
-            }
-        }
-
-        // Draw garden layer beneath UI
-        egui::Area::new(egui::Id::new("garden_bg"))
-            .order(egui::Order::Background)
-            .show(ctx, |ui| {
-                let operator_map = self.state.slimes.iter().map(|op| (op.id(), op)).collect();
-                crate::garden::draw_garden(ui.painter(), screen_rect, &operator_map, &self.garden, t);
-            });
-        */
-
-        // Top status bar
+        // 0. Top Status Bar
         egui::TopBottomPanel::top("top_bar")
-            .frame(
-                egui::Frame::none()
-                    .inner_margin(egui::Margin {
-                        left: safe_area.left,
-                        right: safe_area.right,
-                        top: safe_area.top,
-                        bottom: 0.0,
-                    })
-            )
+            .frame(egui::Frame::none().inner_margin(egui::Margin {
+                left: safe_area.left, right: safe_area.right, top: safe_area.top, bottom: 0.0,
+            }))
             .show(ctx, |ui| {
-            ui.horizontal_wrapped(|ui| {
-                ui.label(
-                    egui::RichText::new("OPERATOR: COMMAND DECK")
-                        .strong()
-                        .size(16.0),
-                );
-                ui.separator();
-                ui.separator();
-                let idle_count = self.state.slimes.iter()
-                    .filter(|s| matches!(s.state, crate::models::SlimeState::Idle))
-                    .count() as i64;
-                let forecast = idle_count * crate::persistence::UPKEEP_PER_DAY;
-                ui.vertical(|ui| {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(egui::RichText::new("OPERATOR").strong());
+                    ui.separator();
                     ui.label(format!("Bank: ${}", self.state.bank));
-                    if forecast > 0 {
-                        ui.label(egui::RichText::new(format!("Est. Upkeep: -${}/day", forecast))
-                            .small()
-                            .color(egui::Color32::from_gray(140)));
-                    }
+                    ui.separator();
+                    ui.label(format!("MTL: {}kg", self.state.inventory.scrap));
+                    
+                    let stress_pct = (self.state.world_map.startled_level / 10.0).clamp(0.0, 1.0);
+                    ui.add_space(8.0);
+                    ui.add(egui::ProgressBar::new(stress_pct)
+                        .fill(egui::Color32::from_rgb(200, 50, 50))
+                        .desired_width(100.0)
+                    );
                 });
-                ui.separator();
-                ui.label(format!("GEL: {}L", self.state.inventory.biomass));
-                ui.separator();
-                ui.label(format!("MTL: {}kg", self.state.inventory.scrap));
-                ui.separator();
-                ui.label(format!("Reagents: {}", self.state.inventory.reagents));
-                ui.separator();
-                
-                // Stress Bar
-                let stress_pct = (self.state.world_map.startled_level / 10.0).clamp(0.0, 1.0);
-                ui.add_space(16.0);
-                ui.label(egui::RichText::new("RESONANCE STRESS:").color(egui::Color32::YELLOW));
-                ui.add(egui::ProgressBar::new(stress_pct)
-                    .fill(egui::Color32::from_rgb(200, 50, 50))
-                    .desired_width(120.0)
-                    .show_percentage()
-                );
             });
-        });
 
-        // 1. Launch Bar (Outer-most bottom)
-        egui::TopBottomPanel::bottom("bottom_bar")
-            .frame(
-                egui::Frame::none()
-                    .inner_margin(egui::Margin {
-                        left: safe_area.left,
-                        right: safe_area.right,
-                        top: 0.0,
-                        bottom: 0.0, // This was safe_area.bottom, but we want the tab bar to handle that
-                    })
-            )
+        // 1. Launch Bar & Tab Bar (Bottom)
+        egui::TopBottomPanel::bottom("bottom_stack")
+            .frame(egui::Frame::none().inner_margin(egui::Margin {
+                left: safe_area.left, right: safe_area.right, top: 0.0, bottom: safe_area.bottom,
+            }))
             .show(ctx, |ui| {
                 self.render_launch_bar(ui);
-            });
-
-        // 2. Navigation Tab Bar — Stitch Design (Outer-middle)
-        let tab_bar_top = ctx.screen_rect().max.y - crate::platform::TAB_BAR_HEIGHT - safe_area.bottom;
-        let _tab_bar_top = tab_bar_top; // Suppress warning until used for layering check
-
-        egui::TopBottomPanel::bottom("bottom_tabs")
-            .frame(
-                egui::Frame::none()
-                    .fill(egui::Color32::from_rgb(19, 19, 24)) // Forced opaque for layering
-                    .inner_margin(egui::Margin {
-                        left: safe_area.left,
-                        right: safe_area.right,
-                        top: 0.0,
-                        bottom: safe_area.bottom,
-                    })
-            )
-            .show(ctx, |ui| {
-                ui.set_height(crate::platform::TAB_BAR_HEIGHT);
+                ui.add_space(4.0);
                 
-                // Top border line separating the bar from content
-                let (rect, _) = ui.allocate_at_least(ui.available_size(), egui::Sense::hover());
-                ui.painter().hline(
-                    rect.min.x..=rect.max.x,
-                    rect.min.y,
-                    egui::Stroke::new(1.0, COLOR_SURFACE_HIGH),
-                );
-
-                let tabs = [
-                    (crate::platform::BottomTab::Roster,   "🧬", "Roster"),
-                    (crate::platform::BottomTab::Missions, "🚀", "Missions"),
-                    (crate::platform::BottomTab::Map,      "🗺️", "Map"),
-                    (crate::platform::BottomTab::Logs,     "📜", "Logs"),
-                ];
-
-                let tab_w = rect.width() / tabs.len() as f32;
-                let tab_h = crate::platform::TAB_BAR_HEIGHT;
-
-                for (i, (tab, icon, label)) in tabs.iter().enumerate() {
-                    let is_active = self.active_tab == *tab;
-                    let slot_rect = egui::Rect::from_min_size(
-                        egui::pos2(rect.min.x + i as f32 * tab_w, rect.min.y),
-                        egui::vec2(tab_w, tab_h)
-                    );
-
-                    if is_active {
-                        ui.painter().rect_filled(slot_rect, egui::Rounding::ZERO, egui::Color32::from_rgb(45, 55, 75));
-                        let accent_rect = egui::Rect::from_min_size(
-                            egui::pos2(slot_rect.min.x, slot_rect.max.y - 4.0),
-                            egui::vec2(tab_w, 4.0),
-                        );
-                        ui.painter().rect_filled(accent_rect, egui::Rounding::ZERO, COLOR_PRIMARY);
+                // Tab Bar
+                ui.horizontal(|ui| {
+                    let tabs = [
+                        (crate::platform::BottomTab::Roster,   "🧬 Roster"),
+                        (crate::platform::BottomTab::Missions, "🚀 Ops"),
+                        (crate::platform::BottomTab::Map,      "🗺️ Map"),
+                        (crate::platform::BottomTab::Logs,     "📜 Logs"),
+                    ];
+                    let w = ui.available_width() / tabs.len() as f32;
+                    for (tab, label) in tabs {
+                        if ui.add_sized([w, 40.0], egui::SelectableLabel::new(self.active_tab == tab, label)).clicked() {
+                            self.active_tab = tab;
+                        }
                     }
-
-                    ui.allocate_ui_at_rect(slot_rect, |ui| {
-                        ui.vertical_centered(|ui| {
-                            ui.add_space(6.0);
-                            ui.label(egui::RichText::new(*icon).size(18.0).color(egui::Color32::WHITE));
-                            ui.add_space(2.0);
-                            ui.label(egui::RichText::new(*label).size(10.0).color(if is_active { COLOR_PRIMARY } else { COLOR_TEXT }));
-                        });
-                    });
-
-                    let click_resp = ui.interact(slot_rect, egui::Id::new(format!("tab_{}", label)), egui::Sense::click());
-                    if click_resp.clicked() { self.active_tab = *tab; }
-                }
+                });
             });
 
-        // 3. Last Action Log (Inner-most bottom / sits above tabs)
-        if self.active_tab == crate::platform::BottomTab::Missions {
-            if self.pending_aar.is_none() && !self.state.combat_log.is_empty() {
-                egui::TopBottomPanel::bottom("combat_log_panel")
-                    .resizable(true)
-                    .min_height(40.0)
-                    .max_height(120.0)
-                    .frame(
-                        egui::Frame::none()
-                            .fill(egui::Color32::from_rgb(20, 20, 25)) // Forced opaque
-                            .inner_margin(egui::Margin {
-                                left: safe_area.left + 8.0,
-                                right: safe_area.right + 8.0,
-                                top: 4.0,
-                                bottom: 4.0,
-                            })
-                    )
-                    .show(ctx, |ui| {
-                        self.render_combat_log(ui);
-                    });
-            }
-        }
-
-        // 4. Sidebar navigation (Sub-tabs) - Universal Sidebar (ADR-042)
+        // 2. Sidebar (Left)
         egui::SidePanel::left("left_sidebar")
-            .frame(
-                egui::Frame::none()
-                    .fill(egui::Color32::from_rgb(19, 19, 24))
-                    .inner_margin(egui::Margin {
-                        left: safe_area.left,
-                        right: 0.0,
-                        top: 0.0,
-                        bottom: 0.0,
-                    })
-            )
+            .frame(egui::Frame::none().fill(egui::Color32::from_rgb(19, 19, 24)).inner_margin(8.0))
             .resizable(false)
-            .default_width(if ctx.screen_rect().width() < 450.0 { 80.0 } else { 100.0 })
+            .default_width(100.0)
             .show(ctx, |ui| {
                 ui.add_space(8.0);
                 render_sub_tabs(ui, self.active_tab, self);
             });
 
-        // 5. Central Content Rendering
+        // 3. Central Content
         egui::CentralPanel::default()
             .frame(egui::Frame::none().fill(egui::Color32::TRANSPARENT))
             .show(ctx, |ui| {
                 match self.active_tab {
                     crate::platform::BottomTab::Roster => match self.roster_sub_tab {
                         crate::platform::RosterSubTab::Collection => {
-                            if self.selected_slime_id.is_some() {
-                                self.render_slime_detail(ui);
-                            } else {
-                                ui.allocate_ui_at_rect(ui.available_rect_before_wrap(), |ui| {
-                                    self.render_manifest(ui);
-                                });
-                            }
+                            if self.selected_slime_id.is_some() { self.render_slime_detail(ui); }
+                            else { self.render_manifest(ui); }
                         }
-                        crate::platform::RosterSubTab::Breeding => {
-                            self.render_incubator(ui);
-                        }
-                        crate::platform::RosterSubTab::Recruit => {
-                            self.render_recruit(ui);
-                        }
-                        crate::platform::RosterSubTab::Squad => {
-                            self.render_squad(ui);
-                        }
+                        crate::platform::RosterSubTab::Breeding => self.render_incubator(ui),
+                        crate::platform::RosterSubTab::Recruit => self.render_recruit(ui),
+                        crate::platform::RosterSubTab::Squad => self.render_squad(ui),
                     },
                     crate::platform::BottomTab::Missions => match self.missions_sub_tab {
-                        crate::platform::MissionsSubTab::Active => {
-                            self.render_active_ops(ui);
-                        }
-                        crate::platform::MissionsSubTab::QuestBoard => {
-                            self.render_contracts(ui);
-                        }
+                        crate::platform::MissionsSubTab::Active => self.render_active_ops(ui),
+                        crate::platform::MissionsSubTab::QuestBoard => self.render_contracts(ui),
                     },
                     crate::platform::BottomTab::Map => match self.map_sub_tab {
-                        crate::platform::MapSubTab::Zones => {
-                            self.render_radar(ui);
-                        }
+                        crate::platform::MapSubTab::Zones => self.render_radar(ui),
                         crate::platform::MapSubTab::Quartermaster => {
-                            // self.render_quartermaster(ui); // Task C
                             ui.centered_and_justified(|ui| {
                                 ui.label(egui::RichText::new("QUARTERMASTER COMING SOON").italics().color(egui::Color32::GRAY));
                             });
                         }
                     },
-                    crate::platform::BottomTab::Logs => match self.logs_sub_tab {
-                        crate::platform::LogsSubTab::MissionHistory => {
-                            egui::ScrollArea::vertical()
-                                .id_source("logs_scroll")
-                                .auto_shrink([false, false])
-                                .show(ui, |ui| {
-                                    if self.state.combat_log.is_empty() {
-                                        ui.label(egui::RichText::new("No mission history.").color(egui::Color32::GRAY).italics());
-                                    } else {
-                                        for entry in &self.state.combat_log {
-                                            let color = match entry.outcome {
-                                                LogOutcome::Victory  => egui::Color32::from_rgb(100, 220, 100),
-                                                LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
-                                                LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
-                                                LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
-                                            };
-                                            ui.colored_label(color, &entry.message);
-                                        }
-                                    }
-                                });
-                        }
-                        crate::platform::LogsSubTab::CultureHistory => {
-                            ui.label("Culture History Awaiting Data...");
-                        }
-                    },
-                }
-
-                if self.pending_aar.is_some() {
-                    if ui.button("PROCESS AAR").clicked() {
-                        let t = ui.ctx().input(|i| i.time);
-                        self.apply_aar_outcome(t);
+                    crate::platform::BottomTab::Logs => {
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            for entry in self.state.combat_log.iter().take(20) {
+                                ui.label(&entry.message);
+                            }
+                        });
                     }
                 }
             });
