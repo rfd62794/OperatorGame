@@ -341,7 +341,7 @@ impl WorldMap {
             }
 
             nodes.push(WorldNode {
-                id: nodes.len(), // Force dense ID sequence
+                id: rn.id as usize, // ADR-036: Use static IDs from radial map
                 name: name.to_string(),
                 zone_type,
                 owner: rn.culture,

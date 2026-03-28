@@ -23,10 +23,10 @@ impl OperatorApp {
         // The "bottom tab system" sits at safe_rect.bottom() - TAB_BAR_HEIGHT
         let tab_bar_top = safe_rect.bottom() - crate::platform::TAB_BAR_HEIGHT;
         
-        // Target: Horizontally centered ON SCREEN, sitting 8dp above the tab bar
+        // Target: Horizontally centered ON SCREEN, sitting 18dp above the tab bar (shifted 10px up from G.2)
         let map_center = egui::pos2(
             screen_rect.center().x,
-            tab_bar_top - scaled_radius - 8.0
+            tab_bar_top - scaled_radius - 18.0
         );
 
         // We still allocate to let egui know we've taken space, though we draw freehand

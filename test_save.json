@@ -1,20 +1,20 @@
 {
-  "bank": 10975,
+  "bank": 975,
   "deployments": [
     {
-      "id": "c2a4fc9f-f619-45f9-bd06-d310cce88e67",
-      "mission_id": "210712e5-4081-400a-9268-aaa0d9c24561",
+      "id": "909ecaa2-d95e-4b62-aff5-562fe14fff6a",
+      "mission_id": "35ea7a05-92c2-4130-9f02-b55ea7403e2a",
       "operator_ids": [
-        "c6916e77-b61e-4467-b96a-1b3d074dd766"
+        "017c0db4-1e59-4cae-9def-de28d822b445"
       ],
-      "completes_at": "2026-03-27T23:40:22.142826500Z",
+      "completes_at": "2026-03-28T00:21:42.975640200Z",
       "resolved": true,
       "is_emergency": false
     }
   ],
   "missions": [
     {
-      "id": "210712e5-4081-400a-9268-aaa0d9c24561",
+      "id": "35ea7a05-92c2-4130-9f02-b55ea7403e2a",
       "name": "Test Mission",
       "description": "High-priority contract from the Orbitals.",
       "tier": "Starter",
@@ -38,7 +38,7 @@
   "slimes": [
     {
       "genome": {
-        "id": "c6916e77-b61e-4467-b96a-1b3d074dd766",
+        "id": "017c0db4-1e59-4cae-9def-de28d822b445",
         "culture_alleles": {
           "dominant": [
             0.0,
@@ -63,34 +63,34 @@
             0.0
           ]
         },
-        "base_hp": 17.48467,
-        "base_atk": 5.1740303,
-        "base_spd": 7.959962,
+        "base_hp": 18.828108,
+        "base_atk": 4.294928,
+        "base_spd": 7.079276,
         "generation": 1,
         "parent_ids": null,
-        "curiosity": 0.027145982,
-        "energy": 0.30508214,
-        "affection": 0.33086503,
-        "shyness": 0.75002056,
-        "base_strength": 9,
+        "curiosity": 0.22865635,
+        "energy": 0.9047988,
+        "affection": 0.95424217,
+        "shyness": 0.5368964,
+        "base_strength": 11,
         "base_agility": 10,
-        "base_intelligence": 12,
-        "base_mind": 11,
-        "base_sensory": 9,
-        "base_tenacity": 8,
-        "shape": "Elongated",
+        "base_intelligence": 9,
+        "base_mind": 8,
+        "base_sensory": 10,
+        "base_tenacity": 9,
+        "shape": "Cubic",
         "body_size": "Massive",
-        "pattern": "Striped",
-        "accessory": "Glow",
+        "pattern": "Iridescent",
+        "accessory": "None",
         "base_color": [
-          152,
-          56,
-          165
+          83,
+          171,
+          199
         ],
         "pattern_color": [
-          123,
-          78,
-          130
+          131,
+          85,
+          219
         ],
         "frequency": 288.0,
         "name": "Rookie"
@@ -108,7 +108,9 @@
         0,
         0
       ],
-      "state": "Idle",
+      "state": {
+        "Deployed": "35ea7a05-92c2-4130-9f02-b55ea7403e2a"
+      },
       "training": {
         "session_counts": {},
         "last_reset": "1970-01-01T00:00:00Z"
@@ -521,12 +523,12 @@
     "tick_accum": 0.0,
     "startled_level": 0.05
   },
-  "last_upkeep_at": "2026-03-28T00:40:12.142756Z",
-  "last_pool_refresh": "2026-03-28T00:40:12.142756800Z",
+  "last_upkeep_at": "2026-03-28T01:21:32.975555100Z",
+  "last_pool_refresh": "2026-03-28T01:21:32.975556Z",
   "inventory": {
     "gear_pool": [],
     "biomass": 0,
-    "scrap": 10000,
+    "scrap": 0,
     "reagents": 0
   },
   "active_expeditions": [],
@@ -537,12 +539,12 @@
   "logs_sub_tab": "MissionHistory",
   "combat_log": [
     {
-      "timestamp": 1774658412,
-      "message": "[Test Mission] ✅ VICTORY (+$$10000) — Clean operation. The client is satisfied. The squad is intact. Good enough.",
+      "timestamp": 1774660892,
+      "message": "[Test Mission] ✅ VICTORY (+$$10000) — The mission ran exactly as planned. In this line of work, that's the best-case scenario.",
       "outcome": "Victory"
     },
     {
-      "timestamp": 1774658412,
+      "timestamp": 1774660892,
       "message": ">> EXCELLENCE RECOGNIZED: Rookie has reached Level 3!",
       "outcome": "System"
     }

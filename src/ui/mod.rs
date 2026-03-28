@@ -667,7 +667,7 @@ impl eframe::App for OperatorApp {
                         left: safe_area.left,
                         right: safe_area.right,
                         top: 0.0,
-                        bottom: safe_area.bottom,
+                        bottom: 0.0, // This was safe_area.bottom, but we want the tab bar to handle that
                     })
             )
             .show(ctx, |ui| {
@@ -675,6 +675,7 @@ impl eframe::App for OperatorApp {
             });
 
         // 2. Navigation Tab Bar — Stitch Design (Outer-middle)
+        let tab_bar_top = ctx.screen_rect().max.y - crate::platform::TAB_BAR_HEIGHT - safe_area.bottom;
         egui::TopBottomPanel::bottom("bottom_tabs")
             .frame(
                 egui::Frame::none()
@@ -683,7 +684,7 @@ impl eframe::App for OperatorApp {
                         left: safe_area.left,
                         right: safe_area.right,
                         top: 0.0,
-                        bottom: 0.0,
+                        bottom: safe_area.bottom,
                     })
             )
             .show(ctx, |ui| {
