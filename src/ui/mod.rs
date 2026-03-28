@@ -639,11 +639,7 @@ impl eframe::App for OperatorApp {
                         }
                     },
                     crate::platform::BottomTab::Logs => {
-                        egui::ScrollArea::vertical().show(ui, |ui| {
-                            for entry in self.state.combat_log.iter().take(20) {
-                                ui.label(&entry.message);
-                            }
-                        });
+                        self.render_combat_log(ui);
                     }
                 }
             });
@@ -753,6 +749,49 @@ impl OperatorApp {
                     }
                 }
             }
+        });
+    }
+
+    pub(crate) fn render_combat_log(&mut self, ui: &mut egui::Ui) {
+        ui.vertical(|ui| {
+            ui.heading("MISSION LOGS");
+            ui.add_space(8.0);
+
+            if self.state.combat_log.is_empty() {
+                ui.centered_and_justified(|ui| {
+                    ui.label(egui::RichText::new("NO LOGS RECORDED").color(egui::Color32::GRAY));
+                });
+                return;
+            }
+
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .id_source("combat_log_scroll")
+                .show(ui, |ui| {
+                    ui.vertical(|ui| {
+                        for entry in &self.state.combat_log {
+                             egui::Frame::none()
+                                .fill(egui::Color32::from_rgb(20, 20, 25))
+                                .inner_margin(egui::Margin::same(8.0))
+                                .show(ui, |ui| {
+                                    ui.set_width(ui.available_width());
+                                    
+                                    let (icon, color) = match entry.outcome {
+                                        crate::models::LogOutcome::Victory => ("✅", egui::Color32::from_rgb(105, 254, 165)),
+                                        crate::models::LogOutcome::Failure => ("❌", egui::Color32::from_rgb(254, 165, 105)),
+                                        crate::models::LogOutcome::CritFail => ("☠", egui::Color32::from_rgb(255, 80, 80)),
+                                        crate::models::LogOutcome::System => ("💾", egui::Color32::LIGHT_BLUE),
+                                    };
+
+                                    ui.horizontal_wrapped(|ui| {
+                                        ui.label(egui::RichText::new(icon).size(16.0));
+                                        ui.label(egui::RichText::new(&entry.message).color(color).small());
+                                    });
+                                });
+                            ui.add_space(4.0);
+                        }
+                    });
+                });
         });
     }
 }
