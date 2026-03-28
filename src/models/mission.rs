@@ -63,6 +63,33 @@ impl std::fmt::Display for ResourceYield {
 }
 
 // ---------------------------------------------------------------------------
+// Targets & Enemies (G.5 Gauntlet)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Target {
+    pub name: String,
+    pub description: String,
+    pub base_dc: u32,
+    pub req_strength: u32,
+    pub req_agility: u32,
+    pub req_intelligence: u32,
+}
+
+impl Target {
+    pub fn new(name: impl Into<String>, dc: u32, str: u32, agi: u32, int: u32) -> Self {
+        Self {
+            name: name.into(),
+            description: "Enemy unit detected in local perimeter.".into(),
+            base_dc: dc,
+            req_strength: str,
+            req_agility: agi,
+            req_intelligence: int,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Mission
 // ---------------------------------------------------------------------------
 
@@ -84,11 +111,8 @@ pub struct Mission {
     pub name: String,
     pub description: String,
     pub tier: MissionTier,
-    pub base_dc: u32,
+    pub targets: Vec<Target>,
     pub min_roster_level: u32,
-    pub req_strength: u32,
-    pub req_agility: u32,
-    pub req_intelligence: u32,
     pub difficulty: f64,
     pub duration_secs: u64,
     pub reward: ResourceYield,
@@ -103,11 +127,8 @@ impl Mission {
     pub fn new(
         name: impl Into<String>,
         tier: MissionTier,
-        base_dc: u32,
+        targets: Vec<Target>,
         min_level: u32,
-        req_str: u32,
-        req_agi: u32,
-        req_int: u32,
         difficulty: f64,
         duration_secs: u64,
         reward: ResourceYield,
@@ -120,11 +141,8 @@ impl Mission {
             name: name.into(),
             description: "High-priority contract from the Orbitals.".into(),
             tier,
-            base_dc,
+            targets,
             min_roster_level: min_level,
-            req_strength: req_str,
-            req_agility: req_agi,
-            req_intelligence: req_int,
             difficulty,
             duration_secs,
             reward,
@@ -159,19 +177,26 @@ impl Mission {
             total_int += i;
         }
 
-        let coverage = (
-            (total_str as f64 / self.req_strength.max(1) as f64).clamp(0.3, 2.0) +
-            (total_agi as f64 / self.req_agility.max(1) as f64).clamp(0.3, 2.0) +
-            (total_int as f64 / self.req_intelligence.max(1) as f64).clamp(0.3, 2.0)
-        ) / 3.0;
-
-        let modifier = crate::combat::D20::modifier_from_coverage(coverage);
-        let dc = self.base_dc as i32;
-        let target_roll = (dc - modifier).clamp(1, 21);
-        let success_faces = (21 - target_roll).clamp(1, 19);
-        let chance = success_faces as f64 / 20.0;
+        // Cumulative Success Probability across all targets
+        let mut cumulative_chance = 1.0;
         
-        let label = match chance {
+        for target in &self.targets {
+            let coverage = (
+                (total_str as f64 / target.req_strength.max(1) as f64).clamp(0.3, 2.0) +
+                (total_agi as f64 / target.req_agility.max(1) as f64).clamp(0.3, 2.0) +
+                (total_int as f64 / target.req_intelligence.max(1) as f64).clamp(0.3, 2.0)
+            ) / 3.0;
+
+            let modifier = crate::combat::D20::modifier_from_coverage(coverage);
+            let dc = target.base_dc as i32;
+            let target_roll = (dc - modifier).clamp(1, 21);
+            let success_faces = (21 - target_roll).clamp(1, 19);
+            let target_chance = success_faces as f64 / 20.0;
+            
+            cumulative_chance *= target_chance;
+        }
+        
+        let label = match cumulative_chance {
             c if c >= 0.90 => "GUARANTEED",
             c if c >= 0.75 => "GOOD ODDS",
             c if c >= 0.50 => "RISKY",
@@ -179,7 +204,7 @@ impl Mission {
             _              => "DESPERATE",
         };
 
-        (label.to_string(), chance)
+        (label.to_string(), cumulative_chance)
     }
 }
 
@@ -187,12 +212,10 @@ impl std::fmt::Display for Mission {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[{}] {} | STR:{} AGI:{} INT:{} | Diff:{:.0}% | Dur:{}s | Reward:{}",
+            "[{}] {} | Targets:{} | Diff:{:.0}% | Dur:{}s | Reward:{}",
             &self.id.to_string()[..8],
             self.name,
-            self.req_strength,
-            self.req_agility,
-            self.req_intelligence,
+            self.targets.len(),
             self.difficulty * 100.0,
             self.duration_secs,
             self.reward,
@@ -205,18 +228,24 @@ pub enum AarOutcome {
     Victory {
         reward: ResourceYield,
         success_chance: f64,
-        rolls: Vec<D20Result>,
+        rolls: Vec<crate::combat::D20Result>,
         xp_gained: u32,
+        targets_defeated: usize,
+        total_targets: usize,
     },
     Failure {
         injured_ids: Vec<Uuid>,
-        rolls: Vec<D20Result>,
+        rolls: Vec<crate::combat::D20Result>,
         xp_gained: u32,
+        targets_defeated: usize,
+        total_targets: usize,
     },
     CriticalFailure {
         injured_ids: Vec<Uuid>,
-        rolls: Vec<D20Result>,
+        rolls: Vec<crate::combat::D20Result>,
         xp_gained: u32,
+        targets_defeated: usize,
+        total_targets: usize,
     },
 }
 
@@ -246,7 +275,7 @@ impl Deployment {
         Utc::now() >= self.completes_at
     }
 
-    pub fn resolve<R: Rng>(
+    pub fn resolve<R: rand::Rng>(
         &self,
         mission: &Mission,
         squad: &[&Operator],
@@ -266,10 +295,6 @@ impl Deployment {
             if req == 0 { 2.0 } else { (stat as f64 / req as f64).clamp(0.0, 2.0) }
         };
 
-        let str_cov = coverage(total_str, mission.req_strength);
-        let agi_cov = coverage(total_agi, mission.req_agility);
-        let int_cov = coverage(total_int, mission.req_intelligence);
-
         let affinity_bonus = mission.get_affinity_bonus(squad);
         let difficulty = if self.is_emergency {
             mission.difficulty + 15.0 + affinity_bonus
@@ -277,37 +302,82 @@ impl Deployment {
             mission.difficulty + affinity_bonus
         };
 
-        let str_roll = D20::mission_check(str_cov, difficulty, RollMode::Normal, rng);
-        let agi_roll = D20::mission_check(agi_cov, difficulty, RollMode::Normal, rng);
-        let int_roll = D20::mission_check(int_cov, difficulty, RollMode::Normal, rng);
+        let mut targets_defeated = 0;
+        let mut all_rolls = Vec::new();
+        let mut stopped_by_failure = false;
+        let mut stopped_by_crit_fail = false;
 
-        let successes = [str_roll.success, agi_roll.success, int_roll.success]
-            .iter().filter(|&&s| s).count();
+        for target in &mission.targets {
+            use crate::combat::{D20, RollMode};
+            let str_cov = coverage(total_str, target.req_strength);
+            let agi_cov = coverage(total_agi, target.req_agility);
+            let int_cov = coverage(total_int, target.req_intelligence);
 
-        let any_crit_fail = (str_roll.nat_one && !str_roll.success)
-            || (agi_roll.nat_one && !agi_roll.success)
-            || (int_roll.nat_one && !int_roll.success);
+            let str_roll = D20::mission_check(str_cov, difficulty, RollMode::Normal, rng);
+            let agi_roll = D20::mission_check(agi_cov, difficulty, RollMode::Normal, rng);
+            let int_roll = D20::mission_check(int_cov, difficulty, RollMode::Normal, rng);
 
-        let rolls = vec![str_roll, agi_roll, int_roll];
+            let successes = [str_roll.success, agi_roll.success, int_roll.success]
+                .iter().filter(|&&s| s).count();
 
-        if successes >= 2 {
-            AarOutcome::Victory {
-                reward: mission.reward,
-                success_chance: mission.calculate_success_chance(squad).1,
-                rolls,
-                xp_gained: 0,
+            let any_crit_fail = (str_roll.nat_one && !str_roll.success)
+                || (agi_roll.nat_one && !agi_roll.success)
+                || (int_roll.nat_one && !int_roll.success);
+
+            all_rolls.push(str_roll);
+            all_rolls.push(agi_roll);
+            all_rolls.push(int_roll);
+
+            if successes >= 2 {
+                targets_defeated += 1;
+            } else {
+                stopped_by_failure = true;
+                if any_crit_fail { stopped_by_crit_fail = true; }
+                break; // Stop on first failure
             }
-        } else if any_crit_fail && successes == 0 {
+        }
+
+        let total_targets = mission.targets.len();
+        let full_clear = targets_defeated == total_targets;
+        
+        // Reward Scaling (Designer Directive)
+        let base_multiplier = if total_targets == 0 { 0.0 } else { 
+            targets_defeated as f32 / total_targets as f32 
+        };
+        
+        let reward_multiplier = if full_clear {
+            1.10 // 10% Bonus
+        } else if targets_defeated == 0 {
+            0.10 // 10% Consolation
+        } else {
+            base_multiplier
+        };
+
+        if full_clear {
+            AarOutcome::Victory {
+                reward: mission.reward.scaled(reward_multiplier),
+                success_chance: mission.calculate_success_chance(squad).1,
+                rolls: all_rolls,
+                xp_gained: 0,
+                targets_defeated,
+                total_targets,
+            }
+        } else if stopped_by_crit_fail && targets_defeated == 0 {
             AarOutcome::CriticalFailure {
                 injured_ids: Vec::new(),
-                rolls,
+                rolls: all_rolls,
                 xp_gained: 0,
+                targets_defeated,
+                total_targets,
             }
         } else {
+            // Partial Success or simple Failure
             AarOutcome::Failure {
                 injured_ids: Vec::new(),
-                rolls,
-                xp_gained: 0,
+                rolls: all_rolls,
+                xp_gained: 0, // award_squad_xp will fill this
+                targets_defeated,
+                total_targets,
             }
         }
     }
@@ -315,10 +385,25 @@ impl Deployment {
     pub fn award_squad_xp(&self, mission: &Mission, squad: &mut [&mut Operator], outcome: &AarOutcome) -> Vec<(Uuid, u32, bool)> {
         let mut results = Vec::new();
         let total_val = mission.reward.total_value();
-        let base_xp = match outcome {
-            AarOutcome::Victory { .. } => (total_val / 100).max(1) as u32,
-            _ => (total_val / 400).max(0) as u32,
+        
+        let (defeated, total) = match outcome {
+            AarOutcome::Victory { targets_defeated, total_targets, .. } => (*targets_defeated, *total_targets),
+            AarOutcome::Failure { targets_defeated, total_targets, .. } => (*targets_defeated, *total_targets),
+            AarOutcome::CriticalFailure { targets_defeated, total_targets, .. } => (*targets_defeated, *total_targets),
         };
+
+        let multiplier = if total == 0 { 0.0 } else { defeated as f32 / total as f32 };
+        let final_multiplier = if defeated == total {
+            1.10 // Full bonus
+        } else if defeated == 0 {
+            0.10 // Consolation
+        } else {
+            multiplier
+        };
+
+        // Base XP is calculated as 1% of total mission value (scaled)
+        let total_xp = (total_val as f32 / 100.0) * final_multiplier;
+        let base_xp = total_xp.max(1.0) as u32;
 
         if base_xp == 0 { return results; }
 
@@ -388,25 +473,42 @@ pub fn apply_outcome_injuries(
 
 pub fn seed_missions() -> Vec<Mission> {
     vec![
-        Mission::new("Bank Heist Recon",    MissionTier::Starter,  5,  1, 20, 30, 10, 0.10, 60,  ResourceYield::scrap(500),  Some(crate::genetics::Culture::Teal), None, false),
-        Mission::new("Corporate Espionage", MissionTier::Standard, 10, 1, 10, 20, 50, 0.25, 120, ResourceYield::scrap(1200), Some(crate::genetics::Culture::Tide), None, false),
-        Mission::new("Harbour Extraction",  MissionTier::Standard, 12, 2, 40, 20, 10, 0.20, 90,  ResourceYield::scrap(800),  Some(crate::genetics::Culture::Marsh), None, false),
-        Mission::new("Zero-Day Exploit",    MissionTier::Advanced, 15, 3, 10, 10, 70, 0.40, 180, ResourceYield::scrap(2500), Some(crate::genetics::Culture::Orange), None, false),
-        Mission::new("Black Site Breach",   MissionTier::Elite,    20, 5, 60, 40, 20, 0.50, 300, ResourceYield::scrap(5000), Some(crate::genetics::Culture::Ember), None, false),
+        Mission::new("Bank Heist Recon",    MissionTier::Starter,  vec![Target::new("Local Security", 5, 20, 30, 10)], 1, 0.10, 60,  ResourceYield::scrap(500),  Some(crate::genetics::Culture::Teal), None, false),
+        Mission::new("Corporate Espionage", MissionTier::Standard, vec![Target::new("Data Sentry", 10, 10, 20, 50)], 1, 0.25, 120, ResourceYield::scrap(1200), Some(crate::genetics::Culture::Tide), None, false),
+        Mission::new("Harbour Extraction",  MissionTier::Standard, vec![Target::new("Heavy Loader", 12, 40, 20, 10)], 2, 0.20, 90,  ResourceYield::scrap(800),  Some(crate::genetics::Culture::Marsh), None, false),
+        Mission::new("Zero-Day Exploit",    MissionTier::Advanced, vec![Target::new("Cyber Grid", 15, 10, 10, 70)], 3, 0.40, 180, ResourceYield::scrap(2500), Some(crate::genetics::Culture::Orange), None, false),
+        Mission::new("Black Site Breach",   MissionTier::Elite,    vec![Target::new("Alpha Squad", 20, 60, 40, 20)], 5, 0.50, 300, ResourceYield::scrap(5000), Some(crate::genetics::Culture::Ember), None, false),
     ]
 }
 
-pub(crate) fn blueprint<R: Rng>(rng: &mut R) -> (String, usize, crate::genetics::Culture) {
+pub(crate) fn blueprint<R: Rng>(rng: &mut R) -> (String, Vec<Target>, crate::genetics::Culture) {
     let adjs = ["Industrial", "Corporate", "Stealth", "Deep-Sea", "Orbital", "Thermal", "Sub-Zero", "Clandestine"];
     let nouns = ["Extraction", "Espionage", "Sabotage", "Data-Siphon", "Recon", "Breach", "Harvest", "Surveillance"];
     let name = format!("{} {}", adjs.choose(rng).unwrap(), nouns.choose(rng).unwrap());
     
     use crate::genetics::Culture;
-    let (stat, cult) = match rng.gen_range(0..3) {
+    let (stat_idx, cult) = match rng.gen_range(0..3) {
         0 => (0, [Culture::Ember, Culture::Marsh, Culture::Frost].choose(rng).unwrap()),
         1 => (1, [Culture::Teal, Culture::Gale, Culture::Crystal].choose(rng).unwrap()),
         _ => (2, [Culture::Orange, Culture::Tundra, Culture::Tide].choose(rng).unwrap()),
     };
+
+    // G.5: Generate 1-3 targets
+    let target_count = rng.gen_range(1..=3);
+    let mut targets = Vec::new();
+    for i in 1..=target_count {
+        let dc = rng.gen_range(5..=15);
+        let s = if stat_idx == 0 { rng.gen_range(20..50) } else { rng.gen_range(5..15) };
+        let a = if stat_idx == 1 { rng.gen_range(20..50) } else { rng.gen_range(5..15) };
+        let i_stat = if stat_idx == 2 { rng.gen_range(20..50) } else { rng.gen_range(5..15) };
+        
+        let target_name = if target_count == 1 {
+            "Main Objective".to_string()
+        } else {
+            format!("Layer {} Security", i)
+        };
+        targets.push(Target::new(target_name, dc, s, a, i_stat));
+    }
     
-    (name, stat, *cult)
+    (name, targets, *cult)
 }
