@@ -676,6 +676,8 @@ impl eframe::App for OperatorApp {
 
         // 2. Navigation Tab Bar — Stitch Design (Outer-middle)
         let tab_bar_top = ctx.screen_rect().max.y - crate::platform::TAB_BAR_HEIGHT - safe_area.bottom;
+        let _tab_bar_top = tab_bar_top; // Suppress warning until used for layering check
+
         egui::TopBottomPanel::bottom("bottom_tabs")
             .frame(
                 egui::Frame::none()
@@ -748,28 +750,24 @@ impl eframe::App for OperatorApp {
                     .frame(
                         egui::Frame::none()
                             .fill(egui::Color32::from_rgb(20, 20, 25)) // Forced opaque
-                            .inner_margin(egui::Margin::symmetric(8.0, 4.0))
+                            .inner_margin(egui::Margin {
+                                left: safe_area.left + 8.0,
+                                right: safe_area.right + 8.0,
+                                top: 4.0,
+                                bottom: 4.0,
+                            })
                     )
                     .show(ctx, |ui| {
-                        ui.label(egui::RichText::new("── LAST ACTION ──").strong());
-                        if let Some(entry) = self.state.combat_log.first() {
-                            let color = match entry.outcome {
-                                LogOutcome::Victory  => egui::Color32::from_rgb(80, 200, 120),
-                                LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
-                                LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
-                                LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
-                            };
-                            ui.colored_label(color, &entry.message);
-                        }
+                        self.render_combat_log(ui);
                     });
             }
         }
 
-        // 4. Sidebar navigation (Sub-tabs)
+        // 4. Sidebar navigation (Sub-tabs) - Universal Sidebar (ADR-042)
         egui::SidePanel::left("left_sidebar")
             .frame(
                 egui::Frame::none()
-                    .fill(egui::Color32::from_rgb(19, 19, 24)) // Consistent opaque surface
+                    .fill(egui::Color32::from_rgb(19, 19, 24))
                     .inner_margin(egui::Margin {
                         left: safe_area.left,
                         right: 0.0,
@@ -784,89 +782,82 @@ impl eframe::App for OperatorApp {
                 render_sub_tabs(ui, self.active_tab, self);
             });
 
-        // 5. Main Content Area (CentralPanel fills the remaining gap perfectly)
+        // 5. Central Content Rendering
         egui::CentralPanel::default()
-            .frame(
-                egui::Frame::none()
-                    .inner_margin(egui::Margin {
-                        left: 4.0, // Breathing room after separator
-                        right: safe_area.right,
-                        top: 0.0,
-                        bottom: 0.0,
-                    })
-            )
+            .frame(egui::Frame::none().fill(egui::Color32::TRANSPARENT))
             .show(ctx, |ui| {
-                // Map tab handles its own positioning
-                if self.active_tab == crate::platform::BottomTab::Map {
-                    match self.map_sub_tab {
+                match self.active_tab {
+                    crate::platform::BottomTab::Roster => match self.roster_sub_tab {
+                        crate::platform::RosterSubTab::Collection => {
+                            if self.selected_slime_id.is_some() {
+                                self.render_slime_detail(ui);
+                            } else {
+                                ui.allocate_ui_at_rect(ui.available_rect_before_wrap(), |ui| {
+                                    self.render_manifest(ui);
+                                });
+                            }
+                        }
+                        crate::platform::RosterSubTab::Breeding => {
+                            self.render_incubator(ui);
+                        }
+                        crate::platform::RosterSubTab::Recruit => {
+                            self.render_recruit(ui);
+                        }
+                        crate::platform::RosterSubTab::Squad => {
+                            self.render_squad(ui);
+                        }
+                    },
+                    crate::platform::BottomTab::Missions => match self.missions_sub_tab {
+                        crate::platform::MissionsSubTab::Active => {
+                            self.render_active_ops(ui);
+                        }
+                        crate::platform::MissionsSubTab::QuestBoard => {
+                            self.render_contracts(ui);
+                        }
+                    },
+                    crate::platform::BottomTab::Map => match self.map_sub_tab {
                         crate::platform::MapSubTab::Zones => {
                             self.render_radar(ui);
                         }
-                    }
-                } else {
-                    // Unified 4-tab content area
-                    match self.active_tab {
-                        crate::platform::BottomTab::Roster => match self.roster_sub_tab {
-                            crate::platform::RosterSubTab::Collection => {
-                                // If a slime is selected, show detail view; otherwise card grid
-                                if self.selected_slime_id.is_some() {
-                                    self.render_slime_detail(ui);
-                                } else {
-                                    // Force Roster (internal ScrollArea) to fill available gap
-                                    ui.allocate_ui_at_rect(ui.available_rect_before_wrap(), |ui| {
-                                        self.render_manifest(ui);
-                                    });
-                                }
-                            }
-                            crate::platform::RosterSubTab::Breeding => {
-                                self.render_incubator(ui);
-                            }
-                            crate::platform::RosterSubTab::Recruit => {
-                                self.render_recruit(ui);
-                            }
-                            crate::platform::RosterSubTab::Squad => {
-                                self.render_squad(ui);
-                            }
-                        },
-                        crate::platform::BottomTab::Missions => match self.missions_sub_tab {
-                            crate::platform::MissionsSubTab::Active => {
-                                self.render_active_ops(ui);
-                            }
-                            crate::platform::MissionsSubTab::QuestBoard => {
-                                self.render_contracts(ui);
-                            }
-                        },
-                        crate::platform::BottomTab::Logs => match self.logs_sub_tab {
-                            crate::platform::LogsSubTab::MissionHistory => {
-                                egui::ScrollArea::vertical()
-                                    .id_source("logs_scroll")
-                                    .auto_shrink([false, false])
-                                    .show(ui, |ui| {
-                                        if self.state.combat_log.is_empty() {
-                                            ui.label(egui::RichText::new("No mission history. Deploy your first squad to begin.").color(egui::Color32::GRAY).italics());
-                                        } else {
-                                            for entry in &self.state.combat_log {
-                                                let color = match entry.outcome {
-                                                    LogOutcome::Victory  => egui::Color32::from_rgb(100, 220, 100),
-                                                    LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
-                                                    LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
-                                                    LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
-                                                };
-                                                ui.colored_label(color, &entry.message);
-                                            }
+                        crate::platform::MapSubTab::Quartermaster => {
+                            // self.render_quartermaster(ui); // Task C
+                            ui.centered_and_justified(|ui| {
+                                ui.label(egui::RichText::new("QUARTERMASTER COMING SOON").italics().color(egui::Color32::GRAY));
+                            });
+                        }
+                    },
+                    crate::platform::BottomTab::Logs => match self.logs_sub_tab {
+                        crate::platform::LogsSubTab::MissionHistory => {
+                            egui::ScrollArea::vertical()
+                                .id_source("logs_scroll")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    if self.state.combat_log.is_empty() {
+                                        ui.label(egui::RichText::new("No mission history.").color(egui::Color32::GRAY).italics());
+                                    } else {
+                                        for entry in &self.state.combat_log {
+                                            let color = match entry.outcome {
+                                                LogOutcome::Victory  => egui::Color32::from_rgb(100, 220, 100),
+                                                LogOutcome::CritFail => egui::Color32::from_rgb(220, 80, 80),
+                                                LogOutcome::Failure  => egui::Color32::from_rgb(220, 180, 80),
+                                                LogOutcome::System   => egui::Color32::from_rgb(160, 160, 180),
+                                            };
+                                            ui.colored_label(color, &entry.message);
                                         }
-                                    });
-                            }
-                            crate::platform::LogsSubTab::CultureHistory => {
-                                ui.label(egui::RichText::new("Awaiting deployment and culture synchronization...").italics().color(egui::Color32::GRAY));
-                            }
-                        },
-                        _ => {}
-                    }
+                                    }
+                                });
+                        }
+                        crate::platform::LogsSubTab::CultureHistory => {
+                            ui.label("Culture History Awaiting Data...");
+                        }
+                    },
                 }
-                if ui.button("PROCESS AAR").clicked() {
-                    let t = ui.ctx().input(|i| i.time);
-                    self.apply_aar_outcome(t);
+
+                if self.pending_aar.is_some() {
+                    if ui.button("PROCESS AAR").clicked() {
+                        let t = ui.ctx().input(|i| i.time);
+                        self.apply_aar_outcome(t);
+                    }
                 }
             });
     }
