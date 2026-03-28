@@ -1,6 +1,6 @@
 // tests/g1_stability.rs
 use operator::persistence::{GameState, load, save};
-use operator::models::{Mission, MissionTier, Deployment};
+use operator::models::{Mission, MissionTier, Deployment, ResourceYield};
 use operator::world_map::generate_static_missions;
 use chrono::{Utc, Duration};
 use uuid::Uuid;
@@ -28,7 +28,7 @@ fn test_g1_anchor_1_orphan_protection() {
     state.refresh_missions_if_needed(next_day);
     
     assert!(state.missions.iter().any(|m| m.id == active_id), "Active mission must be protected from deletion during refresh");
-    assert!(state.missions.len() >= 15, "Pool should contain new 14 missions plus the protected one");
+    assert!(state.missions.len() >= 21, "Pool should contain new 20 missions plus the protected one");
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn test_g1_anchor_2_orphan_reconstruction() {
 fn test_g1_anchor_3_static_pool_size() {
     let mut rng = rand::rngs::SmallRng::seed_from_u64(2025);
     let missions = generate_static_missions(&mut rng);
-    assert_eq!(missions.len(), 14, "Standard pool size should be 14 (4/4/4/2 split)");
+    assert_eq!(missions.len(), 20, "Standard pool size should be 20 (6 scouts + 14 standard)");
 }
 
 #[test]
