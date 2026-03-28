@@ -25,12 +25,17 @@ impl OperatorApp {
                     ui.spacing_mut().item_spacing = egui::vec2(0.0, 8.0);
                     
                     for op in &self.state.slimes {
-                        let (stage_clicked, card_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
+                        let (stage_clicked, card_clicked, hat_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
                         if stage_clicked {
                             toggle_stage = Some(op.genome.id);
                         }
                         if card_clicked {
                             self.selected_slime_id = Some(op.genome.id);
+                        }
+                        if hat_clicked {
+                            self.selected_slime_id = Some(op.genome.id);
+                            self.active_tab = crate::platform::BottomTab::Map;
+                            self.map_sub_tab = crate::platform::MapSubTab::Quartermaster;
                         }
                     }
                 });
@@ -234,9 +239,10 @@ fn render_operator_card(
     staged: &std::collections::HashSet<uuid::Uuid>,
     _selected_mission_id: Option<uuid::Uuid>,
     card_width: f32,
-) -> (bool, bool) {
+) -> (bool, bool, bool) {
     let mut stage_clicked = false;
     let mut card_clicked = false;
+    let mut hat_clicked = false;
     let genome = &op.genome;
     let is_staged = staged.contains(&genome.id);
     let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
@@ -306,15 +312,24 @@ fn render_operator_card(
                 });
             });
 
-            // Hat Label (G.3)
-            if let Some(hat_id) = op.equipped_hat {
-                let catalog = crate::models::Hat::catalog();
-                if let Some(hat) = catalog.iter().find(|h| h.id == hat_id) {
-                    ui.label(egui::RichText::new(format!("🎩 {}", hat.name))
-                        .small()
-                        .color(egui::Color32::from_rgb(220, 220, 100)));
+            // Hat Interaction (G.3)
+            ui.horizontal(|ui| {
+                if let Some(hat_id) = op.equipped_hat {
+                    let catalog = crate::models::Hat::catalog();
+                    if let Some(hat) = catalog.iter().find(|h| h.id == hat_id) {
+                        if ui.button(egui::RichText::new(format!("🎩 {}", hat.name))
+                            .small()
+                            .color(egui::Color32::from_rgb(220, 220, 100))).clicked() 
+                        {
+                            hat_clicked = true;
+                        }
+                    }
+                } else {
+                    if ui.button(egui::RichText::new("➕ EQUIP HAT").small().color(egui::Color32::GRAY)).clicked() {
+                        hat_clicked = true;
+                    }
                 }
-            }
+            });
 
             ui.add_space(4.0);
 
@@ -323,7 +338,7 @@ fn render_operator_card(
             ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).small().color(egui::Color32::LIGHT_GRAY));
         });
 
-    (stage_clicked, card_clicked)
+    (stage_clicked, card_clicked, hat_clicked)
 }
 
 /// Helper for Sprint 6: Renders a segmented horizontal bar representing the Culture genome.
