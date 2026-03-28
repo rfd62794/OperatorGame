@@ -1,9 +1,9 @@
-# Sprint G.5: Multi-Target Missions & Reliability
+# Sprint G.5: Multi-Target Missions & Reliability [COMPLETE]
 
 ## Objectives
-1.  **Transition to Gauntlet Model**: Support sequential combat encounters in a single mission.
-2.  **Fix "Stuck Deployed" Bug**: Ensure operators are returned to `Idle` immediately upon resolution, not just AAR dismissal.
-3.  **UI Feedback**: Instant hat icon updates on operator cards (as requested by Designer).
+1.  **Transition to Gauntlet Model**: ✅ Successfully implemented sequential target resolution.
+2.  **Fix "Stuck Deployed" Bug**: ✅ Moved resolution logic to `GameState::resolve_deployment` for atomic state management.
+3.  **UI Feedback**: ✅ Improved Contracts and AAR panels with target lists and progress tracking.
 
 ## G.5 Mission Design (Gauntlet)
 ### Sequential Encounter Logic
