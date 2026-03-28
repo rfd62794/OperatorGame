@@ -135,6 +135,7 @@ impl OperatorApp {
             left_tab: LeftTab::Manifest,
             right_tab: RightTab::Contracts,
             mobile_tab: MobileTab::Manifest,
+            recently_unlocked_node: None,
         }
     }
 
@@ -161,6 +162,7 @@ impl OperatorApp {
             left_tab: LeftTab::Manifest,
             right_tab: RightTab::Contracts,
             mobile_tab: MobileTab::Manifest,
+            recently_unlocked_node: None,
         }
     }
 
@@ -421,9 +423,9 @@ impl OperatorApp {
                 xp_gained: aar.xp_gained,
             }
         } else if aar.outcome_label.contains("CRITICAL") {
-            AarOutcome::CriticalFailure { rolls: vec![], injured_ids: vec![] }
+            AarOutcome::CriticalFailure { rolls: vec![], injured_ids: vec![], xp_gained: 0 }
         } else {
-            AarOutcome::Failure { rolls: vec![], injured_ids: vec![] }
+            AarOutcome::Failure { rolls: vec![], injured_ids: vec![], xp_gained: 0 }
         };
 
         let dep_idx = self.state.deployments.iter().position(|d| d.mission_id == mission_id).expect("Deployment not found");

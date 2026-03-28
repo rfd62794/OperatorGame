@@ -60,19 +60,25 @@ impl OperatorApp {
             // Base radius
             let mut radius = if node.id == 0 { 12.0 } else { 8.0 };
             
-            // Pulse if node is contested or startled level is high
+            // Pulse if node is contested
             if node.is_contested() {
                 let time = ui.ctx().input(|i| i.time as f32);
                 radius += (time * 5.0).sin() * 2.0;
             }
 
-            // Task D.2: Premium unlocked pulse
-            if unlocked && node.id != 0 {
-                let time = ui.ctx().input(|i| i.time as f32);
-                let pulse_t = (time * 2.0).fract(); // 0.0 to 1.0 cycle
-                let pulse_radius = radius + (pulse_t * 8.0);
-                let alpha = (1.0 - pulse_t) * 0.5;
-                painter.circle_stroke(pos, pulse_radius, egui::Stroke::new(1.0, color.gamma_multiply(alpha)));
+            // Task D.2: Premium unlocked pulse (one-time, 2.0s)
+            if let Some((pulse_id, start_time)) = self.recently_unlocked_node {
+                if pulse_id == node.id && unlocked {
+                    let time = ui.ctx().input(|i| i.time);
+                    let age = time - start_time;
+                    if age > 0.0 && age < 2.0 {
+                        let pulse_t = (age / 2.0) as f32;
+                        let pulse_radius = radius + (pulse_t * 15.0);
+                        let alpha = (1.0 - pulse_t) * 0.6;
+                        painter.circle_stroke(pos, pulse_radius, egui::Stroke::new(1.5, color.gamma_multiply(alpha)));
+                        ui.ctx().request_repaint(); // Ensure smooth animation during the 2s window
+                    }
+                }
             }
 
             painter.circle_filled(pos, radius, color);
