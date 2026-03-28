@@ -165,7 +165,7 @@ mod tests {
     use rand::SeedableRng;
 
     fn dummy_mission(rs: u32, ra: u32, ri: u32) -> Mission {
-        crate::models::Mission::new("Test", crate::models::MissionTier::Starter, 5, 1, rs, ra, ri, 0.1, 60, 100, None, None, false)
+        crate::models::Mission::new("Test", crate::models::MissionTier::Starter, 5, 1, rs, ra, ri, 0.1, 60, crate::models::ResourceYield::scrap(100), None, None, false)
     }
 
     fn dummy_op(name: &str, rng: &mut rand::rngs::SmallRng) -> crate::genetics::SlimeGenome {

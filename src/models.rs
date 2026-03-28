@@ -1212,7 +1212,7 @@ mod tests {
 
     #[test]
     fn test_cargo_apply_increments_inventory() {
-        let yield_ = crate::world_map::ResourceYield { biomass: 10, scrap: 5, reagents: 3 };
+        let yield_ = ResourceYield { biomass: 10, scrap: 5, reagents: 3 };
         let mut inv = crate::inventory::Inventory::default();
         yield_.apply_to_inventory(&mut inv);
         assert_eq!(inv.biomass,   10);

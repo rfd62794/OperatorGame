@@ -216,7 +216,8 @@ fn test_f1b_10_dismissing_aar_clears_pending_state() {
         xp_gained: 100,
         level_ups: vec![],
         roll_lines: vec![],
-        injured_names: vec![]
+        injured_names: vec![],
+        reward: None
     });
     
     assert!(app.pending_aar.is_some());
