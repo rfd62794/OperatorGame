@@ -588,18 +588,20 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
     let mut missions = generate_scout_missions();
     
     // Helper to generate a mission with specific DCs and Tiers
-    let mut gen = |tier: MissionTier, min_dc: u32, max_dc: u32, min_level: u32, reward_base: u64| {
-        let (name, prim_stat, affinity) = crate::models::blueprint(rng);
-        let dc = rng.gen_range(min_dc..=max_dc);
+    let mut gen = |tier: MissionTier, _min_dc: u32, _max_dc: u32, min_level: u32, reward_base: u64| {
+        let (name, mut targets, affinity) = crate::models::blueprint(rng);
         
-        let mut reqs = [rng.gen_range(2..10), rng.gen_range(2..10), rng.gen_range(2..10)];
-        let primary_val = match tier {
-            MissionTier::Starter => rng.gen_range(4..=8),
-            MissionTier::Standard => rng.gen_range(8..=12),
-            MissionTier::Advanced => rng.gen_range(14..=20),
-            MissionTier::Elite => rng.gen_range(28..=36),
-        };
-        reqs[prim_stat] = primary_val;
+        // Adjust the first target to match the requested tier DC if needed, 
+        // or just accept the blueprint's random distribution.
+        // For static missions, let's keep them slightly more predictable.
+        if let Some(t) = targets.get_mut(0) {
+            t.base_dc = match tier {
+                MissionTier::Starter => rng.gen_range(4..=6),
+                MissionTier::Standard => rng.gen_range(6..=10),
+                MissionTier::Advanced => rng.gen_range(10..=15),
+                MissionTier::Elite => rng.gen_range(15..=25),
+            };
+        }
 
         let duration = match tier {
             MissionTier::Starter => rng.gen_range(60..120),
@@ -618,12 +620,12 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
             _ => None,
         };
 
-        let target = crate::models::mission::Target::new("Objective", dc, reqs[0], reqs[1], reqs[2]);
+        let dc = targets.get(0).map(|t| t.base_dc).unwrap_or(10);
 
         Mission::new(
             name,
             tier,
-            vec![target],
+            targets,
             min_level,
             0.5, // Legacy difficulty fallback
             duration,

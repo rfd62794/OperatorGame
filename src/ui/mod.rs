@@ -392,15 +392,29 @@ impl OperatorApp {
         
         let outcome = if aar.outcome_label.contains("VICTORY") {
             AarOutcome::Victory {
-                reward: aar.reward.unwrap_or_default(),
+                reward: aar.reward.clone().unwrap_or_default(),
                 success_chance: 1.0, 
                 rolls: vec![],
                 xp_gained: aar.xp_gained,
+                targets_defeated: aar.targets_defeated,
+                total_targets: aar.total_targets,
             }
         } else if aar.outcome_label.contains("CRITICAL") {
-            AarOutcome::CriticalFailure { rolls: vec![], injured_ids: vec![], xp_gained: 0 }
+            AarOutcome::CriticalFailure { 
+                rolls: vec![], 
+                injured_ids: vec![], 
+                xp_gained: 0,
+                targets_defeated: aar.targets_defeated,
+                total_targets: aar.total_targets,
+            }
         } else {
-            AarOutcome::Failure { rolls: vec![], injured_ids: vec![], xp_gained: 0 }
+            AarOutcome::Failure { 
+                rolls: vec![], 
+                injured_ids: vec![], 
+                xp_gained: 0,
+                targets_defeated: aar.targets_defeated,
+                total_targets: aar.total_targets,
+            }
         };
 
         let dep_idx = self.state.deployments.iter().position(|d| d.mission_id == mission_id).expect("Deployment not found");
