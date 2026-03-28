@@ -255,7 +255,7 @@ impl GameState {
         }
 
         // Cost check
-        if self.inventory.scrap < hat.scrap_cost {
+        if self.inventory.scrap < hat.scrap_cost.into() {
             return Err(format!("Insufficient MTL (Scrap). Need {}kg.", hat.scrap_cost));
         }
 
@@ -265,7 +265,7 @@ impl GameState {
         }
 
         // Deduct and add
-        self.inventory.scrap -= hat.scrap_cost;
+        self.inventory.scrap -= hat.scrap_cost as u64;
         self.hat_inventory.push(hat_id);
         
         Ok(())

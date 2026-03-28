@@ -40,6 +40,7 @@ pub mod contracts;
 pub mod manifest;
 pub mod ops;
 pub mod radar;
+pub mod quartermaster;
 pub mod squad;
 
 // ---------------------------------------------------------------------------
