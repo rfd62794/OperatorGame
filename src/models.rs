@@ -64,6 +64,35 @@ impl std::fmt::Display for ResourceYield {
 }
 
 // ---------------------------------------------------------------------------
+// Gear — Industrial Grade Tools
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+pub enum Gear {
+    HeavyVest, // +5 STR
+    ScoutFins, // +5 AGI
+    DataLens,  // +5 INT
+}
+
+impl Gear {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Gear::HeavyVest => "Heavy Vest",
+            Gear::ScoutFins => "Scout Fins",
+            Gear::DataLens => "Data Lens",
+        }
+    }
+
+    pub fn stat_bonus(&self) -> (u32, u32, u32) {
+        match self {
+            Gear::HeavyVest => (5, 0, 0),
+            Gear::ScoutFins => (0, 5, 0),
+            Gear::DataLens => (0, 0, 5),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Equipment — Hats (G.3)
 // ---------------------------------------------------------------------------
 
