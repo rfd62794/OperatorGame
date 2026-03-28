@@ -114,3 +114,12 @@ fn test_mission_visibility_filtering() {
     assert!(can_see_center);
     assert!(!can_see_locked, "Missions for locked nodes should be hidden");
 }
+
+#[test]
+fn test_scout_mission_node_linkage() {
+    let scouts = generate_scout_missions();
+    for m in scouts {
+        assert!(m.node_id.is_some(), "Scout mission {} is missing node_id", m.name);
+        assert!(m.is_scout, "Scout mission {} is missing is_scout flag", m.name);
+    }
+}
