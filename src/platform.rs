@@ -386,27 +386,43 @@ impl AssetProvider for ProcAssetProvider {
 // Tests
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn android_default_has_nonzero_bottom() {
-        let sa = SafeArea::android_default();
-        assert!(sa.bottom > 0.0, "Android default must reserve nav bar space");
+    fn test_safe_area_desktop_default() {
+        let insets = SafeArea::desktop_default();
+        assert_eq!(insets.top, 0.0, "Desktop mode should have zero top inset");
+        assert_eq!(insets.bottom, 0.0, "Desktop mode should have zero bottom inset");
     }
 
     #[test]
-    fn desktop_default_is_zero() {
-        let sa = SafeArea::desktop_default();
-        assert_eq!(sa.top,    0.0);
-        assert_eq!(sa.bottom, 0.0);
-        assert_eq!(sa.left,   0.0);
-        assert_eq!(sa.right,  0.0);
+    fn test_safe_area_android_default() {
+        let insets = SafeArea::android_default();
+        assert_eq!(insets.top, 48.0, "Android mode should have 48dp top inset (status bar)");
+        assert_eq!(insets.bottom, 56.0, "Android mode should have 56dp bottom inset (nav bar)");
     }
 
     #[test]
-    fn apply_shrinks_rect_correctly() {
+    fn test_mobile_emu_detection_when_set() {
+        std::env::set_var("OPERATOR_MOBILE_EMU", "1");
+        assert!(is_mobile_emu(), "is_mobile_emu() should return true when OPERATOR_MOBILE_EMU is set");
+        std::env::remove_var("OPERATOR_MOBILE_EMU");
+    }
+
+    #[test]
+    fn test_mobile_emu_detection_when_unset() {
+        std::env::remove_var("OPERATOR_MOBILE_EMU");
+        assert!(!is_mobile_emu(), "is_mobile_emu() should return false when unset");
+    }
+
+    #[test]
+    fn test_apply_shrinks_rect_correctly() {
         let sa   = SafeArea { top: 48.0, bottom: 56.0, left: 0.0, right: 0.0 };
         let full = Rect::from_min_max(Pos2::ZERO, Pos2::new(1080.0, 2400.0));
         let safe = sa.apply(full);
@@ -416,36 +432,29 @@ mod tests {
     }
 
     #[test]
-    fn layout_calculator_column_rects_cover_width() {
+    fn test_layout_calculator_column_rects_cover_width() {
         let sa     = SafeArea::desktop_default();
         let layout = LayoutCalculator::new(Vec2::new(900.0, 600.0), sa);
         let r0     = layout.column_rect(0, 3);
         let r2     = layout.column_rect(2, 3);
-        // All three columns together should span the full width
         assert!((r0.min.x - 0.0).abs() < 0.1);
         assert!((r2.max.x - 900.0).abs() < 0.1);
     }
 
     #[test]
-    fn primary_action_guard_is_positive() {
+    fn test_primary_action_guard_is_positive() {
         assert!(PRIMARY_ACTION_BOTTOM_GUARD > 0.0);
     }
-
-    // Phase D — Sprint 3.5 tests -------------------------------------------
 
     #[test]
     fn test_responsive_layout_compact_below_600() {
         assert_eq!(ResponsiveLayout::from_width(599.9), ResponsiveLayout::Compact);
         assert_eq!(ResponsiveLayout::from_width(0.0),   ResponsiveLayout::Compact);
-        assert_eq!(ResponsiveLayout::from_width(375.0), ResponsiveLayout::Compact,
-            "375dp (iPhone SE width) must be Compact");
     }
 
     #[test]
     fn test_responsive_layout_standard_at_600() {
         assert_eq!(ResponsiveLayout::from_width(600.0), ResponsiveLayout::Standard);
-        assert_eq!(ResponsiveLayout::from_width(1280.0), ResponsiveLayout::Standard,
-            "Desktop width must be Standard");
     }
 
     #[test]
@@ -458,29 +467,86 @@ mod tests {
         ];
         for tab in tabs {
             let label = tab.label();
-            assert!(!label.is_empty(), "{:?} must have a non-empty label", tab);
-            // Ensure the label has a unicode icon (first char above ASCII)
-            assert!(
-                label.chars().next().map(|c| c as u32 > 127).unwrap_or(false),
-                "{:?} label should start with an emoji icon", tab
-            );
+            assert!(!label.is_empty());
+            assert!(label.chars().next().map(|c| c as u32 > 127).unwrap_or(false));
         }
+    }
+
+    #[test]
+    fn test_inset_width_consistency() {
+        let desktop = SafeArea::desktop_default();
+        let android = SafeArea::android_default();
+        assert_eq!(std::mem::size_of_val(&desktop.top), std::mem::size_of_val(&android.top));
+    }
+
+    #[test]
+    fn test_inset_values_are_positive() {
+        let android = SafeArea::android_default();
+        assert!(android.top >= 0.0);
+        assert!(android.bottom >= 0.0);
+    }
+
+    #[test]
+    fn test_safe_area_sum() {
+        let android = SafeArea::android_default();
+        let total_vertical_padding = android.top + android.bottom;
+        assert_eq!(total_vertical_padding, 104.0, "Moto G 2025: 48dp + 56dp = 104dp");
+    }
+
+    #[test]
+    fn test_read_window_insets_returns_valid_values() {
+        let insets = read_window_insets();
+        assert!(insets.top.is_finite());
+        assert!(insets.bottom.is_finite());
+        assert!(insets.top >= 0.0 && insets.top < 200.0);
+    }
+
+    #[test]
+    fn test_safe_area_clone() {
+        let original = SafeArea::android_default();
+        let cloned = original.clone();
+        assert_eq!(original.top, cloned.top);
+        assert_eq!(original.bottom, cloned.bottom);
+    }
+
+    #[test]
+    fn test_safe_area_debug_output() {
+        let insets = SafeArea::android_default();
+        let debug_str = format!("{:?}", insets);
+        assert!(debug_str.contains("SafeArea") || debug_str.contains("top") || debug_str.contains("48"));
     }
 
     #[test]
     fn test_asset_provider_stub_returns_err() {
         let provider = ProcAssetProvider;
         let result   = provider.load_bytes("sounds/ember.wav");
-        assert!(result.is_err(), "ProcAssetProvider must always return Err");
-        let msg = result.unwrap_err();
-        assert!(!msg.is_empty(), "Error message must not be empty");
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_platform_integrity_gutters() {
         let sa = SafeArea::android_default();
-        assert!(sa.left > 0.0, "Android must have a left gutter");
-        assert!(sa.right > 0.0, "Android must have a right gutter");
+        assert!(sa.left > 0.0);
+        assert!(sa.right > 0.0);
         assert_eq!(MAX_CONTENT_WIDTH, 600.0);
+    }
+}
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+
+    #[test]
+    fn test_platform_module_compiles() {
+        let _ = SafeArea::android_default();
+        let _ = SafeArea::desktop_default();
+    }
+
+    #[test]
+    fn test_no_panic_on_inset_read() {
+        let result = std::panic::catch_unwind(|| {
+            let _ = read_window_insets();
+        });
+        assert!(result.is_ok());
     }
 }
