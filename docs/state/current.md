@@ -19,11 +19,12 @@ Sprint G.3: Equipment (Hat) System. Four hats (Scout Hood, Knight Helm, Mage Hoo
 
 ## Open Questions
 
-- SDD-035 radial.rs drift: False alarm. `radial.rs` uses pixel math for radius and `ring * 10 - offset` for node-specific DC. The mission-level success math correctly follows `danger * 20`. Node-specific DC modifiers need investigation.
+- G.2 Node DC: `radial.rs` uses `ring * 10 - offset` for node-specific DC modifiers that exist alongside the global mission DC formula (`danger * 20`). Needs investigation into how these stack in future systems.
 - SPEC.md and CONSTITUTION.md are significantly stale (still describe human mercenaries). Scheduled for rewrite after G.3.
 - Upkeep system disabled (TODO in persistence.rs). Needs economy balance sprint before re-enabling.
 - JNI live insets stub in platform.rs still unimplemented. Hardcoded safe area fallbacks in use.
-- Device Verification (Sprint G.2): Deployed to Moto G. Acceptance test (Marsh Delta unlock) is outstanding.
+- Device Verification (Sprint G.2): **VERIFIED on Moto G.** Marsh Delta successfully unlocked; contracts populated correctly.
+- Post-G.3: Screenshot Automation Refresh. Re-mapping of coordinate space for OperatorDeviceTools required after SidePanel and sub-tab layout updates.
 
 ## Recent Decisions
 
