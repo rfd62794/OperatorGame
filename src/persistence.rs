@@ -91,7 +91,8 @@ impl IncubatingGenome {
 
 /// Current save format version. Increment with every breaking schema change.
 /// v10 (Sprint G.2): added unlocked_nodes HashSet
-pub const SAVE_VERSION: u32 = 10;
+/// v11 (Sprint G.3): added hat_inventory and equipped_hat
+pub const SAVE_VERSION: u32 = 11;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -151,6 +152,9 @@ pub struct GameState {
     /// Set of unlocked map node IDs.
     #[serde(default)]
     pub unlocked_nodes: std::collections::HashSet<usize>,
+    /// Purchased hats not currently equipped (G.3).
+    #[serde(default)]
+    pub hat_inventory: Vec<crate::models::HatId>,
 }
 
 impl Default for GameState {
@@ -178,6 +182,7 @@ impl Default for GameState {
             combat_log: Vec::new(),
             version: SAVE_VERSION,
             unlocked_nodes: unlocked,
+            hat_inventory: Vec::new(),
         }
     }
 }
@@ -289,6 +294,20 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
     // v3 → v4 migration: rename culture_expr → culture_alleles on each slime
     let raw = migrate_v3_to_v4(&raw);
     let mut state: GameState = serde_json::from_str(&raw)?;
+        
+    // Migration from v10:
+    if state.version < 11 {
+        // Note: serde(default) handles hat_inventory automatically.
+        state.version = 11;
+    }
+
+    // Sprint G.2 Migration: Ensure Center Node (0) is unlocked in all saves.
+    if state.version < SAVE_VERSION {
+        if state.unlocked_nodes.is_empty() {
+            state.unlocked_nodes.insert(0);
+        }
+        state.version = SAVE_VERSION;
+    }
 
     // Task A.2: Orphan Recovery. If an active deployment references a missing mission, reconstruct it.
     let mut orphans = Vec::new();
