@@ -568,4 +568,56 @@ mod tests {
         assert_eq!(state1.missions[0].name, state2.missions[0].name);
         assert_eq!(state1.missions[0].difficulty, state2.missions[0].difficulty);
     }
+
+    #[test]
+    fn test_purchase_hat_logic() {
+        let mut state = GameState::default();
+        state.inventory.scrap = 100;
+        let mut unlocked = std::collections::HashSet::new();
+        unlocked.insert(0); // Scout Hood is node 0
+
+        // Success
+        state.purchase_hat(crate::models::HatId::ScoutHood, &unlocked).expect("buy hat");
+        assert_eq!(state.inventory.scrap, 50);
+        assert!(state.hat_inventory.contains(&crate::models::HatId::ScoutHood));
+
+        // Duplicate
+        let res = state.purchase_hat(crate::models::HatId::ScoutHood, &unlocked);
+        assert!(res.is_err(), "Cannot buy same hat twice");
+
+        // Insufficient funds
+        state.inventory.scrap = 10;
+        let res2 = state.purchase_hat(crate::models::HatId::KnightHelm, &unlocked);
+        assert!(res2.is_err(), "Insufficient funds");
+
+        // Locked
+        state.inventory.scrap = 500;
+        let res3 = state.purchase_hat(crate::models::HatId::KnightHelm, &unlocked);
+        assert!(res3.is_err(), "Hat node 10 is locked");
+    }
+
+    #[test]
+    fn test_equip_hat_logic_swap() {
+        let mut state = GameState::default();
+        let id_hat = crate::models::HatId::ScoutHood;
+        state.hat_inventory.push(id_hat);
+
+        let mut rng = rand::thread_rng();
+        let g1 = crate::genetics::generate_random(crate::genetics::Culture::Ember, "O1", &mut rng);
+        let g2 = crate::genetics::generate_random(crate::genetics::Culture::Tide,  "O2", &mut rng);
+        let u1 = g1.id;
+        let u2 = g2.id;
+        state.slimes.push(crate::models::Operator::new(g1));
+        state.slimes.push(crate::models::Operator::new(g2));
+
+        // Equip from inventory
+        state.equip_hat(u1, id_hat).expect("equip o1");
+        assert_eq!(state.slimes[0].equipped_hat, Some(id_hat));
+        assert!(state.hat_inventory.is_empty());
+
+        // Swap to another operator
+        state.equip_hat(u2, id_hat).expect("swap to o2");
+        assert_eq!(state.slimes[0].equipped_hat, None);
+        assert_eq!(state.slimes[1].equipped_hat, Some(id_hat));
+    }
 }
