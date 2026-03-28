@@ -29,7 +29,8 @@ impl OperatorApp {
         if let Some(a) = action {
             match a {
                 HatAction::Buy(id) => {
-                    match self.state.purchase_hat(id, &self.state.unlocked_nodes) {
+                    let unlocked = self.state.unlocked_nodes.clone();
+                    match self.state.purchase_hat(id, &unlocked) {
                         Ok(_) => {
                             self.status_msg = "Purchased!".to_string();
                             self.persist();

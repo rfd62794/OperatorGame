@@ -301,7 +301,7 @@ impl OperatorApp {
 
         // Sprint 8/F.1b: Award XP to the squad; capture total and level-ups
         let mut total_xp_gained: u32 = 0;
-        let mut level_ups: Vec<String> = Vec::new();
+        let mut level_up_ids: Vec<(Uuid, u32)> = Vec::new();
         {
             let mut mut_squad: Vec<&mut crate::models::Operator> = self
                 .state
@@ -314,18 +314,26 @@ impl OperatorApp {
             for (id, xp, leveled) in xp_results {
                 total_xp_gained += xp;
                 if leveled {
-                    if let Some(op) = self.state.slimes.iter().find(|s: &&crate::models::Operator| s.genome.id == id) {
-                        let msg = format!("{} has reached Level {}!", op.name(), op.level);
-                        level_ups.push(msg.clone());
-                        // Also push a system log entry
-                        let sys_entry = LogEntry {
-                            timestamp: chrono::Utc::now().timestamp() as u64,
-                            message: format!(">> EXCELLENCE RECOGNIZED: {}", msg),
-                            outcome: LogOutcome::System,
-                        };
-                        self.state.combat_log.insert(0, sys_entry);
+                    // Find the level reached
+                    if let Some(op) = mut_squad.iter().find(|o| o.genome.id == id) {
+                        level_up_ids.push((id, op.level.into()));
                     }
                 }
+            }
+        }
+
+        // Now process level-up logs outside the squad borrow
+        let mut level_ups = Vec::new();
+        for (id, lv) in level_up_ids {
+            if let Some(op) = self.state.slimes.iter().find(|s| s.genome.id == id) {
+                let msg = format!("{} has reached Level {}!", op.name(), lv);
+                level_ups.push(msg.clone());
+                let sys_entry = LogEntry {
+                    timestamp: chrono::Utc::now().timestamp() as u64,
+                    message: format!(">> EXCELLENCE RECOGNIZED: {}", msg),
+                    outcome: LogOutcome::System,
+                };
+                self.state.combat_log.insert(0, sys_entry);
             }
         }
 
@@ -596,7 +604,7 @@ impl eframe::App for OperatorApp {
             .default_width(100.0)
             .show(ctx, |ui| {
                 ui.add_space(8.0);
-                render_sub_tabs(ui, self.active_tab, self);
+                self.render_sub_tabs(ui);
             });
 
         // 3. Central Content
@@ -685,107 +693,61 @@ fn sidebar_header(ui: &mut egui::Ui, title: &str) {
     ui.add_space(6.0);
 }
 
-fn render_sub_tabs(
-    ui: &mut egui::Ui,
-    active_main_tab: crate::platform::BottomTab,
-    app: &mut OperatorApp,
-) {
-    ui.vertical(|ui| {
-        ui.spacing_mut().item_spacing = egui::vec2(0.0, 4.0); // 4dp gap between buttons
+impl OperatorApp {
+    fn render_sub_tabs(&mut self, ui: &mut egui::Ui) {
+        ui.vertical(|ui| {
+            ui.spacing_mut().item_spacing = egui::vec2(0.0, 4.0);
 
-        match active_main_tab {
-            crate::platform::BottomTab::Roster => {
-                sidebar_header(ui, "Roster");
+            match self.active_tab {
+                crate::platform::BottomTab::Roster => {
+                    sidebar_header(ui, "Roster");
 
-                if sub_tab_button(
-                    ui,
-                    "Collection",
-                    app.roster_sub_tab == crate::platform::RosterSubTab::Collection,
-                ) {
-                    app.roster_sub_tab = crate::platform::RosterSubTab::Collection;
+                    if sub_tab_button(ui, "Collection", self.roster_sub_tab == crate::platform::RosterSubTab::Collection) {
+                        self.roster_sub_tab = crate::platform::RosterSubTab::Collection;
+                    }
+                    if sub_tab_button(ui, "Breeding", self.roster_sub_tab == crate::platform::RosterSubTab::Breeding) {
+                        self.roster_sub_tab = crate::platform::RosterSubTab::Breeding;
+                    }
+                    if sub_tab_button(ui, "Recruit", self.roster_sub_tab == crate::platform::RosterSubTab::Recruit) {
+                        self.roster_sub_tab = crate::platform::RosterSubTab::Recruit;
+                    }
+                    if sub_tab_button(ui, "Squad", self.roster_sub_tab == crate::platform::RosterSubTab::Squad) {
+                        self.roster_sub_tab = crate::platform::RosterSubTab::Squad;
+                    }
                 }
 
-                if sub_tab_button(
-                    ui,
-                    "Breeding",
-                    app.roster_sub_tab == crate::platform::RosterSubTab::Breeding,
-                ) {
-                    app.roster_sub_tab = crate::platform::RosterSubTab::Breeding;
+                crate::platform::BottomTab::Missions => {
+                    sidebar_header(ui, "Missions");
+                    if sub_tab_button(ui, "Active", self.missions_sub_tab == crate::platform::MissionsSubTab::Active) {
+                        self.missions_sub_tab = crate::platform::MissionsSubTab::Active;
+                    }
+                    if sub_tab_button(ui, "Quests", self.missions_sub_tab == crate::platform::MissionsSubTab::QuestBoard) {
+                        self.missions_sub_tab = crate::platform::MissionsSubTab::QuestBoard;
+                    }
                 }
 
-                if sub_tab_button(
-                    ui,
-                    "Recruit",
-                    app.roster_sub_tab == crate::platform::RosterSubTab::Recruit,
-                ) {
-                    app.roster_sub_tab = crate::platform::RosterSubTab::Recruit;
+                crate::platform::BottomTab::Map => {
+                    sidebar_header(ui, "Map");
+                    if sub_tab_button(ui, "Zones", self.map_sub_tab == crate::platform::MapSubTab::Zones) {
+                        self.map_sub_tab = crate::platform::MapSubTab::Zones;
+                    }
+                    if sub_tab_button(ui, "Shop", self.map_sub_tab == crate::platform::MapSubTab::Quartermaster) {
+                        self.map_sub_tab = crate::platform::MapSubTab::Quartermaster;
+                    }
                 }
 
-                if sub_tab_button(
-                    ui,
-                    "Squad",
-                    app.roster_sub_tab == crate::platform::RosterSubTab::Squad,
-                ) {
-                    app.roster_sub_tab = crate::platform::RosterSubTab::Squad;
-                }
-            }
-
-            crate::platform::BottomTab::Missions => {
-                sidebar_header(ui, "Missions");
-
-                if sub_tab_button(
-                    ui,
-                    "Active",
-                    app.missions_sub_tab == crate::platform::MissionsSubTab::Active,
-                ) {
-                    app.missions_sub_tab = crate::platform::MissionsSubTab::Active;
-                }
-
-                // Abbreviated: "Quest Board" → "Quests" to fit 80–100dp column
-                if sub_tab_button(
-                    ui,
-                    "Quests",
-                    app.missions_sub_tab == crate::platform::MissionsSubTab::QuestBoard,
-                ) {
-                    app.missions_sub_tab = crate::platform::MissionsSubTab::QuestBoard;
+                crate::platform::BottomTab::Logs => {
+                    sidebar_header(ui, "LOGS");
+                    if sub_tab_button(ui, "Missions", self.logs_sub_tab == crate::platform::LogsSubTab::MissionHistory) {
+                        self.logs_sub_tab = crate::platform::LogsSubTab::MissionHistory;
+                    }
+                    if sub_tab_button(ui, "Culture", self.logs_sub_tab == crate::platform::LogsSubTab::CultureHistory) {
+                        self.logs_sub_tab = crate::platform::LogsSubTab::CultureHistory;
+                    }
                 }
             }
-
-            crate::platform::BottomTab::Map => {
-                sidebar_header(ui, "Map");
-
-                if sub_tab_button(
-                    ui,
-                    "Zones",
-                    app.map_sub_tab == crate::platform::MapSubTab::Zones,
-                ) {
-                    app.map_sub_tab = crate::platform::MapSubTab::Zones;
-                }
-            }
-
-            crate::platform::BottomTab::Logs => {
-                sidebar_header(ui, "LOGS");
-
-                // Abbreviated: "Mission History" → "Missions" to fit 80–100dp column
-                if sub_tab_button(
-                    ui,
-                    "Missions",
-                    app.logs_sub_tab == crate::platform::LogsSubTab::MissionHistory,
-                ) {
-                    app.logs_sub_tab = crate::platform::LogsSubTab::MissionHistory;
-                }
-
-                // Abbreviated: "Culture History" → "Culture" to fit 80–100dp column
-                if sub_tab_button(
-                    ui,
-                    "Culture",
-                    app.logs_sub_tab == crate::platform::LogsSubTab::CultureHistory,
-                ) {
-                    app.logs_sub_tab = crate::platform::LogsSubTab::CultureHistory;
-                }
-            }
-        }
-    });
+        });
+    }
 }
 
 

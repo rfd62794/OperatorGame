@@ -272,34 +272,33 @@ impl GameState {
     }
 
     pub fn equip_hat(&mut self, slime_id: uuid::Uuid, hat_id: crate::models::HatId) -> Result<(), String> {
-        // Find slime
-        let slime = self.slimes.iter_mut().find(|s| s.genome.id == slime_id)
-            .ok_or_else(|| "Operator not found".to_string())?;
-
-        // Check if player owns the hat (either in inventory or equipped elsewhere)
+        // 1. Ownership check (Inventory vs Other Operator)
         if !self.hat_inventory.contains(&hat_id) {
-            // Check if another slime has it
-            let source_slime = self.slimes.iter_mut().find(|s| s.equipped_hat == Some(hat_id));
-            if let Some(src) = source_slime {
-                // Swap it!
-                let old_hat = slime.equipped_hat;
-                slime.equipped_hat = Some(hat_id);
-                src.equipped_hat = old_hat;
-                return Ok(());
-            } else {
-                return Err("Hat not owned or available.".to_string());
+            // Find if anyone else has it
+            let source_idx = self.slimes.iter().position(|s| s.equipped_hat == Some(hat_id));
+            let target_idx = self.slimes.iter().position(|s| s.genome.id == slime_id);
+
+            match (source_idx, target_idx) {
+                (Some(src_i), Some(tgt_i)) if src_i != tgt_i => {
+                    // SWAP directly using indices to avoid double &mut borrow
+                    let old_hat = self.slimes[tgt_i].equipped_hat;
+                    self.slimes[tgt_i].equipped_hat = Some(hat_id);
+                    self.slimes[src_i].equipped_hat = old_hat;
+                    return Ok(());
+                }
+                (Some(_), Some(_)) => return Ok(()), // Already equipped on self
+                _ => return Err("Hat not owned or available.".to_string()),
             }
         }
 
-        // Remove from inventory
-        self.hat_inventory.retain(|&id| id != hat_id);
+        // 2. Equip from inventory
+        let slime = self.slimes.iter_mut().find(|s| s.genome.id == slime_id)
+            .ok_or_else(|| "Operator not found".to_string())?;
 
-        // If slime already had a hat, return it to inventory
+        self.hat_inventory.retain(|&id| id != hat_id);
         if let Some(old_hat) = slime.equipped_hat {
             self.hat_inventory.push(old_hat);
         }
-
-        // Equip
         slime.equipped_hat = Some(hat_id);
         
         Ok(())
