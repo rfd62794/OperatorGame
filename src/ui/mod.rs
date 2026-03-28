@@ -619,9 +619,7 @@ impl eframe::App for OperatorApp {
                     crate::platform::BottomTab::Map => match self.map_sub_tab {
                         crate::platform::MapSubTab::Zones => self.render_radar(ui),
                         crate::platform::MapSubTab::Quartermaster => {
-                            ui.centered_and_justified(|ui| {
-                                ui.label(egui::RichText::new("QUARTERMASTER COMING SOON").italics().color(egui::Color32::GRAY));
-                            });
+                            self.render_quartermaster(ui);
                         }
                     },
                     crate::platform::BottomTab::Logs => {

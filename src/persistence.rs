@@ -242,6 +242,69 @@ impl GameState {
         state
     }
 
+    // --- Hat Management (G.3 Equipment System) ---
+
+    pub fn purchase_hat(&mut self, hat_id: crate::models::HatId, unlocked_nodes: &[usize]) -> Result<(), String> {
+        let catalog = crate::models::Hat::catalog();
+        let hat = catalog.iter().find(|h| h.id == hat_id)
+            .ok_or_else(|| "Hat not found in catalog".to_string())?;
+
+        // Unlock check
+        if hat.unlock_node_id != 0 && !unlocked_nodes.contains(&hat.unlock_node_id) {
+            return Err(format!("Node {} must be scouted to unlock {}", hat.unlock_node_id, hat.name));
+        }
+
+        // Cost check
+        if self.inventory.scrap < hat.scrap_cost {
+            return Err(format!("Insufficient MTL (Scrap). Need {}kg.", hat.scrap_cost));
+        }
+
+        // Ownership check
+        if self.hat_inventory.contains(&hat_id) {
+            return Err("You already own this hat.".to_string());
+        }
+
+        // Deduct and add
+        self.inventory.scrap -= hat.scrap_cost;
+        self.hat_inventory.push(hat_id);
+        
+        Ok(())
+    }
+
+    pub fn equip_hat(&mut self, slime_id: uuid::Uuid, hat_id: crate::models::HatId) -> Result<(), String> {
+        // Find slime
+        let slime = self.slimes.iter_mut().find(|s| s.genome.id == slime_id)
+            .ok_or_else(|| "Operator not found".to_string())?;
+
+        // Check if player owns the hat (either in inventory or equipped elsewhere)
+        if !self.hat_inventory.contains(&hat_id) {
+            // Check if another slime has it
+            let source_slime = self.slimes.iter_mut().find(|s| s.equipped_hat == Some(hat_id));
+            if let Some(src) = source_slime {
+                // Swap it!
+                let old_hat = slime.equipped_hat;
+                slime.equipped_hat = Some(hat_id);
+                src.equipped_hat = old_hat;
+                return Ok(());
+            } else {
+                return Err("Hat not owned or available.".to_string());
+            }
+        }
+
+        // Remove from inventory
+        self.hat_inventory.retain(|&id| id != hat_id);
+
+        // If slime already had a hat, return it to inventory
+        if let Some(old_hat) = slime.equipped_hat {
+            self.hat_inventory.push(old_hat);
+        }
+
+        // Equip
+        slime.equipped_hat = Some(hat_id);
+        
+        Ok(())
+    }
+
     /// Sprint 7B: Maintenance Pressure
     /// Deducts $50 per idle operator per day.
     /// Sprint G.1: Temporarily disabled for loop validation.

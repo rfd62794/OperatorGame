@@ -297,17 +297,28 @@ fn render_operator_card(
             // Hard Stats
             let (s, a, i, _, _, _) = op.total_stats();
             ui.vertical(|ui| {
-                ui.horizontal(|ui| { // TODO: reflow if clips on narrow
+                ui.horizontal(|ui| {
                     ui.small(format!("STR:{}", s));
                     ui.add_space(4.0);
                     ui.small(format!("AGI:{}", a));
+                    ui.add_space(4.0);
+                    ui.small(format!("INT:{}", i));
                 });
-                ui.small(format!("INT:{}", i));
             });
+
+            // Hat Label (G.3)
+            if let Some(hat_id) = op.equipped_hat {
+                let catalog = crate::models::Hat::catalog();
+                if let Some(hat) = catalog.iter().find(|h| h.id == hat_id) {
+                    ui.label(egui::RichText::new(format!("🎩 {}", hat.name))
+                        .small()
+                        .color(egui::Color32::from_rgb(220, 220, 100)));
+                }
+            }
 
             ui.add_space(4.0);
 
-            // HP status directly under pattern/stats to save space
+            // HP status
             let hp = op.genome.base_hp;
             ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).small().color(egui::Color32::LIGHT_GRAY));
         });
