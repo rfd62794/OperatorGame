@@ -2,19 +2,19 @@
   "bank": 10975,
   "deployments": [
     {
-      "id": "b5fdaf44-e3c3-4d89-9881-84d7c577aeff",
-      "mission_id": "422d275a-aa20-4b70-a225-e91a17d6ccaa",
+      "id": "b1e74043-7798-47ee-834d-f5b0a32b3d6a",
+      "mission_id": "7be3685c-ef44-40b4-8746-6a9156ffc56d",
       "operator_ids": [
-        "ffefddef-e321-422d-9df8-f8afd6f40053"
+        "6b988a14-3e63-41af-b9ba-79ce1b276b9f"
       ],
-      "completes_at": "2026-03-27T23:03:51.444551700Z",
+      "completes_at": "2026-03-27T23:40:13.937103900Z",
       "resolved": true,
       "is_emergency": false
     }
   ],
   "missions": [
     {
-      "id": "422d275a-aa20-4b70-a225-e91a17d6ccaa",
+      "id": "7be3685c-ef44-40b4-8746-6a9156ffc56d",
       "name": "Test Mission",
       "description": "High-priority contract from the Orbitals.",
       "tier": "Starter",
@@ -38,16 +38,16 @@
   "slimes": [
     {
       "genome": {
-        "id": "ffefddef-e321-422d-9df8-f8afd6f40053",
+        "id": "6b988a14-3e63-41af-b9ba-79ce1b276b9f",
         "culture_alleles": {
           "dominant": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
             1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0,
             0.0
           ],
@@ -63,36 +63,36 @@
             0.0
           ]
         },
-        "base_hp": 18.452478,
-        "base_atk": 4.621653,
-        "base_spd": 7.786689,
+        "base_hp": 13.921767,
+        "base_atk": 7.334399,
+        "base_spd": 5.4049106,
         "generation": 1,
         "parent_ids": null,
-        "curiosity": 0.64900166,
-        "energy": 0.3952859,
-        "affection": 0.39732975,
-        "shyness": 0.96489304,
-        "base_strength": 9,
-        "base_agility": 11,
+        "curiosity": 0.344204,
+        "energy": 0.006509304,
+        "affection": 0.92566407,
+        "shyness": 0.56677943,
+        "base_strength": 11,
+        "base_agility": 10,
         "base_intelligence": 9,
-        "base_mind": 12,
-        "base_sensory": 9,
-        "base_tenacity": 10,
-        "shape": "Crystalline",
-        "body_size": "Massive",
-        "pattern": "Solid",
+        "base_mind": 11,
+        "base_sensory": 11,
+        "base_tenacity": 9,
+        "shape": "Elongated",
+        "body_size": "Large",
+        "pattern": "Iridescent",
         "accessory": "Scar",
         "base_color": [
-          226,
-          61,
-          207
+          224,
+          119,
+          63
         ],
         "pattern_color": [
-          147,
-          201,
-          250
+          138,
+          153,
+          122
         ],
-        "frequency": 288.0,
+        "frequency": 256.0,
         "name": "Rookie"
       },
       "level": 3,
@@ -521,8 +521,8 @@
     "tick_accum": 0.0,
     "startled_level": 0.05
   },
-  "last_upkeep_at": "2026-03-28T00:03:41.444380700Z",
-  "last_pool_refresh": "2026-03-28T00:03:41.444381600Z",
+  "last_upkeep_at": "2026-03-28T00:40:03.937047600Z",
+  "last_pool_refresh": "2026-03-28T00:40:03.937048600Z",
   "inventory": {
     "gear_pool": [],
     "biomass": 0,
@@ -537,12 +537,12 @@
   "logs_sub_tab": "MissionHistory",
   "combat_log": [
     {
-      "timestamp": 1774656221,
-      "message": "[Test Mission] ✅ VICTORY (+$$10000) — The mission ran exactly as planned. In this line of work, that's the best-case scenario.",
+      "timestamp": 1774658403,
+      "message": "[Test Mission] ✅ VICTORY (+$$10000) — Every contingency accounted for. The squad executed perfectly.",
       "outcome": "Victory"
     },
     {
-      "timestamp": 1774656221,
+      "timestamp": 1774658403,
       "message": ">> EXCELLENCE RECOGNIZED: Rookie has reached Level 3!",
       "outcome": "System"
     }
