@@ -105,9 +105,15 @@ impl OperatorApp {
                         if let Some(nid) = mission.node_id {
                             if let Some(node) = self.state.world_map.nodes.iter().find(|n| n.id as usize == nid) {
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    ui.label(egui::RichText::new(format!("\u{1f4cc} {}", node.name)).small().color(egui::Color32::from_gray(160)));
+                                    let icon = if nid == 0 { "\u{1f3df} [HOME]" } else { "\u{1f4cc}" };
+                                    ui.label(egui::RichText::new(format!("{} {}", icon, node.name)).small().color(egui::Color32::from_gray(160)));
                                 });
                             }
+                        } else {
+                            // node_id: None is also treated as Home Base
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                ui.label(egui::RichText::new("\u{1f3df} [HOME] Hidden Meadow").small().color(egui::Color32::from_gray(160)));
+                            });
                         }
                     });
 
