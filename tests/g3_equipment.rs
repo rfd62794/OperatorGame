@@ -19,8 +19,10 @@ fn test_purchase_hat_deducts_scrap() {
     let mut state = GameState::default();
     state.inventory.scrap = 1000;
     
+    let mut unlocked = std::collections::HashSet::new();
+    unlocked.insert(0);
     // Purchase Mage Hood (150 Scrap)
-    state.purchase_hat(1, &[0]).expect("Purchase should succeed");
+    state.purchase_hat(1, &unlocked).expect("Purchase should succeed");
     
     assert_eq!(state.inventory.scrap, 850);
     assert!(state.hat_inventory.contains(&1));
@@ -31,11 +33,15 @@ fn test_purchase_unlocked_check() {
     let mut state = GameState::default();
     state.inventory.scrap = 1000;
     
+    let mut unlocked = std::collections::HashSet::new();
+    unlocked.insert(1);
+    unlocked.insert(2);
     // Plate Helm (Unlock Node 5)
-    let res = state.purchase_hat(2, &[1, 2]); // Not 5
+    let res = state.purchase_hat(2, &unlocked); // Not 5
     assert!(res.is_err(), "Should be locked");
     
-    state.purchase_hat(2, &[5]).expect("Should unlock with node 5");
+    unlocked.insert(5);
+    state.purchase_hat(2, &unlocked).expect("Should unlock with node 5");
 }
 
 #[test]

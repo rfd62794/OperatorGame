@@ -244,7 +244,7 @@ impl GameState {
 
     // --- Hat Management (G.3 Equipment System) ---
 
-    pub fn purchase_hat(&mut self, hat_id: crate::models::HatId, unlocked_nodes: &[usize]) -> Result<(), String> {
+    pub fn purchase_hat(&mut self, hat_id: crate::models::HatId, unlocked_nodes: &std::collections::HashSet<usize>) -> Result<(), String> {
         let catalog = crate::models::Hat::catalog();
         let hat = catalog.iter().find(|h| h.id == hat_id)
             .ok_or_else(|| "Hat not found in catalog".to_string())?;

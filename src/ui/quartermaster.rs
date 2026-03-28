@@ -4,6 +4,8 @@ use crate::models::{Hat, HatId};
 
 impl OperatorApp {
     pub(crate) fn render_quartermaster(&mut self, ui: &mut egui::Ui) {
+        let mut action = None;
+
         ui.vertical(|ui| {
             ui.heading("QUARTERMASTER");
             ui.add_space(8.0);
@@ -15,23 +17,51 @@ impl OperatorApp {
                 .show(ui, |ui| {
                 let catalog = Hat::catalog();
                 for hat in catalog {
-                    self.render_hat_item(ui, hat);
+                    if let Some(a) = self.render_hat_item(ui, hat) {
+                        action = Some(a);
+                    }
                     ui.add_space(8.0);
                     ui.separator();
-                    ui.add_space(8.0);
                 }
             });
         });
+
+        if let Some(a) = action {
+            match a {
+                HatAction::Buy(id) => {
+                    match self.state.purchase_hat(id, &self.state.unlocked_nodes) {
+                        Ok(_) => {
+                            self.status_msg = "Purchased!".to_string();
+                            self.persist();
+                        }
+                        Err(e) => self.status_msg = format!("Error: {}", e),
+                    }
+                }
+                HatAction::Equip(id) => {
+                    if let Some(slime_id) = self.selected_slime_id {
+                        match self.state.equip_hat(slime_id, id) {
+                            Ok(_) => {
+                                self.status_msg = "Equipped!".to_string();
+                                self.persist();
+                            }
+                            Err(e) => self.status_msg = format!("Error: {}", e),
+                        }
+                    } else {
+                        self.status_msg = "Select a slime in Roster first.".to_string();
+                    }
+                }
+            }
+        }
     }
 
-    fn render_hat_item(&mut self, ui: &mut egui::Ui, hat: Hat) {
+    fn render_hat_item(&self, ui: &mut egui::Ui, hat: Hat) -> Option<HatAction> {
+        let mut action = None;
         let is_unlocked = self.state.unlocked_nodes.contains(&hat.unlock_node_id) || hat.unlock_node_id == 0;
         let is_owned = self.state.hat_inventory.contains(&hat.id) || 
                        self.state.slimes.iter().any(|s| s.equipped_hat == Some(hat.id));
 
         ui.group(|ui| {
             ui.horizontal(|ui| {
-                // Icon (Emoji)
                 ui.label(egui::RichText::new("🎩").size(24.0));
                 
                 ui.vertical(|ui| {
@@ -53,39 +83,24 @@ impl OperatorApp {
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if !is_unlocked {
-                        ui.label(format!("Unlock at Node {}", hat.unlock_node_id));
+                        ui.label(format!("Unlock at {}", hat.unlock_node_id));
                     } else if is_owned {
                         if ui.button("EQUIP").clicked() {
-                            self.status_msg = format!("Select an operator to equip {}.", hat.name);
-                            // TODO: Open a modal/overlay for operator selection if needed,
-                            // or just use the currently selected slime if one is selected.
-                            if let Some(slime_id) = self.selected_slime_id {
-                                if let Err(e) = self.state.equip_hat(slime_id, hat.id) {
-                                    self.status_msg = format!("Error: {}", e);
-                                } else {
-                                    self.status_msg = format!("Equipped {}!", hat.name);
-                                    self.persist();
-                                }
-                            } else {
-                                self.status_msg = "Please select an operator in the Roster first.".to_string();
-                            }
+                            action = Some(HatAction::Equip(hat.id));
                         }
                     } else {
-                        let btn_text = format!("BUY ({} Scrap)", hat.scrap_cost);
-                        if ui.button(btn_text).clicked() {
-                            match self.state.purchase_hat(hat.id, &self.state.unlocked_nodes) {
-                                Ok(_) => {
-                                    self.status_msg = format!("Purchased {}!", hat.name);
-                                    self.persist();
-                                }
-                                Err(e) => {
-                                    self.status_msg = format!("Purchase failed: {}", e);
-                                }
-                            }
+                        if ui.button(format!("BUY ({} MTL)", hat.scrap_cost)).clicked() {
+                            action = Some(HatAction::Buy(hat.id));
                         }
                     }
                 });
             });
         });
+        action
     }
+}
+
+enum HatAction {
+    Buy(crate::models::HatId),
+    Equip(crate::models::HatId),
 }
