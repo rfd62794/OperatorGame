@@ -608,6 +608,16 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
             MissionTier::Elite => rng.gen_range(3600..7200),
         };
 
+        let node_id = match affinity {
+            Culture::Ember => Some(10),
+            Culture::Gale => Some(11),
+            Culture::Tide => Some(12),
+            Culture::Marsh => Some(13),
+            Culture::Crystal => Some(14),
+            Culture::Tundra => Some(15),
+            _ => None,
+        };
+
         Mission::new(
             name,
             tier,
@@ -618,7 +628,7 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
             duration,
             ResourceYield::scrap((reward_base + (dc as u64 * 50)) as u32),
             Some(affinity),
-            None,
+            node_id,
             false,
         )
     };

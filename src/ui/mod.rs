@@ -413,10 +413,15 @@ impl OperatorApp {
                     if let Some(node_id) = mission.node_id {
                         self.state.unlocked_nodes.insert(node_id);
                         
+                        let node_name = self.state.world_map.nodes.iter()
+                            .find(|n| n.id as usize == node_id)
+                            .map(|n| n.name.as_str())
+                            .unwrap_or("Unknown Node");
+                            
                         let culture_name = format!("{:?}", mission.affinity.unwrap_or(crate::genetics::Culture::Void));
                         self.state.combat_log.insert(0, LogEntry {
                             timestamp: chrono::Utc::now().timestamp() as u64,
-                            message: format!("Zone unlocked: {} territory now accessible", culture_name),
+                            message: format!("Zone unlocked: {} — {} territory now accessible", node_name, culture_name),
                             outcome: LogOutcome::System,
                         });
                     }
