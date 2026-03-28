@@ -1245,12 +1245,12 @@ mod tests {
         let mut op = Operator::new(genome);
         op.total_xp = 195; // Level 1, near level 2
         
-        let outcome = AarOutcome::Victory { reward: 100, success_chance: 1.0, rolls: vec![], xp_gained: 0 };
+        let outcome = AarOutcome::Victory { reward: ResourceYield::scrap(100), success_chance: 1.0, rolls: vec![], xp_gained: 0 };
         
         // Ember match: base 1 XP (100 / 100) + 25% = 1 XP (clamped)
         // Wait, reward 1000 -> base 10.
         // Let's use 1000 reward to get 12 XP.
-        let outcome = AarOutcome::Victory { reward: 1000, success_chance: 1.0, rolls: vec![], xp_gained: 0 };
+        let outcome = AarOutcome::Victory { reward: ResourceYield::scrap(1000), success_chance: 1.0, rolls: vec![], xp_gained: 0 };
         let results = dep.award_squad_xp(&mission, &mut [&mut op], &outcome);
         
         assert_eq!(results[0].1, 12);

@@ -185,7 +185,7 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(7);
         let mission = dummy_mission(10, 10, 80);
         let op = dummy_op("Ghost", &mut rng);
-        let outcome = AarOutcome::Victory { reward: 1000, success_chance: 1.0, rolls: vec![], xp_gained: 0 };
+        let outcome = AarOutcome::Victory { reward: crate::models::ResourceYield::scrap(1000), success_chance: 1.0, rolls: vec![], xp_gained: 0 };
         let result = generate_narrative(&outcome, &mission, &[&op], &mut rng);
         assert!(!result.is_empty());
         assert!(result.contains("Ghost"), "Operator name should be interpolated");
@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_format_log_entry_structure() {
-        let entry = format_log_entry("Bank Heist", &AarOutcome::Victory { reward: 500, success_chance: 1.0, rolls: vec![], xp_gained: 0 }, "Great job.");
+        let entry = format_log_entry("Bank Heist", &AarOutcome::Victory { reward: crate::models::ResourceYield::scrap(500), success_chance: 1.0, rolls: vec![], xp_gained: 0 }, "Great job.");
         assert!(entry.contains("Bank Heist"));
         assert!(entry.contains("VICTORY"));
         assert!(entry.contains("Great job."));
