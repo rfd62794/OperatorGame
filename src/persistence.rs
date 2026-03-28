@@ -463,7 +463,7 @@ mod tests {
         
         // Initial refresh
         state.refresh_missions_if_needed(now);
-        assert_eq!(state.missions.len(), 14);
+        assert_eq!(state.missions.len(), 20); // 14 standard + 6 scouts
         let first_id = state.missions[0].id;
         
         // Same day — should NOT refresh
