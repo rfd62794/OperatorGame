@@ -9,8 +9,11 @@ use crate::combat::{D20Result, D20, RollMode};
 // Resources
 // ---------------------------------------------------------------------------
 
-/// The resource payload returned by a completed mission or expedition.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
+/// Structured mission rewards.
+/// - Biomass -> Breeding (Incubation)
+/// - Scrap   -> Equipment (Quartermaster)
+/// - Reagents -> Breeding (Rare patterns)
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
 pub struct ResourceYield {
     pub biomass:  u32,
     pub scrap:    u32,
