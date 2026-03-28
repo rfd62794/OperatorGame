@@ -261,6 +261,8 @@ pub struct Operator {
     pub training:     TrainingState,
     pub equipped_gear: Vec<Gear>,
     #[serde(default)]
+    pub equipped_hat: Option<HatId>,
+    #[serde(default)]
     pub synthesis_cooldown_until: Option<DateTime<Utc>>,
 }
 
@@ -274,6 +276,7 @@ impl Operator {
             state: SlimeState::Idle,
             training: TrainingState::default(),
             equipped_gear: Vec::new(),
+            equipped_hat: None,
             synthesis_cooldown_until: None,
         }
     }
@@ -338,7 +341,7 @@ impl Operator {
         }
     }
 
-    /// Total stats including base, training, and gear (Sprint 9 §4.4).
+    /// Total stats including base, training, gear, and hats (G.3).
     pub fn total_stats(&self) -> (u32, u32, u32, u32, u32, u32) {
         let genome = &self.genome;
         let s = compute_final_stat(genome.base_strength, self.stat_xp[crate::genetics::Culture::Ember.wheel_index().unwrap()], self.level);
@@ -348,15 +351,25 @@ impl Operator {
         let se = compute_final_stat(genome.base_sensory, self.stat_xp[crate::genetics::Culture::Teal.wheel_index().unwrap()], self.level); // Sensory deferred to Teal
         let t = compute_final_stat(genome.base_tenacity, self.stat_xp[crate::genetics::Culture::Frost.wheel_index().unwrap()], self.level); // Tenacity deferred to Frost
         
-        // Apply Gear bonuses after base growth
+        // Target: Final stats are post-multiplier flat bonuses
         let mut fs = s;
         let mut fa = a;
         let mut fi = i;
+        
+        // Gear bonuses
         for gear in &self.equipped_gear {
             let (gs, ga, gi) = gear.stat_bonus();
             fs += gs;
             fa += ga;
             fi += gi;
+        }
+
+        // Hat bonuses (G.3)
+        if let Some(hat_id) = &self.equipped_hat {
+            let hat = Hat::from_id(hat_id);
+            fs += hat.str_bonus as u32;
+            fa += hat.agi_bonus as u32;
+            fi += hat.int_bonus as u32;
         }
 
         (fs, fa, fi, m, se, t)
