@@ -20,8 +20,9 @@
 ## Event Flow
 1. **Selection**: User stages operators for a mission.
 2. **Launch**: `Deployment::start` creates a timed record.
-3. **Resolution**: `resolve_deployment` performs D20 checks on the squad's aggregate stats.
-4. **Log**: Post-mission narratives are generated and stored in a rolling 50-entry buffer.
+3. **Gauntlet Resolution**: `resolve_deployment` iterates through a `Vec<Target>`, performing D20 checks on each encounter until success or failure.
+4. **Reliability Loop**: Resolution is performed atomically in `persistence.rs`, ensuring operators are reset to `Idle` (if not injured) before returning to the UI.
+5. **Log**: Post-mission narratives are generated and stored in a rolling 50-entry buffer.
 
 ## Mobile Emulation Loop
 The project uses a high-velocity feedback loop for mobile-first development:
