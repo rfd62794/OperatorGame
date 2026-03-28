@@ -536,7 +536,10 @@ impl eframe::App for OperatorApp {
         style.visuals.override_text_color = Some(egui::Color32::WHITE);
         ctx.set_style(style);
 
-        if cfg!(target_os = "android") {
+        let layout = crate::platform::ResponsiveLayout::from_width(ctx.screen_rect().width());
+        crate::platform::apply_interaction_scale(ctx, layout);
+
+        if cfg!(target_os = "android") || crate::platform::is_mobile_emu() {
             ctx.set_pixels_per_point(2.0);
         }
 
@@ -571,41 +574,45 @@ impl eframe::App for OperatorApp {
                 });
             });
 
-        // 1. Launch Bar & Tab Bar (Bottom)
-        egui::TopBottomPanel::bottom("bottom_stack")
-            .frame(egui::Frame::none().inner_margin(egui::Margin {
-                left: safe_area.left, right: safe_area.right, top: 0.0, bottom: safe_area.bottom,
-            }))
-            .show(ctx, |ui| {
-                self.render_launch_bar(ui);
-                ui.add_space(4.0);
-                
-                // Tab Bar
-                ui.horizontal(|ui| {
-                    let tabs = [
-                        (crate::platform::BottomTab::Roster,   "🧬 Roster"),
-                        (crate::platform::BottomTab::Missions, "🚀 Ops"),
-                        (crate::platform::BottomTab::Map,      "🗺️ Map"),
-                        (crate::platform::BottomTab::Logs,     "📜 Logs"),
-                    ];
-                    let w = ui.available_width() / tabs.len() as f32;
-                    for (tab, label) in tabs {
-                        if ui.add_sized([w, 40.0], egui::SelectableLabel::new(self.active_tab == tab, label)).clicked() {
-                            self.active_tab = tab;
+        // 1. Launch Bar & Tab Bar (Bottom) - Only in Compact layout
+        if layout == crate::platform::ResponsiveLayout::Compact {
+            egui::TopBottomPanel::bottom("bottom_stack")
+                .frame(egui::Frame::none().inner_margin(egui::Margin {
+                    left: safe_area.left, right: safe_area.right, top: 0.0, bottom: safe_area.bottom,
+                }))
+                .show(ctx, |ui| {
+                    self.render_launch_bar(ui);
+                    ui.add_space(4.0);
+                    
+                    // Tab Bar
+                    ui.horizontal(|ui| {
+                        let tabs = [
+                            (crate::platform::BottomTab::Roster,   "🧬 Roster"),
+                            (crate::platform::BottomTab::Missions, "🚀 Ops"),
+                            (crate::platform::BottomTab::Map,      "🗺️ Map"),
+                            (crate::platform::BottomTab::Logs,     "📜 Logs"),
+                        ];
+                        let w = ui.available_width() / tabs.len() as f32;
+                        for (tab, label) in tabs {
+                            if ui.add_sized([w, 40.0], egui::SelectableLabel::new(self.active_tab == tab, label)).clicked() {
+                                self.active_tab = tab;
+                            }
                         }
-                    }
+                    });
                 });
-            });
+        }
 
-        // 2. Sidebar (Left)
-        egui::SidePanel::left("left_sidebar")
-            .frame(egui::Frame::none().fill(egui::Color32::from_rgb(19, 19, 24)).inner_margin(8.0))
-            .resizable(false)
-            .default_width(100.0)
-            .show(ctx, |ui| {
-                ui.add_space(8.0);
-                self.render_sub_tabs(ui);
-            });
+        // 2. Sidebar (Left) - Only in Standard layout
+        if layout == crate::platform::ResponsiveLayout::Standard {
+            egui::SidePanel::left("left_sidebar")
+                .frame(egui::Frame::none().fill(egui::Color32::from_rgb(19, 19, 24)).inner_margin(8.0))
+                .resizable(false)
+                .default_width(100.0)
+                .show(ctx, |ui| {
+                    ui.add_space(8.0);
+                    self.render_sub_tabs(ui);
+                });
+        }
 
         // 3. Central Content
         egui::CentralPanel::default()

@@ -147,6 +147,18 @@ impl LayoutCalculator {
 }
 
 // ---------------------------------------------------------------------------
+// Platform/Emulation Detection
+// ---------------------------------------------------------------------------
+
+/// Detects if the internal "Mobile Emulation" mode is active.
+///
+/// Triggered by the `OPERATOR_MOBILE_EMU=1` environment variable. Allows
+/// Windows EXE builds to behave identically to Android for testing.
+pub fn is_mobile_emu() -> bool {
+    std::env::var("OPERATOR_MOBILE_EMU").is_ok()
+}
+
+// ---------------------------------------------------------------------------
 // Android Runtime Inset Hook
 // ---------------------------------------------------------------------------
 
@@ -167,10 +179,14 @@ pub fn read_window_insets() -> SafeArea {
     SafeArea::android_default()
 }
 
-/// On desktop/host, no insets are needed.
+/// On desktop/host, return zero insets unless emulating mobile.
 #[cfg(not(target_os = "android"))]
 pub fn read_window_insets() -> SafeArea {
-    SafeArea::desktop_default()
+    if is_mobile_emu() {
+        SafeArea::android_default()
+    } else {
+        SafeArea::desktop_default()
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -194,8 +210,14 @@ pub enum ResponsiveLayout {
 
 impl ResponsiveLayout {
     /// Derive layout from the safe-area usable width.
+    ///
+    /// Forcing: if `is_mobile_emu()` is true, always returns `Compact`.
     pub fn from_width(width: f32) -> Self {
-        if width < 600.0 { Self::Compact } else { Self::Standard }
+        if is_mobile_emu() || width < 600.0 {
+            Self::Compact
+        } else {
+            Self::Standard
+        }
     }
 }
 
