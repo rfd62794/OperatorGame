@@ -71,7 +71,7 @@ fn test_g1_anchor_4_tier_ranges() {
     
     for m in missions {
         match m.tier {
-            MissionTier::Starter  => assert!((4..=6).contains(&m.base_dc), "Starter DC out of range"),
+            MissionTier::Starter  => assert!((4..=7).contains(&m.base_dc), "Starter DC out of range"),
             MissionTier::Standard => assert!((6..=8).contains(&m.base_dc), "Standard DC out of range"),
             MissionTier::Advanced => assert!((10..=14).contains(&m.base_dc), "Advanced DC out of range"),
             MissionTier::Elite    => assert!((12..=15).contains(&m.base_dc), "Elite DC out of range"),

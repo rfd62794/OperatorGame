@@ -2,21 +2,21 @@
   "bank": 10975,
   "deployments": [
     {
-      "id": "9ebcf42d-029d-4791-8da1-5e7ac1bc092d",
-      "mission_id": "ffc45900-5436-4925-ab42-4512e11250d6",
+      "id": "99ecbea3-f2a9-4ad1-927c-553e453c272d",
+      "mission_id": "518232e3-eaa2-45e9-b9a9-f1b6eb4205ef",
       "operator_ids": [
-        "0d96e4f2-17b1-4984-8d7f-623f83f56444"
+        "3b69e3b0-0df5-4112-af9f-6db1f361f66d"
       ],
-      "completes_at": "2026-03-27T10:57:01.035663100Z",
+      "completes_at": "2026-03-27T23:03:03.100665500Z",
       "resolved": true,
       "is_emergency": false
     }
   ],
   "missions": [
     {
-      "id": "ffc45900-5436-4925-ab42-4512e11250d6",
+      "id": "518232e3-eaa2-45e9-b9a9-f1b6eb4205ef",
       "name": "Test Mission",
-      "description": "A standard operational contract.",
+      "description": "High-priority contract from the Orbitals.",
       "tier": "Starter",
       "base_dc": 5,
       "min_roster_level": 1,
@@ -25,20 +25,26 @@
       "req_intelligence": 0,
       "difficulty": 0.0,
       "duration_secs": 10,
-      "reward": 10000,
-      "affinity": null
+      "reward": {
+        "biomass": 0,
+        "scrap": 10000,
+        "reagents": 0
+      },
+      "affinity": null,
+      "node_id": null,
+      "is_scout": false
     }
   ],
   "slimes": [
     {
       "genome": {
-        "id": "0d96e4f2-17b1-4984-8d7f-623f83f56444",
+        "id": "3b69e3b0-0df5-4112-af9f-6db1f361f66d",
         "culture_alleles": {
           "dominant": [
+            0.0,
+            0.0,
+            0.0,
             1.0,
-            0.0,
-            0.0,
-            0.0,
             0.0,
             0.0,
             0.0,
@@ -57,40 +63,40 @@
             0.0
           ]
         },
-        "base_hp": 14.924529,
-        "base_atk": 7.307603,
-        "base_spd": 4.9131904,
+        "base_hp": 20.012955,
+        "base_atk": 4.5434494,
+        "base_spd": 6.282761,
         "generation": 1,
         "parent_ids": null,
-        "curiosity": 0.069806576,
-        "energy": 0.16121805,
-        "affection": 0.0015868545,
-        "shyness": 0.009678841,
-        "base_strength": 10,
-        "base_agility": 10,
-        "base_intelligence": 10,
-        "base_mind": 10,
-        "base_sensory": 12,
-        "base_tenacity": 12,
-        "shape": "Round",
+        "curiosity": 0.04695505,
+        "energy": 0.9754747,
+        "affection": 0.8024736,
+        "shyness": 0.78244436,
+        "base_strength": 9,
+        "base_agility": 8,
+        "base_intelligence": 11,
+        "base_mind": 12,
+        "base_sensory": 8,
+        "base_tenacity": 8,
+        "shape": "Elongated",
         "body_size": "Massive",
-        "pattern": "Marbled",
-        "accessory": "Scar",
+        "pattern": "Iridescent",
+        "accessory": "None",
         "base_color": [
-          115,
-          132,
-          127
+          61,
+          247,
+          170
         ],
         "pattern_color": [
-          63,
-          88,
-          125
+          115,
+          178,
+          229
         ],
-        "frequency": 256.0,
+        "frequency": 384.0,
         "name": "Rookie"
       },
-      "level": 2,
-      "total_xp": 200,
+      "level": 3,
+      "total_xp": 399,
       "stat_xp": [
         0,
         0,
@@ -515,12 +521,12 @@
     "tick_accum": 0.0,
     "startled_level": 0.05
   },
-  "last_upkeep_at": "2026-03-27T11:56:51.035605Z",
-  "last_pool_refresh": "2026-03-27T11:56:51.035606Z",
+  "last_upkeep_at": "2026-03-28T00:02:53.100527500Z",
+  "last_pool_refresh": "2026-03-28T00:02:53.100529100Z",
   "inventory": {
     "gear_pool": [],
     "biomass": 0,
-    "scrap": 0,
+    "scrap": 10000,
     "reagents": 0
   },
   "active_expeditions": [],
@@ -531,14 +537,161 @@
   "logs_sub_tab": "MissionHistory",
   "combat_log": [
     {
-      "timestamp": 1774612611,
-      "message": "[Test Mission] ✅ VICTORY (+$10000) — No single moment of brilliance — just relentless preparation paying off.",
+      "timestamp": 1774656173,
+      "message": "[Test Mission] ✅ VICTORY (+$$10000) — Clean operation. The client is satisfied. The squad is intact. Good enough.",
       "outcome": "Victory"
     },
     {
-      "timestamp": 1774612611,
-      "message": ">> EXCELLENCE RECOGNIZED: Rookie has reached Level 2!",
+      "timestamp": 1774656173,
+      "message": ">> EXCELLENCE RECOGNIZED: Rookie has reached Level 3!",
       "outcome": "System"
     }
+  ],
+  "version": 10,
+  "unlocked_nodes": [
+    0
+  ]
+} "Log 38",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 37,
+      "message": "Log 37",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 36,
+      "message": "Log 36",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 35,
+      "message": "Log 35",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 34,
+      "message": "Log 34",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 33,
+      "message": "Log 33",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 32,
+      "message": "Log 32",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 31,
+      "message": "Log 31",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 30,
+      "message": "Log 30",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 29,
+      "message": "Log 29",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 28,
+      "message": "Log 28",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 27,
+      "message": "Log 27",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 26,
+      "message": "Log 26",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 25,
+      "message": "Log 25",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 24,
+      "message": "Log 24",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 23,
+      "message": "Log 23",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 22,
+      "message": "Log 22",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 21,
+      "message": "Log 21",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 20,
+      "message": "Log 20",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 19,
+      "message": "Log 19",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 18,
+      "message": "Log 18",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 17,
+      "message": "Log 17",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 16,
+      "message": "Log 16",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 15,
+      "message": "Log 15",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 14,
+      "message": "Log 14",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 13,
+      "message": "Log 13",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 12,
+      "message": "Log 12",
+      "outcome": "System"
+    },
+    {
+      "timestamp": 11,
+      "message": "Log 11",
+      "outcome": "System"
+    }
+  ],
+  "version": 10,
+  "unlocked_nodes": [
+    0
   ]
 }
