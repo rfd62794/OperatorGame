@@ -405,6 +405,30 @@ impl OperatorApp {
             reward: if let AarOutcome::Victory { reward, .. } = &outcome { Some(reward.clone()) } else { None },
         });
 
+        self.persist();
+    }
+
+    pub fn apply_aar_outcome(&mut self, current_time: f64) {
+        let aar = self.pending_aar.as_ref().expect("Apply called without pending AAR");
+        let mission_id = self.selected_mission.expect("No selected mission");
+        let mission = self.state.missions.iter().find(|m| m.id == mission_id).expect("Mission not found");
+        
+        let outcome = if aar.outcome_label.contains("VICTORY") {
+            AarOutcome::Victory {
+                reward: aar.reward.unwrap_or_default(),
+                success_chance: 1.0, 
+                rolls: vec![],
+                xp_gained: aar.xp_gained,
+            }
+        } else if aar.outcome_label.contains("CRITICAL") {
+            AarOutcome::CriticalFailure { rolls: vec![], injured_ids: vec![] }
+        } else {
+            AarOutcome::Failure { rolls: vec![], injured_ids: vec![] }
+        };
+
+        let dep_idx = self.state.deployments.iter().position(|d| d.mission_id == mission_id).expect("Deployment not found");
+        let dep = self.state.deployments.remove(dep_idx);
+
         match &outcome {
             AarOutcome::Victory { reward, .. } => {
                 self.state.bank += reward.scrap as i64;
@@ -414,7 +438,7 @@ impl OperatorApp {
                 if mission.is_scout {
                     if let Some(node_id) = mission.node_id {
                         self.state.unlocked_nodes.insert(node_id);
-                        self.recently_unlocked_node = Some((node_id, self.state.world_map.last_tick_at as f64)); // Use time for pulse
+                        self.recently_unlocked_node = Some((node_id, current_time)); // Pulse starts NOW
                         
                         let node_name = self.state.world_map.nodes.iter()
                             .find(|n| n.id as usize == node_id)
@@ -436,7 +460,14 @@ impl OperatorApp {
 
                 self.status_msg = format!("\u{2705} '{}' \u{2014} VICTORY (+{}).{}", mission.name, reward, debt_warning);
                 
-                // Play Tide Bowl (Plate Resonance) based on pre-calculated Mind
+                // Play Tide Bowl based on squad Mind
+                let squad: Vec<&crate::models::Operator> = self.state.slimes.iter()
+                    .filter(|op| dep.operator_ids.contains(&op.genome.id))
+                    .collect();
+                let avg_mnd: f32 = if squad.is_empty() { 10.0 } else { 
+                    squad.iter().map(|op| op.total_stats().2 as f32).sum::<f32>() / squad.len() as f32 
+                };
+
                 let stability = (avg_mnd / 20.0).clamp(0.0, 1.0);
                 crate::audio::OperatorSynth::play(crate::audio::PlayEvent::TideBowl { 
                     base_freq: crate::audio::BASE_RESONANCE, 
@@ -444,7 +475,7 @@ impl OperatorApp {
                 });
 
                 for op in self.state.slimes.iter_mut() {
-                    if dep.operator_ids.contains(&op.id()) && !newly_injured_ids.contains(&op.id()) {
+                    if dep.operator_ids.contains(&op.id()) {
                         op.state = SlimeState::Idle;
                     }
                 }
@@ -454,20 +485,7 @@ impl OperatorApp {
                 let symbol = if is_crit { "\u{2620}" } else { "\u{274c}" };
                 let label = if is_crit { "CRITICAL FAILURE" } else { "FAILURE" };
 
-                if !newly_injured.is_empty() {
-                    let (id, until) = newly_injured[0];
-                    let op = self.state.slimes.iter().find(|s| s.genome.id == id);
-                    let name = op.map(|s: &crate::models::Operator| s.name()).unwrap_or("Operator");
-                    
-                    let remaining = until - Utc::now();
-                    let h = remaining.num_hours();
-                    let m = remaining.num_minutes() % 60;
-                    
-                    self.status_msg = format!("{} '{}' \u{2014} {}. INCIDENT REPORT: {} sustained injuries. Medical leave approved. RTD estimated {}h {}m.", 
-                        symbol, mission.name, label, name, h, m);
-                } else {
-                    self.status_msg = format!("{} '{}' \u{2014} {}. The squad retreated intact.", symbol, mission.name, label);
-                }
+                self.status_msg = format!("{} '{}' \u{2014} {}. The squad retreated.", symbol, mission.name, label);
                 
                 let audio_event = if is_crit {
                     crate::audio::PlayEvent::Startled { base_freq: 100.0 }
@@ -477,7 +495,7 @@ impl OperatorApp {
                 crate::audio::OperatorSynth::play(audio_event);
                 
                 for op in self.state.slimes.iter_mut() {
-                    if dep.operator_ids.contains(&op.id()) && !newly_injured_ids.contains(&op.id()) {
+                    if dep.operator_ids.contains(&op.id()) {
                         op.state = SlimeState::Idle;
                     }
                 }
@@ -842,6 +860,10 @@ impl eframe::App for OperatorApp {
                         },
                         _ => {}
                     }
+                }
+                if ui.button("PROCESS AAR").clicked() {
+                    let t = ui.ctx().input(|i| i.time);
+                    self.apply_aar_outcome(t);
                 }
             });
     }
