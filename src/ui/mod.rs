@@ -88,6 +88,8 @@ pub struct OperatorApp {
     pub missions_sub_tab: crate::platform::MissionsSubTab,
     pub map_sub_tab: crate::platform::MapSubTab,
     pub logs_sub_tab: crate::platform::LogsSubTab,
+    /// Non-persisted state for UI feedback: (node_id, start_time)
+    pub recently_unlocked_node: Option<(usize, f64)>,
 }
 
 #[derive(PartialEq)]
@@ -412,6 +414,7 @@ impl OperatorApp {
                 if mission.is_scout {
                     if let Some(node_id) = mission.node_id {
                         self.state.unlocked_nodes.insert(node_id);
+                        self.recently_unlocked_node = Some((node_id, self.state.world_map.last_tick_at as f64)); // Use time for pulse
                         
                         let node_name = self.state.world_map.nodes.iter()
                             .find(|n| n.id as usize == node_id)
