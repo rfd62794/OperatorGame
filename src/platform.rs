@@ -306,11 +306,11 @@ impl Default for MissionsSubTab {
     }
 }
 
-/// Map sub-tabs: currently flat, reserved for expansion
+/// Map sub-tabs: Zones (Radar) and Quartermaster (Shop)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum MapSubTab {
-    Zones,        // Zone affinity, resource yields
-    // Reserved: Alliances, Trade, Procedural
+    Zones,          // Zone affinity, resource yields, current radar
+    Quartermaster,  // Equipment shop (G.3)
 }
 
 impl Default for MapSubTab {
