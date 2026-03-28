@@ -12,9 +12,8 @@ fn setup_app_with_mission() -> OperatorApp {
     app.state.missions.push(crate::models::Mission::new(
         "Test Mission",
         MissionTier::Starter,
-        5,
+        vec![crate::models::mission::Target::new("Main Obective", 5, 0, 0, 0)],
         1,
-        0, 0, 0,
         0.0,
         10,
         ResourceYield::scrap(10000),
@@ -220,7 +219,9 @@ fn test_f1b_10_dismissing_aar_clears_pending_state() {
         level_ups: vec![],
         roll_lines: vec![],
         injured_names: vec![],
-        reward: None
+        reward: None,
+        targets_defeated: 1,
+        total_targets: 1,
     });
     
     assert!(app.pending_aar.is_some());
@@ -273,9 +274,8 @@ fn test_f1b_13_combat_log_truncation() {
     let mut mission = crate::models::Mission::new(
         "Truncate Mission",
         MissionTier::Starter,
-        5,
+        vec![crate::models::mission::Target::new("Objective", 5, 0, 0, 0)],
         1,
-        0, 0, 0,
         0.1,
         10,
         ResourceYield::scrap(100),

@@ -59,6 +59,8 @@ pub struct AarSummary {
     pub roll_lines: Vec<String>,    // compact per-roll summary
     pub injured_names: Vec<String>, // names of newly-injured operators
     pub reward: Option<crate::models::ResourceYield>,
+    pub targets_defeated: usize,
+    pub total_targets: usize,
 }
 
 pub struct OperatorApp {
@@ -357,6 +359,12 @@ impl OperatorApp {
         if self.state.combat_log.len() > 50 { self.state.combat_log.truncate(50); }
 
         // Store the pending AAR for display
+        let (defeated, total) = match outcome {
+            AarOutcome::Victory { targets_defeated, total_targets, .. } => (targets_defeated, total_targets),
+            AarOutcome::Failure { targets_defeated, total_targets, .. } => (targets_defeated, total_targets),
+            AarOutcome::CriticalFailure { targets_defeated, total_targets, .. } => (targets_defeated, total_targets),
+        };
+
         self.pending_aar = Some(AarSummary {
             mission_name: mission.name.clone(),
             outcome_label,
@@ -370,6 +378,8 @@ impl OperatorApp {
             roll_lines,
             injured_names,
             reward: if let AarOutcome::Victory { reward, .. } = &outcome { Some(reward.clone()) } else { None },
+            targets_defeated: defeated,
+            total_targets: total,
         });
 
         self.persist();

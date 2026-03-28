@@ -618,12 +618,13 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
             _ => None,
         };
 
+        let target = crate::models::mission::Target::new("Objective", dc, reqs[0], reqs[1], reqs[2]);
+
         Mission::new(
             name,
             tier,
-            dc,
+            vec![target],
             min_level,
-            reqs[0], reqs[1], reqs[2],
             0.5, // Legacy difficulty fallback
             duration,
             ResourceYield::scrap((reward_base + (dc as u64 * 50)) as u32),
@@ -645,31 +646,31 @@ pub fn generate_static_missions<R: Rng>(rng: &mut R) -> Vec<Mission> {
     missions
 }
 
-/// Generates the 6 permanent scouting missions for Ring 1 nodes.
 pub fn generate_scout_missions() -> Vec<Mission> {
+    use crate::models::Target;
     vec![
         Mission::new(
-            "Scout: Ember Flats", MissionTier::Starter, 4, 1, 4, 4, 4, 0.20, 120,
+            "Scout: Ember Flats", MissionTier::Starter, vec![Target::new("Ember Outpost", 4, 4, 4, 4)], 1, 0.20, 120,
             ResourceYield::new(15, 5, 2), Some(Culture::Ember), Some(10), true
         ),
         Mission::new(
-            "Scout: Gale Ridge", MissionTier::Starter, 7, 1, 5, 5, 5, 0.35, 180,
+            "Scout: Gale Ridge", MissionTier::Starter, vec![Target::new("Gale Sentry", 7, 5, 5, 5)], 1, 0.35, 180,
             ResourceYield::new(8, 3, 8), Some(Culture::Gale), Some(11), true
         ),
         Mission::new(
-            "Scout: Tide Basin", MissionTier::Starter, 6, 1, 5, 5, 5, 0.30, 240,
+            "Scout: Tide Basin", MissionTier::Starter, vec![Target::new("Basin Patrol", 6, 5, 5, 5)], 1, 0.30, 240,
             ResourceYield::new(12, 10, 6), Some(Culture::Tide), Some(12), true
         ),
         Mission::new(
-            "Scout: Marsh Delta", MissionTier::Starter, 4, 1, 3, 3, 3, 0.15, 90,
+            "Scout: Marsh Delta", MissionTier::Starter, vec![Target::new("Delta Scout", 4, 3, 3, 3)], 1, 0.15, 90,
             ResourceYield::new(25, 2, 3), Some(Culture::Marsh), Some(13), true
         ),
         Mission::new(
-            "Scout: Crystal Spire", MissionTier::Standard, 10, 1, 8, 8, 8, 0.50, 300,
+            "Scout: Crystal Spire", MissionTier::Standard, vec![Target::new("Crystal Crypt", 10, 8, 8, 8)], 1, 0.50, 300,
             ResourceYield::new(5, 8, 15), Some(Culture::Crystal), Some(14), true
         ),
         Mission::new(
-            "Scout: Tundra Shelf", MissionTier::Standard, 11, 1, 12, 12, 12, 0.55, 360,
+            "Scout: Tundra Shelf", MissionTier::Standard, vec![Target::new("Shelf Lookout", 11, 12, 12, 12)], 1, 0.55, 360,
             ResourceYield::new(10, 20, 5), Some(Culture::Tundra), Some(15), true
         ),
     ]

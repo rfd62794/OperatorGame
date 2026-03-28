@@ -20,6 +20,10 @@ impl OperatorApp {
                     ui.set_max_width(ui.available_width());
                     ui.add(egui::Label::new(egui::RichText::new(&aar.mission_name).color(egui::Color32::WHITE)).wrap(true));
                     ui.add(egui::Label::new(egui::RichText::new(&aar.outcome_label).size(18.0).strong().color(aar.outcome_color)).wrap(true));
+                    ui.add_space(4.0);
+                    ui.label(egui::RichText::new(format!("OBJECTIVES: {} / {} TARGETS ELIMINATED", aar.targets_defeated, aar.total_targets))
+                        .color(egui::Color32::from_rgb(180, 180, 180))
+                        .size(11.0));
                     ui.add_space(8.0);
                     
                     egui::ScrollArea::vertical()

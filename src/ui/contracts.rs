@@ -117,19 +117,18 @@ impl OperatorApp {
                         }
                     });
 
-                    ui.horizontal_wrapped(|ui| {
-                        if let Some(aff) = mission.affinity {
-                            let (r, g, b) = crate::genetics::culture_display_color_standalone(aff);
-                            ui.colored_label(egui::Color32::from_rgb(r, g, b), format!("[{aff:?}]"));
+                    ui.vertical(|ui| {
+                        for (idx, target) in mission.targets.iter().enumerate() {
+                            ui.horizontal(|ui| {
+                                ui.label(egui::RichText::new(format!("{}. {}", idx + 1, target.name)).small().color(egui::Color32::from_gray(200)));
+                                ui.label(egui::RichText::new(format!("DC:{}", target.base_dc)).small().color(egui::Color32::from_gray(140)));
+                                ui.label(egui::RichText::new(format!("S:{} A:{} I:{}", target.req_strength, target.req_agility, target.req_intelligence)).small().color(egui::Color32::from_gray(100)));
+                            });
                         }
-                        ui.label(egui::RichText::new(format!("STR:{}", mission.req_strength)).color(egui::Color32::LIGHT_GRAY));
-                        ui.label(egui::RichText::new(format!("AGI:{}", mission.req_agility)).color(egui::Color32::LIGHT_GRAY));
-                        ui.label(egui::RichText::new(format!("INT:{}", mission.req_intelligence)).color(egui::Color32::LIGHT_GRAY));
                     });
 
+                    ui.add_space(4.0);
                     ui.horizontal_wrapped(|ui| {
-                        ui.label(egui::RichText::new(format!("DC: {}", mission.base_dc)).color(egui::Color32::LIGHT_GRAY));
-                        
                         let staged_ops: Vec<&crate::models::Operator> = self.state.slimes.iter()
                             .filter(|op| self.staged_operators.contains(&op.genome.id))
                             .collect();
@@ -146,22 +145,8 @@ impl OperatorApp {
                         };
 
                         ui.label(egui::RichText::new(format!("{} - {}%", label, chance_pct)).color(chance_color).strong());
-
-                        let mut t_str = 0u32; let mut t_agi = 0u32; let mut t_int = 0u32;
-                        for op in &staged_ops {
-                            let (s, a, i, _, _, _) = op.total_stats();
-                            t_str += s; t_agi += a; t_int += i;
-                        }
-                        let (s_val, r_val) = if mission.req_strength >= mission.req_agility && mission.req_strength >= mission.req_intelligence {
-                            (t_str, mission.req_strength)
-                        } else if mission.req_agility >= mission.req_intelligence {
-                            (t_agi, mission.req_agility)
-                        } else {
-                            (t_int, mission.req_intelligence)
-                        };
-                        ui.label(egui::RichText::new(format!("| Squad: {} / Req: {}", s_val, r_val)).color(egui::Color32::from_gray(160)).small());
-
-                        ui.label(egui::RichText::new(format!("| {}s | {}", mission.duration_secs, mission.reward)).color(egui::Color32::LIGHT_GRAY));
+                        ui.label(egui::RichText::new(format!("| {} targets | {}s", mission.targets.len(), mission.duration_secs)).color(egui::Color32::from_gray(160)).small());
+                        ui.label(egui::RichText::new(format!("| {}", mission.reward)).color(egui::Color32::LIGHT_GRAY));
                     });
 
                     let btn_label = if is_selected { "▶ SELECTED" } else { "SELECT CONTRACT" };

@@ -22,9 +22,14 @@ pub enum MissionType {
 
 impl MissionType {
     pub fn from_mission(m: &Mission) -> Self {
-        let s = m.req_strength;
-        let a = m.req_agility;
-        let i = m.req_intelligence;
+        let first = match m.targets.first() {
+            Some(t) => t,
+            None => return MissionType::Balanced,
+        };
+        
+        let s = first.req_strength;
+        let a = first.req_agility;
+        let i = first.req_intelligence;
 
         if s > a && s > i {
             MissionType::Assault
@@ -163,9 +168,11 @@ mod tests {
     use super::*;
     use rand::rngs::SmallRng;
     use rand::SeedableRng;
+    use crate::models::{MissionTier, ResourceYield};
 
     fn dummy_mission(rs: u32, ra: u32, ri: u32) -> Mission {
-        crate::models::Mission::new("Test", crate::models::MissionTier::Starter, 5, 1, rs, ra, ri, 0.1, 60, crate::models::ResourceYield::scrap(100), None, None, false)
+        let target = crate::models::mission::Target::new("Test Target", 5, rs, ra, ri);
+        crate::models::Mission::new("Test", MissionTier::Starter, vec![target], 1, 0.1, 60, ResourceYield::scrap(100), None, None, false)
     }
 
     fn dummy_op(name: &str, rng: &mut rand::rngs::SmallRng) -> crate::genetics::SlimeGenome {
@@ -185,7 +192,14 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(7);
         let mission = dummy_mission(10, 10, 80);
         let op = dummy_op("Ghost", &mut rng);
-        let outcome = AarOutcome::Victory { reward: crate::models::ResourceYield::scrap(1000), success_chance: 1.0, rolls: vec![], xp_gained: 0 };
+        let outcome = AarOutcome::Victory { 
+            reward: crate::models::ResourceYield::scrap(1000), 
+            success_chance: 1.0, 
+            rolls: vec![], 
+            xp_gained: 0,
+            targets_defeated: 1,
+            total_targets: 1,
+        };
         let result = generate_narrative(&outcome, &mission, &[&op], &mut rng);
         assert!(!result.is_empty());
         assert!(result.contains("Ghost"), "Operator name should be interpolated");
@@ -193,7 +207,18 @@ mod tests {
 
     #[test]
     fn test_format_log_entry_structure() {
-        let entry = format_log_entry("Bank Heist", &AarOutcome::Victory { reward: crate::models::ResourceYield::scrap(500), success_chance: 1.0, rolls: vec![], xp_gained: 0 }, "Great job.");
+        let entry = format_log_entry(
+            "Bank Heist", 
+            &AarOutcome::Victory { 
+                reward: crate::models::ResourceYield::scrap(500), 
+                success_chance: 1.0, 
+                rolls: vec![], 
+                xp_gained: 0,
+                targets_defeated: 1,
+                total_targets: 1,
+            }, 
+            "Great job."
+        );
         assert!(entry.contains("Bank Heist"));
         assert!(entry.contains("VICTORY"));
         assert!(entry.contains("Great job."));

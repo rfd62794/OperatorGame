@@ -438,15 +438,12 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
             name: format!("[ORPHANED] Unknown Contract #{}", &id.to_string()[..5]),
             description: "CRITICAL PERSISTENCE ERROR: Original mission data was truncated. Performance history unavailable.".to_string(),
             tier: crate::models::MissionTier::Standard,
-            base_dc: 10,
+            targets: vec![crate::models::mission::Target::new("Unknown", 10, 5, 5, 5)],
             min_roster_level: 1,
             difficulty: 0.5, // Neutral fallback
             reward: ResourceYield::scrap(100),
             duration_secs: 60,
             affinity: None,
-            req_strength: 5,
-            req_agility: 5,
-            req_intelligence: 5,
             node_id: None,
             is_scout: false,
         });
@@ -688,7 +685,8 @@ mod tests {
         state.slimes.push(crate::models::Operator::new(g2));
 
         // Setup: A mission and a deployment
-        let mission = crate::models::Mission::new("Test", crate::models::MissionTier::Starter, 5, 1, 10, 10, 10, 0.1, 60, crate::models::ResourceYield::scrap(100), None, None, false);
+        let target = crate::models::mission::Target::new("Objective", 5, 10, 10, 10);
+        let mission = crate::models::Mission::new("Test", crate::models::MissionTier::Starter, vec![target], 1, 0.1, 60, crate::models::ResourceYield::scrap(100), None, None, false);
         state.missions.push(mission.clone());
         let dep = crate::models::Deployment::start(&mission, vec![u1, u2], false);
         state.deployments.push(dep.clone());
