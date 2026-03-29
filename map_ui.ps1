@@ -65,7 +65,7 @@ function Read-TapCoordinate {
     param([string]$Serial, [string]$Prompt)
 
     Write-Host ""
-    Write-Host ">>> $Prompt" -ForegroundColor Cyan
+    Write-Host ("`>`>`> " + $Prompt) -ForegroundColor Cyan
     Write-Host "    Navigate your phone so the element is visible." -ForegroundColor Gray
     Write-Host "    Press ENTER here when ready, then tap the element once." -ForegroundColor Gray
     $null = Read-Host
@@ -85,8 +85,8 @@ function Read-TapCoordinate {
     while (-not ($hasX -and $hasY)) {
         if ($proc.StandardOutput.EndOfStream) { Start-Sleep -Milliseconds 10; continue }
         $line = $proc.StandardOutput.ReadLine()
-        if ($line -match "ABS_MT_POSITION_X\s+([0-9a-fA-F]+)") { $lastX = [Convert]::ToInt32($matches[1], 16); $hasX = $true }
-        if ($line -match "ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)") { $lastY = [Convert]::ToInt32($matches[1], 16); $hasY = $true }
+        if ($line -match 'ABS_MT_POSITION_X\s+([0-9a-fA-F]+)') { $lastX = [Convert]::ToInt32($matches[1], 16); $hasX = $true }
+        if ($line -match 'ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)') { $lastY = [Convert]::ToInt32($matches[1], 16); $hasY = $true }
     }
     $proc.Kill()
 
