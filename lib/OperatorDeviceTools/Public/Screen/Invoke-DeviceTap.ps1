@@ -18,8 +18,8 @@ function Invoke-DeviceTap {
         throw "Cannot tap: Device $($Device.Serial) is not responsive or healthy."
     }
     
-    if ($X -lt 0 -or $Y -lt 0 -or $X -gt 5000 -or $Y -gt 5000) {
-        throw "Coordinates ($X, $Y) are outside reasonable boundary values."
+    if ($X -lt 0 -or $Y -lt 0 -or $X -gt 32768 -or $Y -gt 32768) {
+        throw "Coordinates ($X, $Y) are outside reasonable boundary values (0-32768)."
     }
     
     Invoke-AdbCommand -Serial $Device.Serial -Command "shell input tap $X $Y" | Out-Null
