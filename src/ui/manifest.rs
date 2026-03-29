@@ -1,4 +1,4 @@
-use crate::ui::OperatorApp;
+use crate::ui::{OperatorApp, CONTENT_WIDTH, SIDE_GUTTER, CARD_INNER_MARGIN, CARD_GAP};
 use crate::render::garden_bridge::egui_rect_to_bounds;
 use eframe::egui;
 
@@ -13,8 +13,7 @@ impl OperatorApp {
         let selected_mission_id = self.selected_mission;
         let mut toggle_stage: Option<uuid::Uuid> = None;
 
-        let available_width = ui.available_width();
-        let card_width = available_width - 4.0; // Visual gutter for scrollbar/clipping safety
+        let card_width = 380.0; // SDD-038 §4: CONTENT_WIDTH - (SIDE_GUTTER * 2)
 
         // Use a vertical layout for the card list inside the scroll area
         egui::ScrollArea::vertical()
@@ -22,7 +21,7 @@ impl OperatorApp {
             .auto_shrink([false, false]) // Fill available space
             .show(ui, |ui| {
                 ui.vertical(|ui| {
-                    ui.spacing_mut().item_spacing = egui::vec2(0.0, 4.0);
+                    ui.spacing_mut().item_spacing = egui::vec2(0.0, CARD_GAP);
                     
                     for op in &self.state.slimes {
                         let (stage_clicked, card_clicked, hat_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
@@ -261,15 +260,16 @@ fn render_operator_card(
         .inner_margin(egui::Margin::same(8.0))
         .rounding(egui::Rounding::same(4.0))
         .show(ui, |ui| {
-            ui.set_width(card_width); // Card width with responsive calculation
+            ui.set_max_width(380.0); // SDD-038 §4 width enforcement
+            ui.set_width(380.0);
             
             // Header: Left (Name, Culture) | Right (STAGE, VIEW)
             ui.horizontal_wrapped(|ui| {
-                ui.label(egui::RichText::new(&genome.name).strong().color(color));
-                ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).small().color(color));
+                ui.label(egui::RichText::new(&genome.name).strong().size(14.0).color(color));
+                ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).size(11.0).color(color));
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button(egui::RichText::new("▶").small()).clicked() {
+                    if ui.button(egui::RichText::new("▶").size(12.0)).clicked() {
                         card_clicked = true;
                     }
                     
@@ -277,12 +277,12 @@ fn render_operator_card(
                     let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
 
                     if is_injured {
-                        ui.add_enabled(false, egui::Button::new("INJURED").small());
+                        ui.add_enabled(false, egui::Button::new(egui::RichText::new("INJURED").size(12.0)));
                     } else if is_dispatched {
-                        ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
+                        ui.add_enabled(false, egui::Button::new(egui::RichText::new("DEPLOYED").size(12.0)));
                     } else {
                         let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
-                        let btn = ui.add(egui::Button::new(btn_label).small());
+                        let btn = ui.add(egui::Button::new(egui::RichText::new(btn_label).size(12.0)));
                         if btn.clicked() {
                             stage_clicked = true;
                         }
@@ -290,9 +290,9 @@ fn render_operator_card(
                 });
             });
 
-            // Row 2: Lv | Stage Label | Pattern
+            // Row 2: Lv | Stage Label | Pattern (§3: 11pt sub-status)
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(format!("Lv: {}", op.level)).small());
+                ui.label(egui::RichText::new(format!("Lv: {}", op.level)).size(11.0).color(egui::Color32::from_gray(160)));
                 ui.add_space(4.0);
                 
                 let stage = op.life_stage();
@@ -309,42 +309,42 @@ fn render_operator_card(
                     .color(stage_color));
                 
                 ui.add_space(4.0);
-                ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).small().color(egui::Color32::GRAY));
+                ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).size(11.0).color(egui::Color32::from_gray(120)));
             });
 
             // Row 3: XP bar (4dp height, no percentage)
             let needed = op.xp_to_next().max(1) as f32;
             let current_tier = (op.total_xp as f32) % needed;
             let xp_pct = (current_tier / needed).clamp(0.0, 1.0);
-            ui.add(egui::ProgressBar::new(xp_pct).desired_height(4.0));
+            ui.add(egui::ProgressBar::new(xp_pct).desired_height(4.0)); // SDD-038 §4
 
-            // Row 4: Hard Stats + HP
+            // Row 4: Vitals (§3: 11pt stats row)
             let (s, a, i, _, _, _) = op.total_stats();
             let hp = op.genome.base_hp;
             ui.horizontal(|ui| {
-                ui.small(format!("STR:{}", s));
+                ui.label(egui::RichText::new(format!("STR:{}", s)).size(11.0).color(egui::Color32::from_gray(180)));
                 ui.add_space(4.0);
-                ui.small(format!("AGI:{}", a));
+                ui.label(egui::RichText::new(format!("AGI:{}", a)).size(11.0).color(egui::Color32::from_gray(180)));
                 ui.add_space(4.0);
-                ui.small(format!("INT:{}", i));
+                ui.label(egui::RichText::new(format!("INT:{}", i)).size(11.0).color(egui::Color32::from_gray(180)));
                 ui.add_space(8.0);
-                ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).small().color(egui::Color32::LIGHT_GRAY));
+                ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).size(11.0).color(egui::Color32::LIGHT_GRAY));
             });
 
-            // Row 5: Hat Interaction (G.3)
+            // Row 5: Hat action (§3: 12pt buttons)
             ui.horizontal(|ui| {
                 if let Some(hat_id) = op.equipped_hat {
                     let catalog = crate::models::Hat::catalog();
                     if let Some(hat) = catalog.iter().find(|h| h.id == hat_id) {
                         if ui.button(egui::RichText::new(format!("🎩 {}", hat.name))
-                            .small()
+                            .size(12.0)
                             .color(egui::Color32::from_rgb(220, 220, 100))).clicked() 
                         {
                             hat_clicked = true;
                         }
                     }
                 } else {
-                    if ui.button(egui::RichText::new("➕ EQUIP HAT").small().color(egui::Color32::GRAY)).clicked() {
+                    if ui.button(egui::RichText::new("➕ EQUIP HAT").size(12.0).color(egui::Color32::GRAY)).clicked() {
                         hat_clicked = true;
                     }
                 }
