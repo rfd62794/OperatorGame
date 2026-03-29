@@ -512,7 +512,7 @@ impl eframe::App for OperatorApp {
         ctx.set_style(style);
 
         let layout = crate::platform::ResponsiveLayout::from_width(ctx.screen_rect().width());
-        crate::platform::apply_interaction_scale(ctx, layout);
+        // crate::platform::apply_interaction_scale(ctx, layout);
 
         if cfg!(target_os = "android") || crate::platform::is_mobile_emu() {
             ctx.set_pixels_per_point(2.0);
@@ -683,8 +683,7 @@ fn sub_tab_button(ui: &mut egui::Ui, label: &str, is_active: bool) -> bool {
     )
     .fill(fill_color)
     .stroke(egui::Stroke::NONE)
-    .rounding(egui::Rounding::ZERO)
-    .min_size(egui::vec2(70.0, 40.0));
+    .rounding(egui::Rounding::ZERO);
 
     ui.add(btn).clicked()
 }

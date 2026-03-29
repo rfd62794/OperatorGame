@@ -22,7 +22,7 @@ impl OperatorApp {
             .auto_shrink([false, false]) // Fill available space
             .show(ui, |ui| {
                 ui.vertical(|ui| {
-                    ui.spacing_mut().item_spacing = egui::vec2(0.0, 8.0);
+                    ui.spacing_mut().item_spacing = egui::vec2(0.0, 4.0);
                     
                     for op in &self.state.slimes {
                         let (stage_clicked, card_clicked, hat_clicked) = render_operator_card(ui, op, &staged, selected_mission_id, card_width);
