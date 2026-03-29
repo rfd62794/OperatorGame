@@ -121,3 +121,27 @@ fn test_g1_anchor_10_level_scaling_preview() {
     let m = Mission::new("T3 Test", MissionTier::Elite, targets, 6, 0.5, 3600, ResourceYield::scrap(5000), None, None, false);
     assert_eq!(m.targets[0].base_dc, 12);
 }
+#[test]
+fn test_g5b_mission_seeding_and_refresh_logic() {
+    let mut state = GameState::default();
+    assert!(state.missions.is_empty(), "Initial state missions should be empty (default)");
+    
+    let now = Utc::now();
+    // 1. First refresh should populate because it's empty
+    let refreshed = state.refresh_missions_if_needed(now);
+    assert!(refreshed);
+    assert_eq!(state.missions.len(), 20, "Should have 20 missions (6 scouts + 14 standard)");
+    
+    let scouts = state.missions.iter().filter(|m| m.is_scout).count();
+    assert_eq!(scouts, 6, "Should have exactly 6 scout missions");
+    
+    // 2. Refresh on same day should return false
+    let refreshed_same_day = state.refresh_missions_if_needed(now + Duration::minutes(5));
+    assert!(!refreshed_same_day, "Should not refresh twice on the same day");
+    
+    // 3. Manual clearing should trigger re-seed even on same day
+    state.missions.clear();
+    let refreshed_force = state.refresh_missions_if_needed(now + Duration::minutes(10));
+    assert!(refreshed_force, "Should force re-seed if pool is manually cleared/empty");
+    assert_eq!(state.missions.len(), 20);
+}
