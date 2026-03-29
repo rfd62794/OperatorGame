@@ -530,9 +530,11 @@ impl eframe::App for OperatorApp {
         ctx.set_style(style);
 
         let layout = crate::platform::ResponsiveLayout::from_width(ctx.screen_rect().width());
+        // SDD-038: apply_interaction_scale stays commented out permanently per §8.
         // crate::platform::apply_interaction_scale(ctx, layout);
 
         if cfg!(target_os = "android") || crate::platform::is_mobile_emu() {
+            // SDD-038 §1: pixels_per_point stays at 2.0.
             ctx.set_pixels_per_point(2.0);
         }
 
@@ -550,13 +552,14 @@ impl eframe::App for OperatorApp {
             .frame(egui::Frame::none().inner_margin(egui::Margin {
                 left: safe_area.left, right: safe_area.right, top: safe_area.top, bottom: 0.0,
             }))
+            .height_range(STATUS_BAR_HEIGHT..=STATUS_BAR_HEIGHT)
             .show(ctx, |ui| {
                 ui.horizontal_wrapped(|ui| {
-                    ui.label(egui::RichText::new("OPERATOR").strong());
+                    ui.label(egui::RichText::new("OPERATOR").strong().size(14.0));
                     ui.separator();
-                    ui.label(format!("Bank: ${}", self.state.bank));
+                    ui.label(egui::RichText::new(format!("Bank: ${}", self.state.bank)).size(14.0));
                     ui.separator();
-                    ui.label(format!("Scrap: {}", self.state.inventory.scrap));
+                    ui.label(egui::RichText::new(format!("Scrap: {}", self.state.inventory.scrap)).size(14.0));
                     
                     let stress_pct = (self.state.world_map.startled_level / 10.0).clamp(0.0, 1.0);
                     if stress_pct > 0.01 {
@@ -611,6 +614,7 @@ impl eframe::App for OperatorApp {
                 .frame(egui::Frame::none().inner_margin(egui::Margin {
                     left: safe_area.left, right: safe_area.right, top: 0.0, bottom: safe_area.bottom,
                 }))
+                .height_range(TAB_BAR_HEIGHT..=TAB_BAR_HEIGHT) // SDD-038 §2
                 .show(ctx, |ui| {
                     self.render_launch_bar(ui);
                     ui.add_space(4.0);
@@ -633,20 +637,15 @@ impl eframe::App for OperatorApp {
         }
 
 
-        // 2. Sidebar (Left) — all layouts.
-        // On Compact: 80dp wide alongside the bottom tab bar.
-        // On Standard: 100dp wide (desktop / tablet).
-        {
-            let sidebar_width = if layout == crate::platform::ResponsiveLayout::Compact { 80.0 } else { 100.0 };
-            egui::SidePanel::left("left_sidebar")
-                .frame(egui::Frame::none().fill(egui::Color32::from_rgb(19, 19, 24)).inner_margin(8.0))
-                .resizable(false)
-                .default_width(sidebar_width)
-                .show(ctx, |ui| {
-                    ui.add_space(8.0);
-                    self.render_sub_tabs(ui);
-                });
-        }
+        // 2. Sidebar (Left) — all layouts (§2: 120dp wide)
+        egui::SidePanel::left("left_sidebar")
+            .frame(egui::Frame::none().fill(COLOR_SURFACE_LOW).inner_margin(8.0))
+            .resizable(false)
+            .default_width(SIDEBAR_WIDTH)
+            .show(ctx, |ui| {
+                ui.add_space(8.0);
+                self.render_sub_tabs(ui);
+            });
 
         // 3. Central Content
         egui::CentralPanel::default()
@@ -691,22 +690,6 @@ impl eframe::App for OperatorApp {
 /// - **Inactive:** transparent fill + high-contrast white text (#f8f5fd)
 /// - Minimum size: 70×40dp (44dp touch target)
 /// - Sharp corners, no stroke (Stitch design system)
-fn sub_tab_button(ui: &mut egui::Ui, label: &str, is_active: bool) -> bool {
-    let text_color = if is_active { COLOR_PRIMARY } else { COLOR_TEXT };
-    let fill_color = if is_active { COLOR_SURFACE_LOW } else { egui::Color32::TRANSPARENT };
-
-    // SIDEBAR: font size 15.0 — do not reduce without designer approval
-    let btn = egui::Button::new(
-        egui::RichText::new(label)
-            .size(15.0)
-            .color(text_color),
-    )
-    .fill(fill_color)
-    .stroke(egui::Stroke::NONE)
-    .rounding(egui::Rounding::ZERO);
-
-    ui.add(btn).clicked()
-}
 
 /// Render a styled section header for the sidebar.
 ///
