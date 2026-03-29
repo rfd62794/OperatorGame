@@ -1,9 +1,9 @@
 {
-  "bank": 11975,
+  "bank": 975,
   "deployments": [],
   "missions": [
     {
-      "id": "5bf6f4e9-32d4-42a7-b844-7720b7e71b34",
+      "id": "eb3f89dc-f6f2-4db3-a25e-38d4c270a46c",
       "name": "Test Mission",
       "description": "High-priority contract from the Orbitals.",
       "tier": "Starter",
@@ -33,7 +33,7 @@
   "slimes": [
     {
       "genome": {
-        "id": "b7580402-d40d-4d9a-8d3f-fcaff69c16fa",
+        "id": "e95ded10-194c-4d29-a2b0-786c395a75ce",
         "culture_alleles": {
           "dominant": [
             0.0,
@@ -58,34 +58,34 @@
             0.0
           ]
         },
-        "base_hp": 1000.0,
-        "base_atk": 100.0,
-        "base_spd": 7.281513,
+        "base_hp": 16.632442,
+        "base_atk": 4.4251647,
+        "base_spd": 7.5551596,
         "generation": 1,
         "parent_ids": null,
-        "curiosity": 0.83321893,
-        "energy": 0.34118128,
-        "affection": 0.79810005,
-        "shyness": 0.056996107,
-        "base_strength": 8,
-        "base_agility": 9,
-        "base_intelligence": 9,
-        "base_mind": 9,
-        "base_sensory": 11,
-        "base_tenacity": 10,
-        "shape": "Round",
-        "body_size": "Massive",
-        "pattern": "Solid",
+        "curiosity": 0.3643222,
+        "energy": 0.20694155,
+        "affection": 0.9403205,
+        "shyness": 0.44912797,
+        "base_strength": 10,
+        "base_agility": 12,
+        "base_intelligence": 8,
+        "base_mind": 11,
+        "base_sensory": 10,
+        "base_tenacity": 11,
+        "shape": "Crystalline",
+        "body_size": "Tiny",
+        "pattern": "Marbled",
         "accessory": "Shell",
         "base_color": [
-          52,
-          137,
-          125
+          130,
+          228,
+          232
         ],
         "pattern_color": [
-          236,
-          212,
-          155
+          176,
+          221,
+          129
         ],
         "frequency": 288.0,
         "name": "Hero"
@@ -517,12 +517,12 @@
     "tick_accum": 0.0,
     "startled_level": 0.05
   },
-  "last_upkeep_at": "2026-03-29T01:07:24.713707700Z",
-  "last_pool_refresh": "2026-03-29T01:07:24.713708700Z",
+  "last_upkeep_at": "2026-03-29T01:23:54.012566400Z",
+  "last_pool_refresh": "2026-03-29T01:23:54.012567200Z",
   "inventory": {
     "gear_pool": [],
     "biomass": 0,
-    "scrap": 11000,
+    "scrap": 0,
     "reagents": 0
   },
   "active_expeditions": [],
@@ -533,8 +533,8 @@
   "logs_sub_tab": "MissionHistory",
   "combat_log": [
     {
-      "timestamp": 1774746444,
-      "message": "[Test Mission] ✅ VICTORY (+$$11000) — No single moment of brilliance — just relentless preparation paying off.",
+      "timestamp": 1774747434,
+      "message": "[Test Mission] ✅ VICTORY (+$$11000) — Every contingency accounted for. The squad executed perfectly.",
       "outcome": "Victory"
     }
   ],
