@@ -263,27 +263,30 @@ fn render_operator_card(
             ui.set_max_width(380.0); // SDD-038 ┬º4 width enforcement
             
             // Row 1: Header
-            let available = ui.available_width();
-            let btn_w = 110.0;
-            let name_w = (available - btn_w).max(60.0);
-
-            ui.horizontal(|ui| {
-                // Name — fixed width
-                ui.add_sized([name_w, 18.0], egui::Label::new(
-                    egui::RichText::new(&genome.name).strong().size(14.0).color(color)
-                ));
-                // Buttons — right aligned in remaining space (simplified)
-                let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
-                let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
-                if is_injured {
-                    ui.add_enabled(false, egui::Button::new("INJRD").small());
-                } else if is_dispatched {
-                    ui.add_enabled(false, egui::Button::new("DEPLD").small());
-                } else {
-                    let lbl = if is_staged { "STAGD" } else { "STAGE" };
-                    if ui.small_button(lbl).clicked() { stage_clicked = true; }
-                }
-                if ui.small_button(">").clicked() { card_clicked = true; }
+            ui.columns(2, |cols| {
+                // Left column: name
+                cols[0].label(
+                    egui::RichText::new(&genome.name)
+                        .strong()
+                        .size(14.0)
+                        .color(color)
+                );
+                // Right column: buttons
+                cols[1].with_layout(
+                    egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.small_button(">").clicked() { card_clicked = true; }
+                        let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
+                        let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
+                        if is_injured {
+                            ui.add_enabled(false, egui::Button::new("INJURED").small());
+                        } else if is_dispatched {
+                            ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
+                        } else {
+                            let lbl = if is_staged { "STAGED" } else { "STAGE" };
+                            if ui.small_button(lbl).clicked() { stage_clicked = true; }
+                        }
+                    }
+                );
             });
 
             // Row 2: Lv | Stage Label | Pattern (┬º3: 11pt sub-status)
