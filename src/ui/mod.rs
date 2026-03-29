@@ -610,11 +610,12 @@ impl eframe::App for OperatorApp {
 
         // 1. Bottom bar: launch bar + main tab bar — Compact only
         if layout == crate::platform::ResponsiveLayout::Compact {
+            let total_bottom_height = LAUNCH_BAR_HEIGHT + TAB_BAR_HEIGHT + safe_area.bottom;
             egui::TopBottomPanel::bottom("bottom_stack")
                 .frame(egui::Frame::none().inner_margin(egui::Margin {
                     left: safe_area.left, right: safe_area.right, top: 0.0, bottom: safe_area.bottom,
                 }))
-                .height_range(TAB_BAR_HEIGHT..=TAB_BAR_HEIGHT) // SDD-038 §2
+                .height_range(total_bottom_height..=total_bottom_height)
                 .show(ctx, |ui| {
                     self.render_launch_bar(ui);
                     ui.add_space(4.0);
