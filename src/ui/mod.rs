@@ -686,12 +686,7 @@ fn sub_tab_button(ui: &mut egui::Ui, label: &str, is_active: bool) -> bool {
     .stroke(egui::Stroke::NONE)
     .rounding(egui::Rounding::ZERO);
 
-    if ui.add(btn).clicked() {
-        self.status_msg.clear();
-        true
-    } else {
-        false
-    }
+    ui.add(btn).clicked()
 }
 
 /// Render a styled section header for the sidebar.
@@ -727,15 +722,19 @@ impl OperatorApp {
 
                     if sub_tab_button(ui, "Collection", self.roster_sub_tab == crate::platform::RosterSubTab::Collection) {
                         self.roster_sub_tab = crate::platform::RosterSubTab::Collection;
+                        self.status_msg.clear();
                     }
                     if sub_tab_button(ui, "Breeding", self.roster_sub_tab == crate::platform::RosterSubTab::Breeding) {
                         self.roster_sub_tab = crate::platform::RosterSubTab::Breeding;
+                        self.status_msg.clear();
                     }
                     if sub_tab_button(ui, "Recruit", self.roster_sub_tab == crate::platform::RosterSubTab::Recruit) {
                         self.roster_sub_tab = crate::platform::RosterSubTab::Recruit;
+                        self.status_msg.clear();
                     }
                     if sub_tab_button(ui, "Squad", self.roster_sub_tab == crate::platform::RosterSubTab::Squad) {
                         self.roster_sub_tab = crate::platform::RosterSubTab::Squad;
+                        self.status_msg.clear();
                     }
                 }
 
@@ -743,9 +742,11 @@ impl OperatorApp {
                     sidebar_header(ui, "Missions");
                     if sub_tab_button(ui, "Active", self.missions_sub_tab == crate::platform::MissionsSubTab::Active) {
                         self.missions_sub_tab = crate::platform::MissionsSubTab::Active;
+                        self.status_msg.clear();
                     }
                     if sub_tab_button(ui, "Quests", self.missions_sub_tab == crate::platform::MissionsSubTab::QuestBoard) {
                         self.missions_sub_tab = crate::platform::MissionsSubTab::QuestBoard;
+                        self.status_msg.clear();
                     }
                 }
 
@@ -753,9 +754,11 @@ impl OperatorApp {
                     sidebar_header(ui, "Map");
                     if sub_tab_button(ui, "Zones", self.map_sub_tab == crate::platform::MapSubTab::Zones) {
                         self.map_sub_tab = crate::platform::MapSubTab::Zones;
+                        self.status_msg.clear();
                     }
                     if sub_tab_button(ui, "Shop", self.map_sub_tab == crate::platform::MapSubTab::Quartermaster) {
                         self.map_sub_tab = crate::platform::MapSubTab::Quartermaster;
+                        self.status_msg.clear();
                     }
                 }
 
@@ -763,9 +766,11 @@ impl OperatorApp {
                     sidebar_header(ui, "LOGS");
                     if sub_tab_button(ui, "Missions", self.logs_sub_tab == crate::platform::LogsSubTab::MissionHistory) {
                         self.logs_sub_tab = crate::platform::LogsSubTab::MissionHistory;
+                        self.status_msg.clear();
                     }
                     if sub_tab_button(ui, "Culture", self.logs_sub_tab == crate::platform::LogsSubTab::CultureHistory) {
                         self.logs_sub_tab = crate::platform::LogsSubTab::CultureHistory;
+                        self.status_msg.clear();
                     }
                 }
             }
