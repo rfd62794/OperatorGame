@@ -7,10 +7,14 @@ This is the central navigation hub for OperatorGame design, architecture, and de
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design and data flow.
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Developer onboarding and environment setup.
 - **[SPEC_DRIVEN_DESIGN.md](./SPEC_DRIVEN_DESIGN.md)** - Our SDD methodology.
-- **[ADR-038: Modular Data Layer](./adr/ADR-038_modular_data_layer.md)** — **(NEW)**
-- **[SDD-037: Gauntlet Missions](./sdd/SDD-037_Gauntlet_Missions.md)** — **(NEW)**
+- [ADR-043 — Flutter-Rust Bridge Integration Strategy](adr/ADR-043-bridge-integration-strategy.md)
+- [ADR-044 — Flutter UI Parity Strategy](adr/ADR-044-flutter-ui-parity.md)
 
-## 移动仿真 (Mobile Emulation)
+## §3 — Software Design Descriptions (SDD)
+
+- [SDD-042 — Flutter Card Contract](sdd/SDD-042-flutter-card-contract.md)
+- [SDD-043 — Equipment & Combat Logs](sdd/SDD-043_Equipment_CombatLogs.md)
+- [SDD-050 — War Room Dashboard Layout](sdd/SDD-050-war-room-dashboard.md)
 - **[MOBILE_EMU_CHEATSHEET.md](./MOBILE_EMU_CHEATSHEET.md)** - Daily workflow quick reference.
 - **[MOBILE_EMU_REFERENCE.md](./MOBILE_EMU_REFERENCE.md)** - Deep dive into emulation logic.
 - **[MOBILE_EMU_PLAN.md](./MOBILE_EMU_PLAN.md)** - Foundational design for the 5-sec loop.
