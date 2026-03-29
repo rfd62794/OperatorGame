@@ -111,7 +111,7 @@ Every roster card renders **exactly 5 rows** in this order. No additions without
 
 | Row | Content | Font | Notes |
 |-----|---------|------|-------|
-| 1 — Header | Name (14pt strong, culture color) + Culture label (11pt) left; STAGE button + ▶ button right | 14pt / 11pt | `horizontal_wrapped` |
+| 1 — Header | Name (14pt strong, culture color) + Culture label (11pt) left; STAGE button + ▶ button right | 14pt / 11pt | `horizontal` |
 | 2 — Sub-status | `Lv: N` + Stage name (stage color) + Pattern name | 11pt | Single `horizontal` row |
 | 3 — XP bar | Progress bar | 4dp height | No percentage text. No label. |
 | 4 — Vitals | STR:N  AGI:N  INT:N  HP:N | 11pt | Single `horizontal` row |
