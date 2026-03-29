@@ -155,10 +155,7 @@ impl LayoutCalculator {
 /// Triggered by the `OPERATOR_MOBILE_EMU=1` environment variable. Allows
 /// Windows EXE builds to behave identically to Android for testing.
 pub fn is_mobile_emu() -> bool {
-    #[cfg(test)]
-    { false }
-    #[cfg(not(test))]
-    { std::env::var("OPERATOR_MOBILE_EMU").is_ok() }
+    std::env::var("OPERATOR_MOBILE_EMU").is_ok()
 }
 
 // ---------------------------------------------------------------------------

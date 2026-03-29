@@ -71,6 +71,10 @@ fn test_tab_bar_respects_left_right_insets() {
 
 #[test]
 fn test_responsive_layout_with_safe_area() {
+    // Ensure emu doesn't override breakpoint testing
+    let old_val = std::env::var("OPERATOR_MOBILE_EMU").ok();
+    std::env::remove_var("OPERATOR_MOBILE_EMU");
+    
     // Compact < 600
     let l1 = operator::platform::ResponsiveLayout::from_width(500.0);
     assert_eq!(l1, operator::platform::ResponsiveLayout::Compact);
@@ -78,6 +82,9 @@ fn test_responsive_layout_with_safe_area() {
     // Standard >= 600
     let l2 = operator::platform::ResponsiveLayout::from_width(700.0);
     assert_eq!(l2, operator::platform::ResponsiveLayout::Standard);
+    
+    // Restore
+    if let Some(v) = old_val { std::env::set_var("OPERATOR_MOBILE_EMU", v); }
 }
 
 #[test]

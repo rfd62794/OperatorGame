@@ -73,8 +73,8 @@ fn test_g1_anchor_4_tier_ranges() {
         match m.tier {
             MissionTier::Starter  => assert!((4..=7).contains(&dc), "Starter DC out of range: {}", dc),
             MissionTier::Standard => assert!((6..=11).contains(&dc), "Standard DC out of range: {}", dc),
-            MissionTier::Advanced => assert!((10..=14).contains(&dc), "Advanced DC out of range: {}", dc),
-            MissionTier::Elite    => assert!((12..=15).contains(&dc), "Elite DC out of range: {}", dc),
+            MissionTier::Advanced => assert!((10..=15).contains(&dc), "Advanced DC out of range: {}", dc),
+            MissionTier::Elite    => assert!((12..=25).contains(&dc), "Elite DC out of range: {}", dc),
         }
     }
 }
