@@ -4,7 +4,7 @@
 Allow players to purchase and equip "Hats" to provide permanent stat bonuses to their biological operators.
 
 ## User Stories
-- **As a Player**, I want to buy hats from the Quartermaster (Shop) using Scrap (MTL).
+- **As a Player**, I want to buy hats from the Quartermaster (Shop) using Scrap (Scrap).
 - **As a Player**, I want to equip a hat to a slime and see their stats increase immediately.
 - **As a Designer**, I want equipment to be a persistent part of the operator's biological data.
 
@@ -47,5 +47,5 @@ pub enum HatId {
 
 ## Testing
 - **Unit**: `test_equip_hat()` and `test_stat_pumping_with_hats()`.
-- **Integration**: Quartermaster correctly deducts MTL and adds hat to inventory/operator.
+- **Integration**: Quartermaster correctly deducts Scrap and adds hat to inventory/operator.
 - **Manual**: Equip hat, verify stat Increase, save/reload, verify hat remains equipped.

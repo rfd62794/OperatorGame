@@ -7,7 +7,7 @@ Following the successful completion of Sprint G.5 (Multi-Target Missions & Relia
 **Focus**: 
 - Implement `GeneticProfile` and trait inheritance logic.
 - Add "Breeding" UI section in the Manifest/Roster tab.
-- Introduce breeding cooldowns and resource costs (MTL, XP).
+- Introduce breeding cooldowns and resource costs (Scrap, XP).
 - **Goal**: Expand roster depth and long-term progression via T3 legendary traits.
 
 ## Option B: G.7 Equipment Expansion

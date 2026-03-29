@@ -9,7 +9,7 @@ impl OperatorApp {
         ui.vertical(|ui| {
             ui.heading("QUARTERMASTER");
             ui.add_space(8.0);
-            ui.label(format!("Available MTL (Scrap): {}kg", self.state.inventory.scrap));
+            ui.label(format!("Available Scrap (Scrap): {}kg", self.state.inventory.scrap));
             ui.add_space(16.0);
 
             egui::ScrollArea::vertical()
@@ -90,7 +90,7 @@ impl OperatorApp {
                             action = Some(HatAction::Equip(hat.id));
                         }
                     } else {
-                        if ui.button(format!("BUY ({} MTL)", hat.scrap_cost)).clicked() {
+                        if ui.button(format!("BUY ({} Scrap)", hat.scrap_cost)).clicked() {
                             action = Some(HatAction::Buy(hat.id));
                         }
                     }

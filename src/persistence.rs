@@ -256,7 +256,7 @@ impl GameState {
 
         // Cost check
         if self.inventory.scrap < hat.scrap_cost.into() {
-            return Err(format!("Insufficient MTL (Scrap). Need {}kg.", hat.scrap_cost));
+            return Err(format!("Insufficient Scrap (Scrap). Need {}kg.", hat.scrap_cost));
         }
 
         // Ownership check

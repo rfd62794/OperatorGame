@@ -6,7 +6,7 @@
 
 1. **Top Status Bar (`TopBottomPanel::top`)**
    - Title: "OPERATOR: COMMAND DECK" 
-   - **Metrics:** Bank Balance, Daily Upkeep Forecast, GEL (Biomass), MTL (Scrap), Reagents.
+   - **Metrics:** Bank Balance, Daily Upkeep Forecast, GEL (Biomass), Scrap (Scrap), Reagents.
    - **Health/Meta:** "RESONANCE STRESS" progress bar.
 
 2. **Main Content Area (`CentralPanel`)**

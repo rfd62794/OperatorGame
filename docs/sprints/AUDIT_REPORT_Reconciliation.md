@@ -26,9 +26,9 @@ This report identifies significant divergences between the current codebase stat
 
 ## 💰 Taxonomic Divergences (Currency)
 
-### 1. MTL vs Scrap
+### 1. Scrap vs Scrap
 - **Decision (ADR-034)**: Equipment currency is strictly **Scrap**.
-- **Current State**: The UI (`contracts.rs`, `quartermaster.rs`) and model logic (`item.rs`) refer to this resource as **MTL**.
+- **Current State**: The UI (`contracts.rs`, `quartermaster.rs`) and model logic (`item.rs`) refer to this resource as **Scrap**.
 - **Impact**: Breaks alignment with project-wide terminology and ADR-034's strict partitioning.
 - **Status**: **NON-COMPLIANT**
 
@@ -38,7 +38,7 @@ This report identifies significant divergences between the current codebase stat
 
 ### 1. G.3 Equipment (Hats)
 - **Specification (SDD-036)**: 4 hats (Scout Hood, Knight Helm, Mage Hood, Commander Cap) with specific Scrap costs (50, 100, 100, 250).
-- **Current State**: Hats are implemented, but they use `MTL` and the naming/costs may have diverged during the "Agent version" of G.3. 
+- **Current State**: Hats are implemented, but they use `Scrap` and the naming/costs may have diverged during the "Agent version" of G.3. 
 - **Status**: **REVIEW REQUIRED** (Needs code verification against exact costs/stats).
 
 ### 2. G.5 Gauntlet (Multi-Target Missions)
@@ -60,7 +60,7 @@ This report identifies significant divergences between the current codebase stat
 ## 📋 Recommendations
 
 1. **Re-centralize Models**: Collapse `src/models/` back into `src/models.rs` unless an ADR is drafted for modularization.
-2. **Restore Currency (MTL -> Scrap)**: Mass-rename all "MTL" occurrences back to "Scrap" to honor ADR-034.
+2. **Restore Currency (Scrap -> Scrap)**: Mass-rename all "Scrap" occurrences back to "Scrap" to honor ADR-034.
 3. **Re-spec the Gauntlet**: Either rollback G.5 or draft a retroactive SDD that incorporates the Designer's feedback on mission-phasing.
 4. **Fix the Test Floor**: Prioritize fixing `f1b_loop_tests` to restore the 219 passing baseline before any G.6 work begins.
 

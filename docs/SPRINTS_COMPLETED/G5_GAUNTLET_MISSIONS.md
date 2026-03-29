@@ -12,7 +12,7 @@ Expand the mission system from a single-check task to a sequential "Gauntlet" of
 - [x] `Mission` model updated to use `Vec<Target>` for sequential encounters.
 - [x] Combat resolution in `Deployment::resolve` iterates through targets, failing-fast on the first loss.
 - [x] "Targets Defeated: X/Y" progress is tracked and displayed in the AAR summary and Combat Log.
-- [x] Mission rewards (MTL, XP) scale based on the number of targets defeated (`defeated / total`).
+- [x] Mission rewards (Scrap, XP) scale based on the number of targets defeated (`defeated / total`).
 - [x] Reliability Fix: Operator state reset for deployment is moved to the persistence layer for atomicity.
 
 ## Data Model

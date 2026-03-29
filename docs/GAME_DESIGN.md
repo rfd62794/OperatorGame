@@ -12,7 +12,7 @@ OperatorGame is a tactical strategy game about breeding and deploying adorable s
 ## 3. Core Loop
 1.  **Deploy Squad**: Select up to 3 operators for a gauntlet mission (1–3 targets).
 2.  **Run Mission**: Resolve sequential encounters (fail-fast logic).
-3.  **Earn Rewards**: Collect Scrap (MTL), XP, and rare genetics based on targets defeated.
+3.  **Earn Rewards**: Collect Scrap (Scrap), XP, and rare genetics based on targets defeated.
 4.  **Breed/Train**: Use rewards to breed new slimes, train stats, or buy equipment.
 5.  **Repeat**: Face tougher missions and reach the ultimate win conditions.
 
@@ -59,7 +59,7 @@ OperatorGame is a tactical strategy game about breeding and deploying adorable s
 - **Recovery Cost**: Can be accelerated with Scrap or specialized training.
 
 ## 7. Economy
-- **MTL (Scrap)**: Primary currency for items, breeding, and roster expansion.
+- **Scrap (Scrap)**: Primary currency for items, breeding, and roster expansion.
 - **XP**: Earned per mission target; spent on training TP (Training Points).
 - **Sinks**: Breeding fees, high-tier gear, and recovery acceleration.
 

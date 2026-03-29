@@ -18,7 +18,7 @@ impl OperatorApp {
             if ui.button("Refine").clicked() {}
             ui.end_row();
 
-            ui.label(egui::RichText::new("Scrap [MTL]").color(egui::Color32::LIGHT_BLUE));
+            ui.label(egui::RichText::new("Scrap [Scrap]").color(egui::Color32::LIGHT_BLUE));
             ui.label(format!("{} kg", self.state.inventory.scrap));
             if ui.button("Repair Ship").clicked() {}
             ui.end_row();
