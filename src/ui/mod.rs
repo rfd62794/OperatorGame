@@ -607,6 +607,7 @@ impl eframe::App for OperatorApp {
                         for (tab, label) in tabs {
                             if ui.add_sized([w, 40.0], egui::SelectableLabel::new(self.active_tab == tab, label)).clicked() {
                                 self.active_tab = tab;
+                                self.status_msg.clear();
                             }
                         }
                     });
@@ -678,14 +679,19 @@ fn sub_tab_button(ui: &mut egui::Ui, label: &str, is_active: bool) -> bool {
 
     let btn = egui::Button::new(
         egui::RichText::new(label)
-            .size(11.0)
+            .size(13.0)
             .color(text_color),
     )
     .fill(fill_color)
     .stroke(egui::Stroke::NONE)
     .rounding(egui::Rounding::ZERO);
 
-    ui.add(btn).clicked()
+    if ui.add(btn).clicked() {
+        self.status_msg.clear();
+        true
+    } else {
+        false
+    }
 }
 
 /// Render a styled section header for the sidebar.
