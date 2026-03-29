@@ -263,31 +263,34 @@ fn render_operator_card(
             ui.set_max_width(380.0); // SDD-038 §4 width enforcement
             ui.set_width(380.0);
             
-            // Header: Left (Name, Culture) | Right (STAGE, VIEW)
+            // Header (§4: Consolidated header row)
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(&genome.name).strong().size(14.0).color(color));
-                ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).size(11.0).color(color));
+                // Right side first — allocate button space before text
+                let _ = ui.with_layout(
+                    egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.add(egui::Button::new(egui::RichText::new("▶").size(12.0)).small()).clicked() {
+                            card_clicked = true;
+                        }
+                        
+                        let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
+                        let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
 
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button(egui::RichText::new("▶").size(12.0)).clicked() {
-                        card_clicked = true;
-                    }
-                    
-                    let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
-                    let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
-
-                    if is_injured {
-                        ui.add_enabled(false, egui::Button::new(egui::RichText::new("INJURED").size(12.0)));
-                    } else if is_dispatched {
-                        ui.add_enabled(false, egui::Button::new(egui::RichText::new("DEPLOYED").size(12.0)));
-                    } else {
-                        let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
-                        let btn = ui.add(egui::Button::new(egui::RichText::new(btn_label).size(12.0)));
-                        if btn.clicked() {
-                            stage_clicked = true;
+                        if is_injured {
+                            ui.add_enabled(false, egui::Button::new(egui::RichText::new("INJURED").size(12.0)).small());
+                        } else if is_dispatched {
+                            ui.add_enabled(false, egui::Button::new(egui::RichText::new("DEPLOYED").size(12.0)).small());
+                        } else {
+                            let btn_label = if is_staged { "✓ STAGED" } else { "STAGE" };
+                            let btn = ui.add(egui::Button::new(egui::RichText::new(btn_label).size(12.0)).small());
+                            if btn.clicked() {
+                                stage_clicked = true;
+                            }
                         }
                     }
-                });
+                );
+                // Left side fills remaining space
+                ui.label(egui::RichText::new(&genome.name).strong().size(14.0).color(color));
+                ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).size(11.0).color(color));
             });
 
             // Row 2: Lv | Stage Label | Pattern (§3: 11pt sub-status)
