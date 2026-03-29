@@ -1,13 +1,14 @@
 # OperatorGame: Game Design Document
 
 ## 1. Vision Statement
-OperatorGame is a tactical strategy game about breeding and deploying adorable slimes on increasingly absurd "Gauntlet" missions. Players manage a high-stakes roster of bio-engineered operators, optimizing their genetics and equipment to survive sequential hazards on a living planet map.
+OperatorGame is a tactical strategy game about breeding and deploying bio-engineered slimes for a corporate field audit. Players play as an astronaut crash-landed on a slime-infested world, forced to manage a high-stakes roster of "Operators" for an interstellar logistics company with terrible benefits. The ultimate goal is to breed a **Void Slime** capable of serving as an escape vessel to return home.
 
 ## 2. Core Pillars
-- **Strategy**: Squad composition and mission tactics (risk management) are the keys to victory.
-- **Genetics**: Breeding and inheritance are the primary long-term progression engines.
-- **Risk**: Injuries and partial success create tension; every roll matters.
-- **Charm**: Whimsical slimes in absurd, over-the-top situations (Experimental & Whimsical tone).
+- **Corporate Absurdism**: The player is a mid-level auditor in an impossible situation.
+- **Strategy**: Squad composition and mission tactics (risk management) are the keys to survival.
+- **Genetics**: Breeding and inheritance are the primary engines for reaching the endgame.
+- **Risk**: Injuries and partial success create tension; every roll is a business expense.
+- **Charm**: Whimsical slimes in cold, bureaucratic situations.
 
 ## 3. Core Loop
 1.  **Deploy Squad**: Select up to 3 operators for a gauntlet mission (1–3 targets).
@@ -21,17 +22,17 @@ OperatorGame is a tactical strategy game about breeding and deploying adorable s
 - **Mid Game (G.4–G.8)**: Expand the roster, breed T1/T2 operators, and prepare for the **Boss Encounter**.
 - **Endgame (G.9+)**: Infinite scaling, T3 legendary breeding, and regional leaderboards.
 
-## 5. Win Conditions
+## 5. Win Condition: The Void Vessel
 
-### Mid-Game Victory: Boss Defeat
-- **The Matriarch**: A massive Corrupted Slime King guarding the planet's core.
-- Requires a squad of T2 operators with optimized equipment.
-- Defeating the boss clears the primary "campaign" and unlocks **Endgame Scaling**.
+### The Ultimate Goal: Breeding the Void Slime
+- The player’s only way off the planet is to breed an **Elder Void Slime**.
+- This requires multiple generations of genetic refining to unlock the `Void` allele.
+- **Mid-Game Milestone**: Identifying the first Void genetic marker in a wild node.
+- **Victory**: Successfully incubating a Void Slime and launching the "Relocation Protocol."
 
-### Endgame: Infinite Scaling
-- Missions scale in difficulty indefinitely (Tier 10, Tier 100, etc.).
-- Global leaderboards track the highest tier reached.
-- Goal: Breed the perfect T3 operator with maxed stats and rare traits.
+### Endgame (Post-Victory)
+- After the primary win condition, the player can continue to manage the facility for high-tier corporate "Efficiency Ratings."
+- Infinite scaling exists as a way to test the limits of T3 genetic perfection, but the narrative focus remains on the escape.
 
 ## 6. Mechanics
 
@@ -70,9 +71,9 @@ OperatorGame is a tactical strategy game about breeding and deploying adorable s
 - **Bottom-Tab Navigation**: Always-on primary navigation for Roster, Contracts, Map, and Shop.
 
 ## 9. Narrative Tone
-- **Tone**: Experimental, Whimsical, and tactical.
-- **Humor**: High-stakes missions described with absurd, charming descriptions.
-- **Example**: "Negotiate the liquidation of the Jiggly Collective." (Slimes are "just sleeping" on failure).
+- **Tone**: Corporate-Absurdist. The humor is dry, bureaucratic, and cynical.
+- **Context**: The player is an employee of *AstroLogistics Corp*, performing a "Hazardous Environment Audit" while privately trying to find a way home.
+- **Example**: "Audit the logistics of the Jiggly Collective." On failure: "Personnel underwent unscheduled dormancy; insurance claim denied."
 
 ## 10. Inspirations & Precedents
 - **Beastie Bay DX**: Sequential exploration tracks and party-based discovery.
@@ -80,6 +81,6 @@ OperatorGame is a tactical strategy game about breeding and deploying adorable s
 - **Slime Garden**: Procedural dungeon tracks and progression visualization.
 
 ## 11. Success Metrics
-- **Engagement**: Players reach the Boss within 2–4 weeks.
+- **Engagement**: Players discover the Void genetic marker within 2 weeks.
 - **Variety**: Each playthrough features 15+ unique name/trait combinations.
-- **Retention**: Post-boss player activity remains >20% via infinite scaling.
+- **Victory**: At least 30% of players reach the "Relocation Protocol" (Void Escape).
