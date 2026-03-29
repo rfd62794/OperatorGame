@@ -264,7 +264,7 @@ fn render_operator_card(
             ui.set_width(380.0);
             
             // Header: Left (Name, Culture) | Right (STAGE, VIEW)
-            ui.horizontal_wrapped(|ui| {
+            ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(&genome.name).strong().size(14.0).color(color));
                 ui.label(egui::RichText::new(format!("{:?}", genome.dominant_culture())).size(11.0).color(color));
 
