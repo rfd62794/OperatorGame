@@ -13,7 +13,7 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-$Keystore   = "operatorgame-release.jks"
+$Keystore   = "C:\Github\OperatorGame\operatorgame-release.jks"
 $Alias      = "operatorgame"
 $ApkAligned = "operatorgame-release-aligned.apk"
 $ApkFinal   = "operatorgame-release.apk"
