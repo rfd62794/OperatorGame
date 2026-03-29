@@ -27,13 +27,13 @@ mod f1b_loop_tests;
 // ---------------------------------------------------------------------------
 
 /// Background surface low (panels, active tab fills). #131318
-const COLOR_SURFACE_LOW:  egui::Color32 = egui::Color32::from_rgb(19, 19, 24);
+pub(crate) const COLOR_SURFACE_LOW:  egui::Color32 = egui::Color32::from_rgb(19, 19, 24);
 /// Surface container highest (separator lines, headers). #25252c
-const COLOR_SURFACE_HIGH: egui::Color32 = egui::Color32::from_rgb(37, 37, 44);
+pub(crate) const COLOR_SURFACE_HIGH: egui::Color32 = egui::Color32::from_rgb(37, 37, 44);
 /// Primary accent — active/success states. #69fea5
-const COLOR_PRIMARY:      egui::Color32 = egui::Color32::from_rgb(105, 254, 165);
+pub(crate) const COLOR_PRIMARY:      egui::Color32 = egui::Color32::from_rgb(105, 254, 165);
 /// High-contrast text (inactive labels). #f8f5fd
-const COLOR_TEXT:         egui::Color32 = egui::Color32::from_rgb(248, 245, 253);
+pub(crate) const COLOR_TEXT:         egui::Color32 = egui::Color32::from_rgb(248, 245, 253);
 
 pub mod cargo;
 pub mod contracts;
@@ -41,7 +41,25 @@ pub mod manifest;
 pub mod ops;
 pub mod radar;
 pub mod quartermaster;
+pub mod sidebar;
 pub mod squad;
+
+// ---------------------------------------------------------------------------
+// SDD-038 UI Architecture Constants (Ground Truth)
+// ---------------------------------------------------------------------------
+
+pub const SIDEBAR_WIDTH: f32 = 120.0;
+pub const STATUS_BAR_HEIGHT: f32 = 40.0;
+pub const LAUNCH_BAR_HEIGHT: f32 = 44.0;
+pub const TAB_BAR_HEIGHT: f32 = 56.0;
+pub const SIDE_GUTTER: f32 = 8.0;
+
+/// Canonical content area width: 540dp canvas - 8dp left gutter - 120dp sidebar - 16dp spacers/right gutter
+pub const CONTENT_WIDTH: f32 = 524.0 - SIDEBAR_WIDTH - SIDE_GUTTER; // 396.0dp
+
+pub const CARD_INNER_MARGIN: f32 = 8.0;   // Inside every card frame
+pub const CARD_GAP: f32 = 4.0;            // Vertical gap between cards
+pub const SECTION_GUTTER: f32 = 12.0;     // Between logical sections
 
 // ---------------------------------------------------------------------------
 // App State

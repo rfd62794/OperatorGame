@@ -257,12 +257,9 @@ pub const MAX_CONTENT_WIDTH: f32 = 600.0;
 ///
 /// Used by `LayoutCalculator::bottom_tab_rect()` and by `render_radar()` to
 /// subtract reserved chrome from the map's available draw height.
-pub const TAB_BAR_HEIGHT: f32 = 48.0;
+pub const TAB_BAR_HEIGHT: f32 = 56.0;
 
 /// Tab bar height in logical pixels for the Compact layout.
-///
-/// Sits immediately above the `safe_area.bottom` boundary:
-/// `tab_bar_top_y = safe_height - BOTTOM_TAB_BAR_HEIGHT`
 pub const BOTTOM_TAB_BAR_HEIGHT: f32 = 56.0;
 
 /// The four primary navigation destinations in Compact (mobile) layout.
