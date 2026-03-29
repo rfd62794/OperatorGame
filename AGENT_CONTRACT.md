@@ -24,11 +24,11 @@ docs/sprints/*_Directive.md    | Sprint implementation plan  | human | per sprin
 docs/sprints/AUDIT_REPORT_*.md | Pre-sprint audit findings   | agent | per sprint
 AGENT_CONTRACT.md              | This file                   | human | on structural change
 
-src/models.rs          | Core data structs: Operator, Mission, Hat, GameState fields    | agent | on model change
-src/persistence.rs     | Save/load, GameState impl, SAVE_VERSION, migration             | agent | on state change
-src/world_map.rs       | WorldMap, WorldNode, mission pool generation, ExpeditionTarget | agent | on map change
-src/genetics.rs        | Genome generation, culture expression, breeding resolution      | agent | on genetics change
-src/combat.rs          | D20 resolution, AarOutcome, calculate_success_chance           | agent | on combat change
+src/models/*            | Modular core data: operator.rs, mission.rs, item.rs, etc.       | agent | on model change
+src/persistence.rs      | Save/load, GameState impl, SAVE_VERSION, migration             | agent | on state change
+src/world_map.rs        | WorldMap, WorldNode, mission pool generation, ExpeditionTarget | agent | on map change
+src/genetics.rs         | Genome generation, culture expression, breeding resolution      | agent | on genetics change
+src/combat.rs           | D20 resolution, AarOutcome, calculate_success_chance           | agent | on combat change
 src/log_engine.rs      | Log entry formatting and narrative generation                   | agent | rarely
 src/platform.rs        | SafeArea, TAB_BAR_HEIGHT, ResponsiveLayout, Android insets     | agent | rarely
 src/ui/mod.rs          | OperatorApp struct, update loop, tab routing, sub-tab enums    | agent | on nav change

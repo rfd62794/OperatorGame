@@ -6,7 +6,9 @@ This is the central navigation hub for OperatorGame design, architecture, and de
 - **[GAME_DESIGN.md](./GAME_DESIGN.md)** - Vision, mechanics, and progression. **(NEW)**
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design and data flow.
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Developer onboarding and environment setup.
-- **[SPEC_DRIVEN_DESIGN.md](./SPEC_DRIVEN_DESIGN.md)** - Our SDD methodology. **(NEW)**
+- **[SPEC_DRIVEN_DESIGN.md](./SPEC_DRIVEN_DESIGN.md)** - Our SDD methodology.
+- **[ADR-038: Modular Data Layer](./adr/ADR-038_modular_data_layer.md)** — **(NEW)**
+- **[SDD-037: Gauntlet Missions](./sdd/SDD-037_Gauntlet_Missions.md)** — **(NEW)**
 
 ## 移动仿真 (Mobile Emulation)
 - **[MOBILE_EMU_CHEATSHEET.md](./MOBILE_EMU_CHEATSHEET.md)** - Daily workflow quick reference.
