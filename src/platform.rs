@@ -35,9 +35,7 @@ impl SafeArea {
     /// Runtime inset reading will replace this in Sprint 4 when the JNI
     /// `WindowInsetsCompat.systemBars()` call is wired in.
     pub fn android_default() -> Self {
-        Self {
-            top:    48.0,
-            bottom: 56.0,  // 48dp nav bar + 8dp primary action guard
+            bottom: 40.0,  // Reduced from 56dp per designer feedback
             left:   8.0,   // Gutter for Moto G horizontal clipping
             right:  8.0,   // Gutter for Moto G horizontal clipping
         }
@@ -487,7 +485,7 @@ mod tests {
     fn test_safe_area_sum() {
         let android = SafeArea::android_default();
         let total_vertical_padding = android.top + android.bottom;
-        assert_eq!(total_vertical_padding, 104.0, "Moto G 2025: 48dp + 56dp = 104dp");
+        assert_eq!(total_vertical_padding, 88.0, "Moto G 2025: 48dp + 40dp = 88dp");
     }
 
     #[test]
