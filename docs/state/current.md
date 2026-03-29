@@ -1,13 +1,13 @@
 # Project State
 
-updated: 2026-03-28
+updated: 2026-03-29
 agent: human (Robert) + Claude
 
 ## Status
 
-phase: G.5b Complete — Baseline Restoration & Reconciliation
+phase: G.5c Complete — UI Baseline Restored (Two-Row Header)
 test_floor: 156 unit tests + 6 integration suites passing, 0 failing, 0 skipped
-last_directive: G.5b Baseline Restoration
+last_directive: G.5c UI Restoration & Two-Row Header Baseline
 
 ## What Is Built
 
