@@ -546,7 +546,7 @@ impl eframe::App for OperatorApp {
                 });
             });
 
-        // 1. Launch Bar, Sub-Tab Bar & Main Tab Bar (Bottom) — Compact layout only
+        // 1. Bottom bar: launch bar + main tab bar — Compact only
         if layout == crate::platform::ResponsiveLayout::Compact {
             egui::TopBottomPanel::bottom("bottom_stack")
                 .frame(egui::Frame::none().inner_margin(egui::Margin {
@@ -554,13 +554,34 @@ impl eframe::App for OperatorApp {
                 }))
                 .show(ctx, |ui| {
                     self.render_launch_bar(ui);
+                    ui.add_space(4.0);
+                    ui.horizontal(|ui| {
+                        let tabs = [
+                            (crate::platform::BottomTab::Roster,   "🧬 Roster"),
+                            (crate::platform::BottomTab::Missions, "🚀 Ops"),
+                            (crate::platform::BottomTab::Map,      "🗺️ Map"),
+                            (crate::platform::BottomTab::Logs,     "📜 Logs"),
+                        ];
+                        let w = ui.available_width() / tabs.len() as f32;
+                        for (tab, label) in tabs {
+                            if ui.add_sized([w, 40.0], egui::SelectableLabel::new(self.active_tab == tab, label)).clicked() {
+                                self.active_tab = tab;
+                            }
+                        }
+                    });
+                });
+        }
 
-                    // ── Sub-Tab Row ──────────────────────────────────────────
-                    // Renders the sub-tabs for the currently active main tab.
-                    // Only shown when the active tab has sub-tabs to switch.
-                    // Height: 44dp (WCAG 2.5.5 minimum touch target).
-                    ui.separator();
-                    let sub_tab_h = 44.0;
+        // 1b. Sub-tab bar — Compact only, pinned below the status bar.
+        // Shows the secondary navigation relevant to the current main tab.
+        // Declared after bottom_stack so egui places it below top_bar, above content.
+        if layout == crate::platform::ResponsiveLayout::Compact {
+            egui::TopBottomPanel::top("sub_tab_bar")
+                .frame(egui::Frame::none()
+                    .fill(egui::Color32::from_rgb(19, 19, 24))
+                    .inner_margin(egui::Margin { left: safe_area.left, right: safe_area.right, top: 0.0, bottom: 0.0 }))
+                .show(ctx, |ui| {
+                    let sub_tab_h = 36.0; // slightly smaller than main tabs — secondary nav
                     match self.active_tab {
                         crate::platform::BottomTab::Roster => {
                             use crate::platform::RosterSubTab;
@@ -578,7 +599,7 @@ impl eframe::App for OperatorApp {
                                         egui::SelectableLabel::new(self.roster_sub_tab == tab, label)
                                     ).clicked() {
                                         self.roster_sub_tab = tab;
-                                        self.selected_slime_id = None; // clear detail view on tab switch
+                                        self.selected_slime_id = None;
                                     }
                                 }
                             });
@@ -638,23 +659,6 @@ impl eframe::App for OperatorApp {
                             });
                         }
                     }
-                    ui.separator();
-
-                    // ── Main Tab Bar ─────────────────────────────────────────
-                    ui.horizontal(|ui| {
-                        let tabs = [
-                            (crate::platform::BottomTab::Roster,   "🧬 Roster"),
-                            (crate::platform::BottomTab::Missions, "🚀 Ops"),
-                            (crate::platform::BottomTab::Map,      "🗺️ Map"),
-                            (crate::platform::BottomTab::Logs,     "📜 Logs"),
-                        ];
-                        let w = ui.available_width() / tabs.len() as f32;
-                        for (tab, label) in tabs {
-                            if ui.add_sized([w, 40.0], egui::SelectableLabel::new(self.active_tab == tab, label)).clicked() {
-                                self.active_tab = tab;
-                            }
-                        }
-                    });
                 });
         }
 
