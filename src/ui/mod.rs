@@ -677,9 +677,10 @@ fn sub_tab_button(ui: &mut egui::Ui, label: &str, is_active: bool) -> bool {
     let text_color = if is_active { COLOR_PRIMARY } else { COLOR_TEXT };
     let fill_color = if is_active { COLOR_SURFACE_LOW } else { egui::Color32::TRANSPARENT };
 
+    // SIDEBAR: font size 15.0 — do not reduce without designer approval
     let btn = egui::Button::new(
         egui::RichText::new(label)
-            .size(13.0)
+            .size(15.0)
             .color(text_color),
     )
     .fill(fill_color)
@@ -695,9 +696,10 @@ fn sub_tab_button(ui: &mut egui::Ui, label: &str, is_active: bool) -> bool {
 /// followed by a thin surface-high separator line.
 fn sidebar_header(ui: &mut egui::Ui, title: &str) {
     ui.add_space(8.0);
+    // SIDEBAR: font size 15.0 — do not reduce without designer approval
     ui.label(
         egui::RichText::new(title)
-            .size(13.0)
+            .size(15.0)
             .color(COLOR_PRIMARY)
             .strong(),
     );
