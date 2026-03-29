@@ -19,6 +19,8 @@ tests/                : All Rust integration test files. cargo test convention.
 # path | purpose | writer | frequency
 
 docs/state/current.md          | Project state snapshot      | both  | every session
+docs/GAME_DESIGN.md            | Authoritative design vision | human | on core change
+docs/ROADMAP.md                | Canonical sprint sequence   | human | per sprint
 docs/adr/ADR-NNN.md            | Decision record             | human | on decision
 docs/sprints/*_Directive.md    | Sprint implementation plan  | human | per sprint
 docs/sprints/AUDIT_REPORT_*.md | Pre-sprint audit findings   | agent | per sprint

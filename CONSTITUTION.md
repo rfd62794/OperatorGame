@@ -1,5 +1,5 @@
 # OPERATOR — Project Constitution
-> **Status:** LOCKED v1.0 | 2026-03-04
+> **Status:** ALIGNED v1.1 | 2026-03-28
 
 ## 1. Governing Principles
 
@@ -26,7 +26,7 @@
 ## 3. Scope Boundaries (MVP)
 
 **IN scope:**
-- Operator roster (hire, view stats, check state)
+- Operator roster (recruit slime personnel, view stats, check state)
 - Mission pool (static definitions for MVP)
 - Squad assembly (1–3 operators)
 - Timestamp-based mission execution (offline-safe)

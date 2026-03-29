@@ -1,6 +1,8 @@
-# OPERATOR — Feature Specification (SPEC)
-> **Version:** 2.0 | **Status:** Tiers 1–3 + Sprint 1 | 2026-03-04
-> **Rule:** This document defines *what the system does*. The GDD defines *why it feels that way*.
+# OPERATOR — Feature Specification (SPEC) [DEPRECATED]
+> **Status:** [DEPRECATED] | 2026-03-28
+> **Note:** This document is significantly stale and reflects the legacy "Human Mercenary" version of the project. 
+> **Authoritative Source:** Refer to [GAME_DESIGN.md](file:///c:/Github/OperatorGame/docs/GAME_DESIGN.md) v2.0 for the current "Corporate-Absurdist" vision and core systems.
+> A full rewrite of the technical specification is scheduled for Sprint G.9.
 
 ---
 
