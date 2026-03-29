@@ -1,4 +1,4 @@
-use operator::models::{Mission, MissionTier, ResourceYield};
+use operator::models::{Mission, MissionTier, ResourceYield, Target};
 use operator::persistence::GameState;
 use operator::world_map::{generate_static_missions, generate_scout_missions};
 use rand::SeedableRng;
@@ -39,10 +39,10 @@ fn test_scout_dc_formula() {
     let scouts = generate_scout_missions();
     
     let ember = scouts.iter().find(|m| m.name.contains("Ember Flats")).unwrap();
-    assert_eq!(ember.base_dc, 4, "Ember Flats (0.20) should be DC 4");
+    assert_eq!(ember.targets[0].base_dc, 4, "Ember Flats (0.20) should be DC 4");
     
     let crystal = scouts.iter().find(|m| m.name.contains("Crystal Spire")).unwrap();
-    assert_eq!(crystal.base_dc, 10, "Crystal Spire (0.50) should be DC 10");
+    assert_eq!(crystal.targets[0].base_dc, 10, "Crystal Spire (0.50) should be DC 10");
 }
 
 #[test]
@@ -63,8 +63,9 @@ fn test_node_unlock_and_yield_logic() {
     let initial_biomass = state.inventory.biomass;
     
     // Create a scout mission for Node 10 (Ember Flats)
+    let targets = vec![Target::new("Scout Target", 4, 1, 0, 0)];
     let mission = Mission::new(
-        "Scout: Ember Flats", MissionTier::Starter, 4, 1, 0, 0, 0, 0.20, 60,
+        "Scout: Ember Flats", MissionTier::Starter, targets, 1, 0.20, 60,
         ResourceYield::new(15, 5, 2), None, Some(10), true
     );
     
@@ -74,6 +75,8 @@ fn test_node_unlock_and_yield_logic() {
         success_chance: 1.0,
         rolls: vec![],
         xp_gained: 10,
+        targets_defeated: 1,
+        total_targets: 1,
     };
     
     if let operator::models::AarOutcome::Victory { reward, .. } = outcome {
@@ -98,8 +101,9 @@ fn test_mission_visibility_filtering() {
     state.unlocked_nodes.clear();
     state.unlocked_nodes.insert(0); // Center only
     
-    let m_center = Mission::new("C", MissionTier::Starter, 5, 1, 0, 0, 0, 0.0, 60, ResourceYield::scrap(0), None, None, false);
-    let m_locked = Mission::new("L", MissionTier::Starter, 5, 1, 0, 0, 0, 0.0, 60, ResourceYield::scrap(0), None, Some(10), false);
+    let targets = vec![Target::new("T", 5, 1, 1, 1)];
+    let m_center = Mission::new("C", MissionTier::Starter, targets.clone(), 1, 0.0, 60, ResourceYield::scrap(0), None, None, false);
+    let m_locked = Mission::new("L", MissionTier::Starter, targets, 1, 0.0, 60, ResourceYield::scrap(0), None, Some(10), false);
     
     // Visibility logic (from contracts.rs)
     let can_see_center = match m_center.node_id {

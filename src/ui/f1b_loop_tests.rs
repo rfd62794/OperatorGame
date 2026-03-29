@@ -223,6 +223,7 @@ fn test_f1b_10_dismissing_aar_clears_pending_state() {
         reward: None,
         targets_defeated: 1,
         total_targets: 1,
+        operator_ids: vec![],
     });
     
     assert!(app.pending_aar.is_some());

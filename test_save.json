@@ -1,9 +1,9 @@
 {
-  "bank": 975,
+  "bank": 11975,
   "deployments": [],
   "missions": [
     {
-      "id": "67dc2e23-6ab3-4634-9a0d-465750a7a538",
+      "id": "cedf4474-b1f1-431d-8498-64298187fe03",
       "name": "Test Mission",
       "description": "High-priority contract from the Orbitals.",
       "tier": "Starter",
@@ -33,16 +33,16 @@
   "slimes": [
     {
       "genome": {
-        "id": "353bc729-48da-4be3-bb6d-591d83102fd4",
+        "id": "b796bcd1-4cf9-4e9b-95b2-8d399d66a509",
         "culture_alleles": {
           "dominant": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
             1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0,
             0.0
           ],
@@ -60,34 +60,34 @@
         },
         "base_hp": 1000.0,
         "base_atk": 100.0,
-        "base_spd": 6.7119994,
+        "base_spd": 5.2057076,
         "generation": 1,
         "parent_ids": null,
-        "curiosity": 0.19289726,
-        "energy": 0.41107208,
-        "affection": 0.6262342,
-        "shyness": 0.88474786,
-        "base_strength": 8,
-        "base_agility": 8,
-        "base_intelligence": 10,
-        "base_mind": 11,
-        "base_sensory": 9,
+        "curiosity": 0.9006978,
+        "energy": 0.28850436,
+        "affection": 0.03953111,
+        "shyness": 0.26402497,
+        "base_strength": 10,
+        "base_agility": 11,
+        "base_intelligence": 12,
+        "base_mind": 10,
+        "base_sensory": 12,
         "base_tenacity": 12,
-        "shape": "Round",
-        "body_size": "Small",
+        "shape": "Amorphous",
+        "body_size": "Medium",
         "pattern": "Marbled",
-        "accessory": "Crown",
+        "accessory": "Glow",
         "base_color": [
-          91,
           247,
-          98
+          71,
+          197
         ],
         "pattern_color": [
-          158,
-          67,
-          252
+          56,
+          154,
+          170
         ],
-        "frequency": 288.0,
+        "frequency": 256.0,
         "name": "Hero"
       },
       "level": 2,
@@ -517,12 +517,12 @@
     "tick_accum": 0.0,
     "startled_level": 0.05
   },
-  "last_upkeep_at": "2026-03-29T00:07:20.819430Z",
-  "last_pool_refresh": "2026-03-29T00:07:20.819444100Z",
+  "last_upkeep_at": "2026-03-29T00:17:25.572963300Z",
+  "last_pool_refresh": "2026-03-29T00:17:25.572965600Z",
   "inventory": {
     "gear_pool": [],
     "biomass": 0,
-    "scrap": 0,
+    "scrap": 11000,
     "reagents": 0
   },
   "active_expeditions": [],
@@ -533,12 +533,12 @@
   "logs_sub_tab": "MissionHistory",
   "combat_log": [
     {
-      "timestamp": 1774742840,
-      "message": "[Test Mission] ✅ VICTORY (+$$11000) — No single moment of brilliance — just relentless preparation paying off.",
+      "timestamp": 1774743445,
+      "message": "[Test Mission] ✅ VICTORY (+$$11000) — The mission ran exactly as planned. In this line of work, that's the best-case scenario.",
       "outcome": "Victory"
     },
     {
-      "timestamp": 1774742840,
+      "timestamp": 1774743445,
       "message": ">> EXCELLENCE RECOGNIZED: Hero reached Level 2!",
       "outcome": "System"
     }
@@ -548,5 +548,4 @@
     0
   ],
   "hat_inventory": []
-}entory": []
 }
