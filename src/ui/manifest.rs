@@ -237,117 +237,115 @@ fn render_operator_card(
     op: &crate::models::Operator,
     staged: &std::collections::HashSet<uuid::Uuid>,
     _selected_mission_id: Option<uuid::Uuid>,
-    card_width: f32,
+    _card_width: f32,
 ) -> (bool, bool, bool) {
-    let mut stage_clicked = false;
-    let mut card_clicked = false;
-    let mut hat_clicked = false;
     let genome = &op.genome;
     let is_staged = staged.contains(&genome.id);
     let (cr, cg, cb) = crate::genetics::culture_display_color(&genome.culture_alleles);
     let color = egui::Color32::from_rgb(cr, cg, cb);
-    
-    // Card Frame
     let frame_color = if is_staged {
-        egui::Color32::from_rgb(30, 50, 40) // Subtle green for staged
+        egui::Color32::from_rgb(30, 50, 40)
     } else {
-        egui::Color32::from_rgb(26, 26, 34) // Panel background
+        egui::Color32::from_rgb(26, 26, 34)
     };
 
-    let _response = egui::Frame::none()
+    let mut stage_clicked = false;
+    let mut card_clicked = false;
+    let mut hat_clicked = false;
+
+    egui::Frame::none()
         .fill(frame_color)
-        .stroke(egui::Stroke::new(1.0, if is_staged { egui::Color32::GREEN } else { egui::Color32::from_gray(60) }))
+        .stroke(egui::Stroke::new(1.0,
+            if is_staged { egui::Color32::GREEN }
+            else { egui::Color32::from_gray(60) }
+        ))
         .inner_margin(egui::Margin::same(8.0))
         .rounding(egui::Rounding::same(4.0))
         .show(ui, |ui| {
-            ui.set_max_width(380.0); // SDD-038 ┬º4 width enforcement
-            
-            // Row 1: Header
-            ui.columns(2, |cols| {
-                // Left column: name
-                cols[0].label(
-                    egui::RichText::new(&genome.name)
-                        .strong()
-                        .size(14.0)
-                        .color(color)
-                );
-                // Right column: buttons
-                cols[1].with_layout(
-                    egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.small_button(">").clicked() { card_clicked = true; }
-                        let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
-                        let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
-                        if is_injured {
-                            ui.add_enabled(false, egui::Button::new("INJURED").small());
-                        } else if is_dispatched {
-                            ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
-                        } else {
-                            let lbl = if is_staged { "STAGED" } else { "STAGE" };
-                            if ui.small_button(lbl).clicked() { stage_clicked = true; }
-                        }
-                    }
-                );
+            // Row 1: name left, buttons right — no nested closures
+            let _row = ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(&genome.name)
+                    .strong().size(14.0).color(color));
+                ui.label(egui::RichText::new(
+                    format!("{:?}", genome.dominant_culture()))
+                    .size(11.0).color(color));
             });
 
-            // Row 2: Lv | Stage Label | Pattern (┬º3: 11pt sub-status)
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(format!("Lv: {}", op.level)).size(11.0).color(egui::Color32::from_gray(160)));
-                ui.add_space(4.0);
-                
-                let stage = op.life_stage();
-                let stage_color = match stage {
-                    crate::genetics::LifeStage::Hatchling => egui::Color32::from_rgb(160, 160, 160),
-                    crate::genetics::LifeStage::Juvenile  => egui::Color32::from_rgb(140, 200, 140),
-                    crate::genetics::LifeStage::Young     => egui::Color32::from_rgb(100, 200, 180),
-                    crate::genetics::LifeStage::Prime     => egui::Color32::from_rgb(220, 180,  80),
-                    crate::genetics::LifeStage::Veteran   => egui::Color32::from_rgb(200, 140,  60),
-                    crate::genetics::LifeStage::Elder     => egui::Color32::from_rgb(180, 120, 220),
-                };
-                ui.label(egui::RichText::new(stage.to_string().to_uppercase())
-                    .size(11.0)
-                    .color(stage_color));
-                
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).size(11.0).color(egui::Color32::from_gray(120)));
-            });
-
-            // Row 3: XP bar (4dp height, no percentage)
-            let needed = op.xp_to_next().max(1) as f32;
-            let current_tier = (op.total_xp as f32) % needed;
-            let xp_pct = (current_tier / needed).clamp(0.0, 1.0);
-            ui.add(egui::ProgressBar::new(xp_pct).desired_height(4.0)); // SDD-038 ┬º4
-
-            // Row 4: Vitals (┬º3: 11pt stats row)
-            let (s, a, i, _, _, _) = op.total_stats();
-            let hp = op.genome.base_hp;
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(format!("STR:{}", s)).size(11.0).color(egui::Color32::from_gray(180)));
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new(format!("AGI:{}", a)).size(11.0).color(egui::Color32::from_gray(180)));
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new(format!("INT:{}", i)).size(11.0).color(egui::Color32::from_gray(180)));
-                ui.add_space(8.0);
-                ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).size(11.0).color(egui::Color32::LIGHT_GRAY));
-            });
-
-            // Row 5: Hat action (┬º3: 12pt buttons)
-            ui.horizontal(|ui| {
-                if let Some(hat_id) = op.equipped_hat {
-                    let catalog = crate::models::Hat::catalog();
-                    if let Some(hat) = catalog.iter().find(|h| h.id == hat_id) {
-                        if ui.button(egui::RichText::new(format!("≡ƒÄ⌐ {}", hat.name))
-                            .size(12.0)
-                            .color(egui::Color32::from_rgb(220, 220, 100))).clicked() 
-                        {
-                            hat_clicked = true;
-                        }
-                    }
+            // Buttons rendered separately to avoid closure capture issues
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                if ui.small_button(">").clicked() { card_clicked = true; }
+                let is_injured = matches!(op.state,
+                    crate::models::SlimeState::Injured(_));
+                let is_deployed = matches!(op.state,
+                    crate::models::SlimeState::Deployed(_));
+                if is_injured {
+                    ui.add_enabled(false,
+                        egui::Button::new("INJRD").small());
+                } else if is_deployed {
+                    ui.add_enabled(false,
+                        egui::Button::new("DEPLD").small());
                 } else {
-                    if ui.button(egui::RichText::new("Γ₧ò EQUIP HAT").size(12.0).color(egui::Color32::GRAY)).clicked() {
-                        hat_clicked = true;
+                    let lbl = if is_staged { "STAGED" } else { "STAGE" };
+                    if ui.small_button(lbl).clicked() {
+                        stage_clicked = true;
                     }
                 }
             });
+
+            // Row 2
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(
+                    format!("Lv: {}", op.level))
+                    .size(11.0).color(egui::Color32::from_gray(160)));
+                let stage = op.life_stage();
+                let sc = match stage {
+                    crate::genetics::LifeStage::Hatchling =>
+                        egui::Color32::from_rgb(160,160,160),
+                    crate::genetics::LifeStage::Juvenile =>
+                        egui::Color32::from_rgb(140,200,140),
+                    crate::genetics::LifeStage::Young =>
+                        egui::Color32::from_rgb(100,200,180),
+                    crate::genetics::LifeStage::Prime =>
+                        egui::Color32::from_rgb(220,180,80),
+                    crate::genetics::LifeStage::Veteran =>
+                        egui::Color32::from_rgb(200,140,60),
+                    crate::genetics::LifeStage::Elder =>
+                        egui::Color32::from_rgb(180,120,220),
+                };
+                ui.label(egui::RichText::new(
+                    stage.to_string().to_uppercase())
+                    .size(11.0).color(sc));
+                ui.label(egui::RichText::new(
+                    format!("{:?}", genome.pattern))
+                    .size(11.0).color(egui::Color32::from_gray(120)));
+            });
+
+            // Row 3: XP bar
+            let needed = op.xp_to_next().max(1) as f32;
+            let xp_pct = ((op.total_xp as f32) % needed / needed)
+                .clamp(0.0, 1.0);
+            ui.add(egui::ProgressBar::new(xp_pct).desired_height(4.0));
+
+            // Row 4: Stats
+            let (s, a, i, _, _, _) = op.total_stats();
+            let hp = op.genome.base_hp;
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(format!("STR:{} AGI:{} INT:{} HP:{:.0}",
+                    s, a, i, hp)).size(11.0)
+                    .color(egui::Color32::from_gray(180)));
+            });
+
+            // Row 5: Hat
+            let hat_label = if let Some(hat_id) = op.equipped_hat {
+                let catalog = crate::models::Hat::catalog();
+                catalog.iter().find(|h| h.id == hat_id)
+                    .map(|h| format!("HAT: {}", h.name))
+                    .unwrap_or_else(|| "+ EQUIP HAT".to_string())
+            } else {
+                "+ EQUIP HAT".to_string()
+            };
+            if ui.button(egui::RichText::new(hat_label).size(12.0))
+                .clicked() { hat_clicked = true; }
         });
 
     (stage_clicked, card_clicked, hat_clicked)
