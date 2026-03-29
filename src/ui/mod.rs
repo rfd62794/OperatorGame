@@ -537,14 +537,51 @@ impl eframe::App for OperatorApp {
                     ui.separator();
                     ui.label(format!("Scrap: {}", self.state.inventory.scrap));
                     
-                    let stress_pct = (self.state.world_map.startled_level / 10.0).clamp(0.0, 1.0);
-                    ui.add_space(8.0);
-                    ui.add(egui::ProgressBar::new(stress_pct)
-                        .fill(egui::Color32::from_rgb(200, 50, 50))
-                        .desired_width(100.0)
-                    );
+                    if stress_pct > 0.01 {
+                        ui.add_space(8.0);
+                        ui.add(egui::ProgressBar::new(stress_pct)
+                            .fill(egui::Color32::from_rgb(200, 50, 50))
+                            .desired_width(100.0)
+                        );
+                    }
                 });
             });
+
+        // Part 4: AAR Modal Overlay (Refactored G.1 Modal)
+        if let Some(aar) = self.pending_aar.clone() {
+            egui::Window::new("MISSION RESULT")
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .collapsible(false)
+                .resizable(false)
+                .fixed_size([300.0, 400.0])
+                .show(ctx, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.heading(egui::RichText::new("── AFTER ACTION REPORT ──").strong().size(18.0));
+                        ui.add_space(8.0);
+                        ui.label(egui::RichText::new(&aar.mission_name).strong());
+                        ui.label(egui::RichText::new(&aar.outcome_label).color(aar.outcome_color).strong().size(20.0));
+                        ui.add_space(12.0);
+
+                        egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                            for line in &aar.roll_lines {
+                                ui.label(egui::RichText::new(line).small().monospace());
+                            }
+                            if !aar.level_ups.is_empty() {
+                                ui.add_space(8.0);
+                                ui.label(egui::RichText::new("PROMOTIONS:").strong().color(egui::Color32::from_rgb(105, 254, 165)));
+                                for msg in &aar.level_ups {
+                                    ui.label(egui::RichText::new(format!("• {}", msg)).small());
+                                }
+                            }
+                        });
+
+                        ui.add_space(16.0);
+                        if ui.button(egui::RichText::new("ACKNOWLEDGE & DISMISS").size(14.0)).clicked() {
+                            self.pending_aar = None;
+                        }
+                    });
+                });
+        }
 
         // 1. Bottom bar: launch bar + main tab bar — Compact only
         if layout == crate::platform::ResponsiveLayout::Compact {
