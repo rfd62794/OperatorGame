@@ -1,4 +1,4 @@
-﻿use crate::ui::{OperatorApp, CONTENT_WIDTH, SIDE_GUTTER, CARD_INNER_MARGIN, CARD_GAP};
+use crate::ui::{OperatorApp, CONTENT_WIDTH, SIDE_GUTTER, CARD_INNER_MARGIN, CARD_GAP};
 use crate::render::garden_bridge::egui_rect_to_bounds;
 use eframe::egui;
 
@@ -263,47 +263,31 @@ fn render_operator_card(
             ui.set_max_width(380.0); // SDD-038 ┬º4 width enforcement
             ui.set_width(380.0);
             
-            // Row 1: Name left, buttons right
-            let available = ui.available_width();
-            let button_width = 120.0;
-            let name_area = available - button_width;
-
-            ui.horizontal(|ui| {
-                // Name block ΓÇö fixed width, left aligned
-                ui.vertical(|ui| {
-                    ui.set_width(name_area);
-                    ui.label(
-                        egui::RichText::new(&genome.name)
-                            .strong()
-                            .size(14.0)
-                            .color(color)
-                    );
-                });
-                
-                // Buttons ΓÇö take remaining width
-                ui.vertical(|ui| {
-                    ui.set_width(button_width);
-                    ui.horizontal(|ui| {
+            // Row 1: Header
+            ui.columns(2, |cols| {
+                // Left column: name
+                cols[0].label(
+                    egui::RichText::new(&genome.name)
+                        .strong()
+                        .size(14.0)
+                        .color(color)
+                );
+                // Right column: buttons
+                cols[1].with_layout(
+                    egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.small_button(">").clicked() { card_clicked = true; }
                         let is_injured = matches!(op.state, crate::models::SlimeState::Injured(_));
                         let is_dispatched = matches!(op.state, crate::models::SlimeState::Deployed(_));
-                        
                         if is_injured {
-                            ui.add_enabled(false, egui::Button::new(egui::RichText::new("INJURED").size(12.0)).small());
+                            ui.add_enabled(false, egui::Button::new("INJURED").small());
                         } else if is_dispatched {
-                            ui.add_enabled(false, egui::Button::new(egui::RichText::new("DEPLOYED").size(12.0)).small());
+                            ui.add_enabled(false, egui::Button::new("DEPLOYED").small());
                         } else {
-                            let btn_label = if is_staged { "Γ£ô STAGED" } else { "STAGE" };
-                            let btn = ui.add(egui::Button::new(egui::RichText::new(btn_label).size(12.0)).small());
-                            if btn.clicked() {
-                                stage_clicked = true;
-                            }
+                            let lbl = if is_staged { "STAGED" } else { "STAGE" };
+                            if ui.small_button(lbl).clicked() { stage_clicked = true; }
                         }
-                        
-                        if ui.add(egui::Button::new(egui::RichText::new("Γû╢").size(12.0)).small()).clicked() {
-                            card_clicked = true;
-                        }
-                    });
-                });
+                    }
+                );
             });
 
             // Row 2: Lv | Stage Label | Pattern (┬º3: 11pt sub-status)
