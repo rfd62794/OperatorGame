@@ -35,6 +35,8 @@ impl SafeArea {
     /// Runtime inset reading will replace this in Sprint 4 when the JNI
     /// `WindowInsetsCompat.systemBars()` call is wired in.
     pub fn android_default() -> Self {
+        Self {
+            top:    48.0,
             bottom: 40.0,  // Reduced from 56dp per designer feedback
             left:   8.0,   // Gutter for Moto G horizontal clipping
             right:  8.0,   // Gutter for Moto G horizontal clipping
