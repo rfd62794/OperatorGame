@@ -332,6 +332,15 @@ impl GameState {
                 .collect();
                 
             let xp_results = dep.award_squad_xp(mission, &mut mut_squad, &outcome);
+
+            // Populate xp_gained in the outcome (G.5b Fix)
+            let total_xp: u32 = xp_results.iter().map(|(_, xp, _)| *xp).sum();
+            match &mut outcome {
+                crate::models::AarOutcome::Victory { xp_gained, .. } => *xp_gained = total_xp,
+                crate::models::AarOutcome::Failure { xp_gained, .. } => *xp_gained = total_xp,
+                crate::models::AarOutcome::CriticalFailure { xp_gained, .. } => *xp_gained = total_xp,
+            }
+
             for (id, _xp, leveled) in xp_results {
                 if leveled {
                     if let Some(op) = mut_squad.iter().find(|o| o.genome.id == id) {

@@ -87,7 +87,7 @@ fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
     let dep_id = app.state.deployments[0].id;
     app.resolve_deployment(dep_id);
     
-    assert!(app.state.deployments[0].resolved);
+    assert!(app.state.deployments.is_empty(), "Deployment should be removed from active list");
     assert!(app.pending_aar.is_some());
 }
 
@@ -142,7 +142,7 @@ fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
     
     let dep_id = app.state.deployments[0].id;
     let mission_id = app.state.deployments[0].mission_id;
-    app.resolve_deployment(dep_id); // This applies outcome
+    app.resolve_deployment(dep_id); // This applies outcome and removes dep
     app.selected_mission = Some(mission_id);
     app.apply_aar_outcome(0.0);    // This resets state if no injury
     
