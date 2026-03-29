@@ -5,17 +5,22 @@ agent: human (Robert) + Claude
 
 ## Status
 
-phase: G.5c Complete — UI Baseline Restored (Two-Row Header)
+phase: G.5c Complete — UI Baseline Restored (Final egui State)
 test_floor: 156 unit tests + 6 integration suites passing, 0 failing, 0 skipped
-last_directive: G.5c UI Restoration & Two-Row Header Baseline
+last_directive: G.5c UI Restoration & Flutter Transition Decision
 
 ## What Is Built
 
-OperatorGame is a Rust/egui mobile tactical genetics game running on Android (Moto G, API 35). The functional loop is: recruit slime operators, equip hats, scout map nodes, dispatch squads on Gauntlet missions (sequential targets), collect AARs with XP and resources, level up operators. The world map has 19 radial nodes across 3 rings — Ring 1 nodes unlock via scouting missions, granting heritage resource yields and culture-specific mission pools. Locked nodes render gray, unlocked nodes render in culture color. The resource economy maps Scrap→Recruitment+Equipment, Biomass→Breeding (planned), Reagents→Breeding Synthesis Slot (planned). Four hats purchasable from the Quartermaster sub-tab under Map. Save version 11, backward compatible.
+OperatorGame is a Rust tactical genetics game with a stable egui mobile UI. STAGE button functional via two-row header layout. SDD-038 implemented with egui constraints documented. ADR-039 (Header Layout) and ADR-040 (Flutter Migration Deferred) committed. Genetic persistence, combat logic, and world map are UI-independent and verified.
 
 ## What Is Next
 
-Sprint G.6: Leveling Feel & First Impression. The Hatchling→Juvenile level-up is a 33% power spike that does not currently feel like one. Before any new systems, make level 1→2 feel strong, visible, and rewarding. No new systems — pure feedback, stat display, XP rate tuning, level-up moment in the AAR panel.
+Sprint F.H1: Flutter Migration Scaffold. Transitioning the UI from egui to Flutter using flutter_rust_bridge. Objective: Rebuild the Roster Collection view in Flutter while preserving the existing Rust game logic.
+
+## Open Questions
+
+- Single-row header (name + buttons same line) deferred per ADR-039 — revisit with Flutter migration.
+- flutter_rust_bridge v2 vs v1.0 — which fits the current asynchronous model better?
 
 ## Open Questions
 
