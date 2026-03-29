@@ -261,7 +261,7 @@ fn render_operator_card(
         .rounding(egui::Rounding::same(4.0))
         .show(ui, |ui| {
             ui.set_max_width(380.0); // SDD-038 ┬º4 width enforcement
-            ui.set_width(380.0);
+            ui.set_max_width(380.0);
             
             // Row 1: Header
             ui.columns(2, |cols| {
