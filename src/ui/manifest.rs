@@ -290,45 +290,48 @@ fn render_operator_card(
                 });
             });
 
-            // Pattern
-            ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).small().color(egui::Color32::GRAY));
+            // Row 2: Lv | Stage Label | Pattern
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(format!("Lv: {}", op.level)).small());
+                ui.add_space(4.0);
+                
+                let stage = op.life_stage();
+                let stage_color = match stage {
+                    crate::genetics::LifeStage::Hatchling => egui::Color32::from_rgb(160, 160, 160),
+                    crate::genetics::LifeStage::Juvenile  => egui::Color32::from_rgb(140, 200, 140),
+                    crate::genetics::LifeStage::Young     => egui::Color32::from_rgb(100, 200, 180),
+                    crate::genetics::LifeStage::Prime     => egui::Color32::from_rgb(220, 180,  80),
+                    crate::genetics::LifeStage::Veteran   => egui::Color32::from_rgb(200, 140,  60),
+                    crate::genetics::LifeStage::Elder     => egui::Color32::from_rgb(180, 120, 220),
+                };
+                ui.label(egui::RichText::new(stage.to_string().to_uppercase())
+                    .size(11.0)
+                    .color(stage_color));
+                
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new(format!("{:?}", genome.pattern)).small().color(egui::Color32::GRAY));
+            });
 
-            // Level & XP bar (Distinct rows to prevent overlap)
-            ui.label(egui::RichText::new(format!("Lv: {}", op.level)).small());
-
-            // G.6 Stage label — muted color per stage, all caps, 11pt
-            let stage = op.life_stage();
-            let stage_color = match stage {
-                crate::genetics::LifeStage::Hatchling => egui::Color32::from_rgb(160, 160, 160),
-                crate::genetics::LifeStage::Juvenile  => egui::Color32::from_rgb(140, 200, 140),
-                crate::genetics::LifeStage::Young     => egui::Color32::from_rgb(100, 200, 180),
-                crate::genetics::LifeStage::Prime     => egui::Color32::from_rgb(220, 180,  80),
-                crate::genetics::LifeStage::Veteran   => egui::Color32::from_rgb(200, 140,  60),
-                crate::genetics::LifeStage::Elder     => egui::Color32::from_rgb(180, 120, 220),
-            };
-            ui.label(egui::RichText::new(stage.to_string().to_uppercase())
-                .size(11.0)
-                .color(stage_color));
-
+            // Row 3: XP bar (4dp height, no percentage)
             let needed = op.xp_to_next().max(1) as f32;
             let current_tier = (op.total_xp as f32) % needed;
             let xp_pct = (current_tier / needed).clamp(0.0, 1.0);
-            ui.add(egui::ProgressBar::new(xp_pct).show_percentage().desired_height(4.0));
+            ui.add(egui::ProgressBar::new(xp_pct).desired_height(4.0));
 
-
-            // Hard Stats
+            // Row 4: Hard Stats + HP
             let (s, a, i, _, _, _) = op.total_stats();
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.small(format!("STR:{}", s));
-                    ui.add_space(4.0);
-                    ui.small(format!("AGI:{}", a));
-                    ui.add_space(4.0);
-                    ui.small(format!("INT:{}", i));
-                });
+            let hp = op.genome.base_hp;
+            ui.horizontal(|ui| {
+                ui.small(format!("STR:{}", s));
+                ui.add_space(4.0);
+                ui.small(format!("AGI:{}", a));
+                ui.add_space(4.0);
+                ui.small(format!("INT:{}", i));
+                ui.add_space(8.0);
+                ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).small().color(egui::Color32::LIGHT_GRAY));
             });
 
-            // Hat Interaction (G.3)
+            // Row 5: Hat Interaction (G.3)
             ui.horizontal(|ui| {
                 if let Some(hat_id) = op.equipped_hat {
                     let catalog = crate::models::Hat::catalog();
@@ -346,12 +349,6 @@ fn render_operator_card(
                     }
                 }
             });
-
-            ui.add_space(4.0);
-
-            // HP status
-            let hp = op.genome.base_hp;
-            ui.label(egui::RichText::new(format!("HP: {:.0}", hp)).small().color(egui::Color32::LIGHT_GRAY));
         });
 
     (stage_clicked, card_clicked, hat_clicked)
