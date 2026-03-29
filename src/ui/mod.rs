@@ -679,11 +679,6 @@ impl eframe::App for OperatorApp {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Free-standing column render helpers (work around borrow-checker in columns)
-// ---------------------------------------------------------------------------
-
-
 /// Render a single styled sub-tab button for the sidebar.
 ///
 /// - **Active:** dark surface fill (#131318) + primary green text (#69fea5)
@@ -691,28 +686,6 @@ impl eframe::App for OperatorApp {
 /// - Minimum size: 70×40dp (44dp touch target)
 /// - Sharp corners, no stroke (Stitch design system)
 
-/// Render a styled section header for the sidebar.
-///
-/// All-caps bold label in primary green, preceded by spacing and
-/// followed by a thin surface-high separator line.
-fn sidebar_header(ui: &mut egui::Ui, title: &str) {
-    ui.add_space(8.0);
-    // SIDEBAR: font size 15.0 — do not reduce without designer approval
-    ui.label(
-        egui::RichText::new(title)
-            .size(15.0)
-            .color(COLOR_PRIMARY)
-            .strong(),
-    );
-    // Thin colored separator line via the painter
-    let sep_rect = ui.available_rect_before_wrap();
-    ui.painter().hline(
-        sep_rect.min.x..=sep_rect.max.x,
-        sep_rect.min.y,
-        egui::Stroke::new(1.0, COLOR_SURFACE_HIGH),
-    );
-    ui.add_space(6.0);
-}
 
 impl OperatorApp {
     fn render_sub_tabs(&mut self, ui: &mut egui::Ui) {
