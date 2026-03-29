@@ -277,7 +277,7 @@ fn render_operator_card(
                             .strong()
                             .size(14.0)
                             .color(color)
-                    ).truncate()
+                    ).truncate(true)
                 );
                 
                 // Right: Buttons fill remaining space
