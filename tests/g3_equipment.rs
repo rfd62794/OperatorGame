@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 #[test]
 fn test_hat_stat_bonuses_applied() {
-    let mut op = Operator::new(operator::genetics::generate_random_standard());
+    let mut op = Operator::new(operator::recruitment::generate_recruit(None, "Test"));
     let (s, a, i, _, _, _) = op.total_stats();
     
     // Equip Mage Hood (+2 INT)
@@ -50,12 +50,12 @@ fn test_purchase_unlocked_check() {
 fn test_equip_hat_swaps_source() {
     let mut state = GameState::default();
     let id1 = Uuid::new_v4();
-    let mut op1 = Operator::new(operator::genetics::generate_random_standard());
+    let mut op1 = Operator::new(operator::recruitment::generate_recruit(None, "Test1"));
     op1.genome.id = id1;
     state.slimes.push(op1);
     
     let id2 = Uuid::new_v4();
-    let mut op2 = Operator::new(operator::genetics::generate_random_standard());
+    let mut op2 = Operator::new(operator::recruitment::generate_recruit(None, "Test2"));
     op2.genome.id = id2;
     state.slimes.push(op2);
     
