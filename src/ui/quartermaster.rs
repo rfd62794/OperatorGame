@@ -9,7 +9,7 @@ impl OperatorApp {
         ui.vertical(|ui| {
             ui.heading("QUARTERMASTER");
             ui.add_space(8.0);
-            ui.label(format!("Available Scrap (Scrap): {}kg", self.state.inventory.scrap));
+            ui.label(format!("Available Scrap (Scrap): {}", self.state.inventory.scrap));
             ui.add_space(16.0);
 
             egui::ScrollArea::vertical()

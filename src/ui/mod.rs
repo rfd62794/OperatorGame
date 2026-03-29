@@ -535,7 +535,7 @@ impl eframe::App for OperatorApp {
                     ui.separator();
                     ui.label(format!("Bank: ${}", self.state.bank));
                     ui.separator();
-                    ui.label(format!("Scrap: {}kg", self.state.inventory.scrap));
+                    ui.label(format!("Scrap: {}", self.state.inventory.scrap));
                     
                     let stress_pct = (self.state.world_map.startled_level / 10.0).clamp(0.0, 1.0);
                     ui.add_space(8.0);
