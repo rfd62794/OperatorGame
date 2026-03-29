@@ -278,7 +278,7 @@ impl OperatorApp {
         let mut rng = rand::thread_rng();
         
         // Use the new centralized resolution logic in GameState (Bug Fix / Refactor)
-        let (dep, mut outcome, level_ups, level_up_events) = match self.state.resolve_deployment(dep_id, &mut rng) {
+        let (dep, outcome, level_ups, level_up_events) = match self.state.resolve_deployment(dep_id, &mut rng) {
             Ok(res) => res,
             Err(e) => {
                 self.status_msg = format!("\u{26a0} Error: {}", e);
