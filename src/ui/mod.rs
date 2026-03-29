@@ -495,6 +495,9 @@ impl OperatorApp {
 
 impl eframe::App for OperatorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Daily and empty-pool mission refresh
+        self.state.refresh_missions_if_needed(Utc::now());
+
         let safe_area = crate::platform::read_window_insets();
 
         // Redraw every 100ms

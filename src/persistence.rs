@@ -219,9 +219,18 @@ impl GameState {
     /// Sprint 8: Refresh pool if calendar date has changed (00:00 UTC).
     /// Sprint G.1: Active deployments are protected from removal.
     pub fn refresh_missions_if_needed(&mut self, now: DateTime<Utc>) -> bool {
+        // ALWAYS re-seed if pool is empty (e.g. following a failed logic migration or manual clearing).
+        if self.missions.is_empty() {
+             use rand::SeedableRng;
+             let mut rng = rand::rngs::SmallRng::from_entropy();
+             self.missions = crate::world_map::generate_static_missions(&mut rng);
+             self.last_pool_refresh = now;
+             return true;
+        }
+
         let is_same_day = self.last_pool_refresh.date_naive() == now.date_naive();
         
-        if is_same_day && !self.missions.is_empty() {
+        if is_same_day {
             return false;
         }
 
