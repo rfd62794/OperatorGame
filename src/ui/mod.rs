@@ -515,7 +515,7 @@ impl eframe::App for OperatorApp {
         crate::platform::apply_interaction_scale(ctx, layout);
 
         if cfg!(target_os = "android") || crate::platform::is_mobile_emu() {
-            ctx.set_pixels_per_point(2.0);
+            ctx.set_pixels_per_point(3.0);
         }
 
         // Ticks
