@@ -1,28 +1,23 @@
 {
   "bank": 975,
-  "deployments": [
-    {
-      "id": "8debe064-9269-435a-9023-826f6cfb82e5",
-      "mission_id": "dfb6b90a-81c6-45a1-8433-2153ea502cf4",
-      "operator_ids": [
-        "d41646a8-8f4d-4cec-af79-4b21c3cc86b7"
-      ],
-      "completes_at": "2026-03-28T00:26:30.730981600Z",
-      "resolved": true,
-      "is_emergency": false
-    }
-  ],
+  "deployments": [],
   "missions": [
     {
-      "id": "dfb6b90a-81c6-45a1-8433-2153ea502cf4",
+      "id": "b337a12b-eb36-43e7-a7a4-fc1b071b775f",
       "name": "Test Mission",
       "description": "High-priority contract from the Orbitals.",
       "tier": "Starter",
-      "base_dc": 5,
+      "targets": [
+        {
+          "name": "Main Obective",
+          "description": "Enemy unit detected in local perimeter.",
+          "base_dc": 5,
+          "req_strength": 0,
+          "req_agility": 0,
+          "req_intelligence": 0
+        }
+      ],
       "min_roster_level": 1,
-      "req_strength": 0,
-      "req_agility": 0,
-      "req_intelligence": 0,
       "difficulty": 0.0,
       "duration_secs": 10,
       "reward": {
@@ -38,16 +33,16 @@
   "slimes": [
     {
       "genome": {
-        "id": "d41646a8-8f4d-4cec-af79-4b21c3cc86b7",
+        "id": "314a9c2b-d381-4241-bd06-320ccd04d8e6",
         "culture_alleles": {
           "dominant": [
             0.0,
             0.0,
             0.0,
-            0.0,
-            0.0,
-            0.0,
             1.0,
+            0.0,
+            0.0,
+            0.0,
             0.0,
             0.0
           ],
@@ -63,40 +58,40 @@
             0.0
           ]
         },
-        "base_hp": 18.199572,
-        "base_atk": 5.067243,
-        "base_spd": 7.4841423,
+        "base_hp": 18.985493,
+        "base_atk": 4.1606927,
+        "base_spd": 6.39775,
         "generation": 1,
         "parent_ids": null,
-        "curiosity": 0.95906997,
-        "energy": 0.47866398,
-        "affection": 0.84394974,
-        "shyness": 0.47020036,
-        "base_strength": 10,
-        "base_agility": 12,
-        "base_intelligence": 11,
-        "base_mind": 10,
-        "base_sensory": 10,
+        "curiosity": 0.46898514,
+        "energy": 0.5348696,
+        "affection": 0.15496993,
+        "shyness": 0.09860492,
+        "base_strength": 12,
+        "base_agility": 8,
+        "base_intelligence": 8,
+        "base_mind": 12,
+        "base_sensory": 12,
         "base_tenacity": 12,
-        "shape": "Crystalline",
-        "body_size": "Medium",
-        "pattern": "Striped",
-        "accessory": "Crown",
+        "shape": "Cubic",
+        "body_size": "Tiny",
+        "pattern": "Spotted",
+        "accessory": "None",
         "base_color": [
-          165,
-          171,
-          222
+          203,
+          224,
+          103
         ],
         "pattern_color": [
-          200,
-          127,
-          135
+          244,
+          219,
+          195
         ],
-        "frequency": 288.0,
+        "frequency": 384.0,
         "name": "Rookie"
       },
-      "level": 3,
-      "total_xp": 399,
+      "level": 4,
+      "total_xp": 409,
       "stat_xp": [
         0,
         0,
@@ -108,14 +103,13 @@
         0,
         0
       ],
-      "state": {
-        "Deployed": "dfb6b90a-81c6-45a1-8433-2153ea502cf4"
-      },
+      "state": "Idle",
       "training": {
         "session_counts": {},
         "last_reset": "1970-01-01T00:00:00Z"
       },
       "equipped_gear": [],
+      "equipped_hat": null,
       "synthesis_cooldown_until": null
     }
   ],
@@ -523,8 +517,8 @@
     "tick_accum": 0.0,
     "startled_level": 0.05
   },
-  "last_upkeep_at": "2026-03-28T01:26:20.730919400Z",
-  "last_pool_refresh": "2026-03-28T01:26:20.730920400Z",
+  "last_upkeep_at": "2026-03-28T23:59:39.986149700Z",
+  "last_pool_refresh": "2026-03-28T23:59:39.986151500Z",
   "inventory": {
     "gear_pool": [],
     "biomass": 0,
@@ -539,18 +533,19 @@
   "logs_sub_tab": "MissionHistory",
   "combat_log": [
     {
-      "timestamp": 1774661180,
-      "message": "[Test Mission] ✅ VICTORY (+$$10000) — No single moment of brilliance — just relentless preparation paying off.",
+      "timestamp": 1774742379,
+      "message": "[Test Mission] ✅ VICTORY (+$$11000) — No single moment of brilliance — just relentless preparation paying off.",
       "outcome": "Victory"
     },
     {
-      "timestamp": 1774661180,
-      "message": ">> EXCELLENCE RECOGNIZED: Rookie has reached Level 3!",
+      "timestamp": 1774742379,
+      "message": ">> EXCELLENCE RECOGNIZED: Rookie reached Level 4!",
       "outcome": "System"
     }
   ],
-  "version": 10,
+  "version": 11,
   "unlocked_nodes": [
     0
-  ]
+  ],
+  "hat_inventory": []
 }
