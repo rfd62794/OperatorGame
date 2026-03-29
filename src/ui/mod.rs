@@ -572,102 +572,16 @@ impl eframe::App for OperatorApp {
                 });
         }
 
-        // 1b. Sub-tab bar — Compact only, pinned below the status bar.
-        // Shows the secondary navigation relevant to the current main tab.
-        // Declared after bottom_stack so egui places it below top_bar, above content.
-        if layout == crate::platform::ResponsiveLayout::Compact {
-            egui::TopBottomPanel::top("sub_tab_bar")
-                .frame(egui::Frame::none()
-                    .fill(egui::Color32::from_rgb(19, 19, 24))
-                    .inner_margin(egui::Margin { left: safe_area.left, right: safe_area.right, top: 0.0, bottom: 0.0 }))
-                .show(ctx, |ui| {
-                    let sub_tab_h = 36.0; // slightly smaller than main tabs — secondary nav
-                    match self.active_tab {
-                        crate::platform::BottomTab::Roster => {
-                            use crate::platform::RosterSubTab;
-                            let sub_tabs = [
-                                (RosterSubTab::Collection, "Collect"),
-                                (RosterSubTab::Breeding,   "Breed"),
-                                (RosterSubTab::Recruit,    "Recruit"),
-                                (RosterSubTab::Squad,      "Squad"),
-                            ];
-                            ui.horizontal(|ui| {
-                                let w = ui.available_width() / sub_tabs.len() as f32;
-                                for (tab, label) in sub_tabs {
-                                    if ui.add_sized(
-                                        [w, sub_tab_h],
-                                        egui::SelectableLabel::new(self.roster_sub_tab == tab, label)
-                                    ).clicked() {
-                                        self.roster_sub_tab = tab;
-                                        self.selected_slime_id = None;
-                                    }
-                                }
-                            });
-                        }
-                        crate::platform::BottomTab::Missions => {
-                            use crate::platform::MissionsSubTab;
-                            let sub_tabs = [
-                                (MissionsSubTab::Active,     "Active"),
-                                (MissionsSubTab::QuestBoard, "Contracts"),
-                            ];
-                            ui.horizontal(|ui| {
-                                let w = ui.available_width() / sub_tabs.len() as f32;
-                                for (tab, label) in sub_tabs {
-                                    if ui.add_sized(
-                                        [w, sub_tab_h],
-                                        egui::SelectableLabel::new(self.missions_sub_tab == tab, label)
-                                    ).clicked() {
-                                        self.missions_sub_tab = tab;
-                                    }
-                                }
-                            });
-                        }
-                        crate::platform::BottomTab::Map => {
-                            use crate::platform::MapSubTab;
-                            let sub_tabs = [
-                                (MapSubTab::Zones,         "Zones"),
-                                (MapSubTab::Quartermaster, "Shop"),
-                            ];
-                            ui.horizontal(|ui| {
-                                let w = ui.available_width() / sub_tabs.len() as f32;
-                                for (tab, label) in sub_tabs {
-                                    if ui.add_sized(
-                                        [w, sub_tab_h],
-                                        egui::SelectableLabel::new(self.map_sub_tab == tab, label)
-                                    ).clicked() {
-                                        self.map_sub_tab = tab;
-                                    }
-                                }
-                            });
-                        }
-                        crate::platform::BottomTab::Logs => {
-                            use crate::platform::LogsSubTab;
-                            let sub_tabs = [
-                                (LogsSubTab::MissionHistory, "Missions"),
-                                (LogsSubTab::CultureHistory, "Culture"),
-                            ];
-                            ui.horizontal(|ui| {
-                                let w = ui.available_width() / sub_tabs.len() as f32;
-                                for (tab, label) in sub_tabs {
-                                    if ui.add_sized(
-                                        [w, sub_tab_h],
-                                        egui::SelectableLabel::new(self.logs_sub_tab == tab, label)
-                                    ).clicked() {
-                                        self.logs_sub_tab = tab;
-                                    }
-                                }
-                            });
-                        }
-                    }
-                });
-        }
 
-        // 2. Sidebar (Left) - Only in Standard layout
-        if layout == crate::platform::ResponsiveLayout::Standard {
+        // 2. Sidebar (Left) — all layouts.
+        // On Compact: 80dp wide alongside the bottom tab bar.
+        // On Standard: 100dp wide (desktop / tablet).
+        {
+            let sidebar_width = if layout == crate::platform::ResponsiveLayout::Compact { 80.0 } else { 100.0 };
             egui::SidePanel::left("left_sidebar")
                 .frame(egui::Frame::none().fill(egui::Color32::from_rgb(19, 19, 24)).inner_margin(8.0))
                 .resizable(false)
-                .default_width(100.0)
+                .default_width(sidebar_width)
                 .show(ctx, |ui| {
                     ui.add_space(8.0);
                     self.render_sub_tabs(ui);
