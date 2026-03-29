@@ -60,7 +60,7 @@ fn test_f1b_03_stage_and_launch_mission() {
     assert_eq!(app.staged_operators.len(), 1);
     
     // Launch
-    app.launch_mission(mission.clone());
+    println!("STAGED: {:?}", app.staged_operators); app.launch_mission(mission.clone());
     
     assert_eq!(app.state.deployments.len(), 1);
     assert_eq!(app.state.deployments[0].mission_id, mission.id);
@@ -78,7 +78,7 @@ fn test_f1b_04_deployment_resolves_and_creates_pending_aar() {
     let mission = app.state.missions[0].clone();
     
     app.staged_operators.insert(op_id);
-    app.launch_mission(mission);
+    println!("STAGED: {:?}", app.staged_operators); app.launch_mission(mission);
     
     // Fast forward time
     app.state.deployments[0].completes_at -= Duration::hours(1);
@@ -96,7 +96,7 @@ fn test_f1b_05_aar_contains_xp_gained() {
     let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Rookie").unwrap();
     app.staged_operators.insert(op_id);
-    app.launch_mission(app.state.missions[0].clone());
+    println!("STAGED: {:?}", app.staged_operators); app.launch_mission(app.state.missions[0].clone());
     app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
@@ -115,7 +115,7 @@ fn test_f1b_06_aar_awards_xp_to_operator() {
     let initial_xp = app.state.slimes.iter().find(|s| s.genome.id == op_id).unwrap().total_xp;
     
     app.staged_operators.insert(op_id);
-    app.launch_mission(app.state.missions[0].clone());
+    println!("STAGED: {:?}", app.staged_operators); app.launch_mission(app.state.missions[0].clone());
     app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
@@ -134,6 +134,7 @@ fn test_f1b_07_resolving_aar_resets_slime_state_if_not_injured() {
     if let Some(op) = app.state.slimes.iter_mut().find(|s| s.genome.id == op_id) {
         op.genome.base_hp = 1000.0;
         op.genome.base_atk = 100.0;
+        op.state = SlimeState::Idle;
     }
     
     app.staged_operators.insert(op_id);
@@ -158,7 +159,7 @@ fn test_f1b_08_log_entry_persisted_in_game_state() {
     let mut app = setup_app_with_mission();
     let op_id = crate::recruitment::purchase_recruit(&mut app.state, "Hero").unwrap();
     app.staged_operators.insert(op_id);
-    app.launch_mission(app.state.missions[0].clone());
+    println!("STAGED: {:?}", app.staged_operators); app.launch_mission(app.state.missions[0].clone());
     app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;
@@ -187,7 +188,7 @@ fn test_f1b_09_operator_level_up_triggers_system_log() {
     }
     
     app.staged_operators.insert(op_id);
-    app.launch_mission(app.state.missions[0].clone());
+    println!("STAGED: {:?}", app.staged_operators); app.launch_mission(app.state.missions[0].clone());
     app.state.deployments[0].completes_at -= Duration::hours(1);
     
     let dep_id = app.state.deployments[0].id;

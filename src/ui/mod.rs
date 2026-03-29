@@ -214,6 +214,9 @@ impl OperatorApp {
     fn launch_mission(&mut self, mission: Mission) {
         // Validate and check for emergency
         let staged_ids: Vec<Uuid> = self.staged_operators.iter().cloned().collect();
+        if staged_ids.is_empty() {
+             return;
+        }
         let mut is_emergency = false;
         for id in &staged_ids {
             let op = self.state.slimes.iter().find(|o| o.genome.id == *id);
