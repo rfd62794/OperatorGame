@@ -384,31 +384,33 @@ impl Deployment {
 
     pub fn award_squad_xp(&self, mission: &Mission, squad: &mut [&mut Operator], outcome: &AarOutcome) -> Vec<(Uuid, u32, bool)> {
         let mut results = Vec::new();
-        let total_val = mission.reward.total_value();
-        
+
         let (defeated, total) = match outcome {
             AarOutcome::Victory { targets_defeated, total_targets, .. } => (*targets_defeated, *total_targets),
             AarOutcome::Failure { targets_defeated, total_targets, .. } => (*targets_defeated, *total_targets),
             AarOutcome::CriticalFailure { targets_defeated, total_targets, .. } => (*targets_defeated, *total_targets),
         };
 
-        let multiplier = if total == 0 { 0.0 } else { defeated as f32 / total as f32 };
-        let final_multiplier = if defeated == total {
-            1.10 // Full bonus
+        // G.6 XP Formula: 35 XP per target defeated on victory, 10 XP on failure/partial.
+        // Consolation (0 targets): 5 XP flat. Eliminates reward-value coupling.
+        // Design target: 2-3 starter victories reach Level 2 (need 100 XP from base 100).
+        // Starter (1 target): 35 XP / victory → Level 2 in 3 wins. ✓
+        // Standard (1-3 targets): 35-105 XP / victory. ✓
+        let full_clear = defeated == total && total > 0;
+        let base_xp: u32 = if full_clear {
+            // Full clear bonus: extra 10% rounding up
+            ((defeated as f32 * 35.0) * 1.10).ceil() as u32
         } else if defeated == 0 {
-            0.10 // Consolation
+            5  // Consolation: showed up, learned nothing useful
         } else {
-            multiplier
+            defeated as u32 * 10  // Partial: 10 XP per target cleared
         };
-
-        // Base XP is calculated as 1% of total mission value (scaled)
-        let total_xp = (total_val as f32 / 100.0) * final_multiplier;
-        let base_xp = total_xp.max(1.0) as u32;
 
         if base_xp == 0 { return results; }
 
         for op in squad {
             let mut op_xp = base_xp;
+            // Cultural affinity bonus: 25% XP boost for matching culture
             if let Some(aff) = mission.affinity {
                 if op.genome.dominant_culture() == aff {
                     op_xp = (op_xp as f64 * 1.25) as u32;

@@ -7,7 +7,7 @@ use crate::ui::OperatorApp;
 
 impl OperatorApp {
     pub(crate) fn render_active_ops(&mut self, ui: &mut egui::Ui) {
-        // Task B.5: Render AAR Result panel if one is pending
+        // Render AAR Result panel if one is pending
         if let Some(aar) = self.pending_aar.clone() {
             ui.label(egui::RichText::new("── AFTER ACTION REPORT ──").strong().size(16.0));
             ui.add_space(8.0);
@@ -25,9 +25,10 @@ impl OperatorApp {
                         .color(egui::Color32::from_rgb(180, 180, 180))
                         .size(11.0));
                     ui.add_space(8.0);
-                    
+
+                    // ScrollArea contains all log content — DISMISS button is NOT inside it
                     egui::ScrollArea::vertical()
-                        .max_height(300.0) // Constraint for mobile "feel"
+                        .max_height(280.0)
                         .auto_shrink([false; 2])
                         .show(ui, |ui| {
                             if let Some(reward) = &aar.reward {
@@ -35,13 +36,74 @@ impl OperatorApp {
                                 ui.add_space(4.0);
                             }
                             ui.label(format!("Squad Experience Gained: {}", aar.xp_gained));
-                            if !aar.level_ups.is_empty() {
-                                ui.add_space(4.0);
-                                ui.label(egui::RichText::new("PROMOTIONS:").strong().color(egui::Color32::from_rgb(100, 200, 255)));
-                                for lvl in &aar.level_ups {
-                                    ui.label(format!(" • {}", lvl));
+
+                            // ── FIELD PROMOTIONS ─────────────────────────────────────
+                            // G.6: Only rendered when at least one operator leveled up.
+                            // Stage transitions (e.g. Hatchling→Juvenile) rendered in gold.
+                            // Same-stage level-ups rendered in cyan.
+                            if !aar.level_up_events.is_empty() {
+                                ui.add_space(8.0);
+                                ui.label(egui::RichText::new("── FIELD PROMOTIONS ────────────────────")
+                                    .strong()
+                                    .color(egui::Color32::from_rgb(100, 200, 255))
+                                    .size(12.0));
+
+                                for evt in &aar.level_up_events {
+                                    ui.add_space(4.0);
+
+                                    // Gold = stage transition (biologically significant moment)
+                                    // Cyan = same-stage level-up (operational improvement)
+                                    let name_color = if evt.stage_transition {
+                                        egui::Color32::from_rgb(255, 215, 80)
+                                    } else {
+                                        egui::Color32::from_rgb(140, 220, 255)
+                                    };
+
+                                    // Row 1: ⬆ Name   Lv X → Y   STAGE_OLD → STAGE_NEW
+                                    let header = if evt.stage_transition {
+                                        format!(
+                                            "⬆ {:12}  Lv {} → {}    {} → {}",
+                                            evt.operator_name,
+                                            evt.old_level, evt.new_level,
+                                            evt.old_stage.to_string().to_uppercase(),
+                                            evt.new_stage.to_string().to_uppercase(),
+                                        )
+                                    } else {
+                                        format!(
+                                            "⬆ {:12}  Lv {} → {}    [{}]",
+                                            evt.operator_name,
+                                            evt.old_level, evt.new_level,
+                                            evt.new_stage.to_string().to_uppercase(),
+                                        )
+                                    };
+                                    ui.add(egui::Label::new(
+                                        egui::RichText::new(header)
+                                            .strong()
+                                            .color(name_color)
+                                            .size(12.0)
+                                    ).wrap(true));
+
+                                    // Row 2: Stat delta line
+                                    let d = &evt.stat_delta;
+                                    let fmt_delta = |v: i32| if v >= 0 { format!("+{}", v) } else { format!("{}", v) };
+                                    ui.label(
+                                        egui::RichText::new(format!(
+                                            "   STR {} ({})   AGI {} ({})   INT {} ({})",
+                                            fmt_delta(d.str_change), fmt_delta(d.str_change),
+                                            fmt_delta(d.agi_change), fmt_delta(d.agi_change),
+                                            fmt_delta(d.int_change), fmt_delta(d.int_change),
+                                        ))
+                                        .color(egui::Color32::from_rgb(180, 220, 180))
+                                        .size(11.0)
+                                    );
                                 }
+
+                                ui.add_space(4.0);
+                                ui.label(egui::RichText::new("────────────────────────────────────────")
+                                    .color(egui::Color32::from_rgb(60, 80, 100))
+                                    .size(11.0));
                             }
+                            // ── END FIELD PROMOTIONS ─────────────────────────────────
 
                             if !aar.injured_names.is_empty() {
                                 ui.add_space(4.0);
@@ -59,7 +121,8 @@ impl OperatorApp {
                             });
                         });
 
-                    ui.add_space(16.0);
+                    // DISMISS button is OUTSIDE the ScrollArea — always visible
+                    ui.add_space(12.0);
                     if ui.button(egui::RichText::new("ACKNOWLEDGE & DISMISS").size(14.0)).clicked() {
                         self.pending_aar = None;
                     }
@@ -100,7 +163,7 @@ impl OperatorApp {
                         .rounding(egui::Rounding::same(4.0))
                         .show(ui, |ui| {
                             let is_orphan = mission_name.contains("[ORPHANED]");
-                            
+
                             ui.horizontal(|ui| {
                                 ui.label(egui::RichText::new(&mission_name).strong());
                                 if is_orphan {
@@ -129,7 +192,6 @@ impl OperatorApp {
                                 }
                             }
 
-                            // Squad IDs
                             ui.small(
                                 egui::RichText::new(format!(
                                     "Squad: {} operator(s)",
@@ -142,7 +204,6 @@ impl OperatorApp {
                 }
             });
 
-        // Process any AAR clicks
         for dep_id in to_resolve {
             self.resolve_deployment(dep_id);
         }
@@ -151,14 +212,14 @@ impl OperatorApp {
 
     pub(crate) fn render_launch_bar(&mut self, ui: &mut egui::Ui) {
         ui.separator();
-        
+
         if self.pending_aar.is_some() {
-            ui.horizontal(|ui| { // TODO: reflow if clips on narrow
+            ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("Awaiting commander acknowledgment of AAR...").color(egui::Color32::YELLOW));
             });
             return;
         }
-        
+
         ui.horizontal_wrapped(|ui| {
             if let Some(mission_id) = self.selected_mission {
                 let mission = self

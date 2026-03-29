@@ -218,6 +218,7 @@ fn test_f1b_10_dismissing_aar_clears_pending_state() {
         outcome_color: eframe::egui::Color32::GREEN,
         xp_gained: 100,
         level_ups: vec![],
+        level_up_events: vec![],  // G.6
         roll_lines: vec![],
         injured_names: vec![],
         reward: None,

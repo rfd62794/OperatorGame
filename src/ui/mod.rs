@@ -55,9 +55,10 @@ pub struct AarSummary {
     pub outcome_label: String,
     pub outcome_color: egui::Color32,
     pub xp_gained: u32,
-    pub level_ups: Vec<String>,     // "{name} reached Level {n}"
-    pub roll_lines: Vec<String>,    // compact per-roll summary
-    pub injured_names: Vec<String>, // names of newly-injured operators
+    pub level_ups: Vec<String>,              // "{name} reached Level {n}" (combat log)
+    pub level_up_events: Vec<crate::persistence::LevelUpEvent>, // G.6 rich events for FIELD PROMOTIONS
+    pub roll_lines: Vec<String>,             // compact per-roll summary
+    pub injured_names: Vec<String>,          // names of newly-injured operators
     pub reward: Option<crate::models::ResourceYield>,
     pub targets_defeated: usize,
     pub total_targets: usize,
@@ -277,7 +278,7 @@ impl OperatorApp {
         let mut rng = rand::thread_rng();
         
         // Use the new centralized resolution logic in GameState (Bug Fix / Refactor)
-        let (dep, mut outcome, level_ups) = match self.state.resolve_deployment(dep_id, &mut rng) {
+        let (dep, mut outcome, level_ups, level_up_events) = match self.state.resolve_deployment(dep_id, &mut rng) {
             Ok(res) => res,
             Err(e) => {
                 self.status_msg = format!("\u{26a0} Error: {}", e);
@@ -379,6 +380,7 @@ impl OperatorApp {
                 AarOutcome::CriticalFailure { xp_gained, .. } => xp_gained,
             },
             level_ups,
+            level_up_events,  // G.6 FIELD PROMOTIONS data
             roll_lines,
             injured_names,
             reward: if let AarOutcome::Victory { reward, .. } = &outcome { Some(reward.clone()) } else { None },

@@ -42,6 +42,34 @@ impl From<serde_json::Error> for PersistenceError {
     fn from(e: serde_json::Error) -> Self { PersistenceError::Json(e) }
 }
 
+// ---------------------------------------------------------------------------
+// G.6 Session Events — not persisted, session-lifetime only
+// ---------------------------------------------------------------------------
+
+/// Change in primary combat stats caused by a level-up.
+/// Not persisted — computed at resolution time and handed to the UI layer.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StatDelta {
+    pub str_change: i32,
+    pub agi_change: i32,
+    pub int_change: i32,
+}
+
+/// Describes a single operator level-up event during mission resolution.
+/// Session-only: `#[serde(skip)]` is not needed as this type is never serialized.
+#[derive(Debug, Clone)]
+pub struct LevelUpEvent {
+    pub operator_id: uuid::Uuid,
+    pub operator_name: String,
+    pub old_level: u8,
+    pub new_level: u8,
+    pub old_stage: crate::genetics::LifeStage,
+    pub new_stage: crate::genetics::LifeStage,  // may equal old_stage if within same range
+    pub stat_delta: StatDelta,
+    /// True when old_stage != new_stage (Hatchling→Juvenile etc.)
+    pub stage_transition: bool,
+}
+
 /// A genome currently being synthesised in the Bio-Incubator (ADR-010).
 /// Collected by `operator incubate` once `completes_at` has passed.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -308,7 +336,11 @@ impl GameState {
     ///
     /// BUG FIX: This method ensures operators are reset to Idle (if not injured)
     /// BEFORE returning, making the resolution atomic and session-resilient.
-    pub fn resolve_deployment(&mut self, dep_id: uuid::Uuid, rng: &mut impl rand::Rng) -> Result<(crate::models::Deployment, crate::models::AarOutcome, Vec<String>), String> {
+    /// Resolve a deployment, returning (Deployment, AarOutcome, log_strings, LevelUpEvents).
+    ///
+    /// `level_up_events` carries rich stat-delta data for the AAR FIELD PROMOTIONS panel (G.6).
+    /// `level_up_strings` are plain-text entries for the combat log.
+    pub fn resolve_deployment(&mut self, dep_id: uuid::Uuid, rng: &mut impl rand::Rng) -> Result<(crate::models::Deployment, crate::models::AarOutcome, Vec<String>, Vec<LevelUpEvent>), String> {
         let dep_idx = self.deployments.iter().position(|d| d.id == dep_id)
             .ok_or_else(|| "Deployment not found".to_string())?;
         
@@ -324,13 +356,20 @@ impl GameState {
             
         let mut outcome = dep.resolve(mission, &squad, rng);
 
-        // 3. Award XP
-        let mut level_ups = Vec::new();
+        // 3. Award XP — capture stat deltas before and after for FIELD PROMOTIONS (G.6)
+        let mut level_ups: Vec<String> = Vec::new();
+        let mut level_up_events: Vec<LevelUpEvent> = Vec::new();
         {
             let mut mut_squad: Vec<&mut crate::models::Operator> = self.slimes.iter_mut()
                 .filter(|o| dep.operator_ids.contains(&o.genome.id))
                 .collect();
-                
+
+            // Capture pre-XP state for stat delta computation
+            let pre_states: Vec<(uuid::Uuid, u8, (u32, u32, u32))> = mut_squad.iter().map(|op| {
+                let (s, a, i, _, _, _) = op.total_stats();
+                (op.genome.id, op.level, (s, a, i))
+            }).collect();
+
             let xp_results = dep.award_squad_xp(mission, &mut mut_squad, &outcome);
 
             // Populate xp_gained in the outcome (G.5b Fix)
@@ -344,7 +383,31 @@ impl GameState {
             for (id, _xp, leveled) in xp_results {
                 if leveled {
                     if let Some(op) = mut_squad.iter().find(|o| o.genome.id == id) {
+                        // Log string for combat log
                         level_ups.push(format!("{} reached Level {}!", op.name(), op.level));
+
+                        // Rich event for AAR FIELD PROMOTIONS panel
+                        if let Some(&(_, old_level, (pre_s, pre_a, pre_i))) =
+                            pre_states.iter().find(|(pid, _, _)| *pid == id)
+                        {
+                            let (post_s, post_a, post_i, _, _, _) = op.total_stats();
+                            let old_stage = crate::genetics::LifeStage::from_level(old_level);
+                            let new_stage = op.life_stage();
+                            level_up_events.push(LevelUpEvent {
+                                operator_id: id,
+                                operator_name: op.name().to_string(),
+                                old_level,
+                                new_level: op.level,
+                                stage_transition: old_stage != new_stage,
+                                old_stage,
+                                new_stage,
+                                stat_delta: StatDelta {
+                                    str_change: post_s as i32 - pre_s as i32,
+                                    agi_change: post_a as i32 - pre_a as i32,
+                                    int_change: post_i as i32 - pre_i as i32,
+                                },
+                            });
+                        }
                     }
                 }
             }
@@ -363,7 +426,7 @@ impl GameState {
             }
         }
 
-        Ok((dep, outcome, level_ups))
+        Ok((dep, outcome, level_ups, level_up_events))
     }
 
     /// Sprint 7B: Maintenance Pressure
