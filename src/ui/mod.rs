@@ -61,6 +61,7 @@ pub struct AarSummary {
     pub reward: Option<crate::models::ResourceYield>,
     pub targets_defeated: usize,
     pub total_targets: usize,
+    pub operator_ids: Vec<Uuid>,
 }
 
 pub struct OperatorApp {
@@ -383,6 +384,7 @@ impl OperatorApp {
             reward: if let AarOutcome::Victory { reward, .. } = &outcome { Some(reward.clone()) } else { None },
             targets_defeated: defeated,
             total_targets: total,
+            operator_ids: dep.operator_ids.clone(),
         });
 
         self.persist();
@@ -420,9 +422,6 @@ impl OperatorApp {
             }
         };
 
-        let dep_idx = self.state.deployments.iter().position(|d| d.mission_id == mission_id).expect("Deployment not found");
-        let dep = self.state.deployments.remove(dep_idx);
-
         match &outcome {
             AarOutcome::Victory { reward, .. } => {
                 self.state.bank += reward.scrap as i64;
@@ -456,7 +455,7 @@ impl OperatorApp {
                 
                 // Play Tide Bowl based on squad Mind
                 let squad: Vec<&crate::models::Operator> = self.state.slimes.iter()
-                    .filter(|op| dep.operator_ids.contains(&op.genome.id))
+                    .filter(|op| aar.operator_ids.contains(&op.genome.id))
                     .collect();
                 let avg_mnd: f32 = if squad.is_empty() { 10.0 } else { 
                     squad.iter().map(|op| op.total_stats().2 as f32).sum::<f32>() / squad.len() as f32 
