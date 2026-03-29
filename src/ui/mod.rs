@@ -537,6 +537,7 @@ impl eframe::App for OperatorApp {
                     ui.separator();
                     ui.label(format!("Scrap: {}", self.state.inventory.scrap));
                     
+                    let stress_pct = (self.state.world_map.startled_level / 10.0).clamp(0.0, 1.0);
                     if stress_pct > 0.01 {
                         ui.add_space(8.0);
                         ui.add(egui::ProgressBar::new(stress_pct)
