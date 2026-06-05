@@ -3,7 +3,6 @@ name = "operator"
 version = "0.1.10"
 authors = ["Operator Team"]
 edition = "2021"
-autobins = false
 
 [workspace]
 members = ["operator-cli"]
@@ -11,10 +10,6 @@ members = ["operator-cli"]
 [lib]
 name = "operator"
 crate-type = ["rlib", "cdylib"]
-
-[[bin]]
-name = "operatorgame"
-path = "src/main.rs"
 
 # ---------------------------------------------------------------------------
 # Shared dependencies — available on all platforms
