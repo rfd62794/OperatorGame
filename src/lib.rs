@@ -45,3 +45,27 @@ fn android_main(app: android_activity::AndroidApp) {
         Box::new(|cc| Box::new(OperatorApp::new(cc, state, path))),
     ).expect("Failed to run on Android");
 }
+
+#[cfg(target_arch = "wasm32")]
+use eframe::wasm_bindgen::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(start)]
+pub async fn start() {
+    use crate::persistence::load;
+    use crate::ui::OperatorApp;
+    use eframe::WebOptions;
+
+    let state = load(&std::path::PathBuf::from("operator_save")).unwrap_or_default();
+
+    let web_options = WebOptions::default();
+
+    eframe::WebRunner::new()
+        .start(
+            "OPERATOR",
+            web_options,
+            Box::new(|cc| Box::new(OperatorApp::new(cc, state, std::path::PathBuf::from("operator_save")))),
+        )
+        .await
+        .expect("Failed to run on WASM");
+}
