@@ -2579,6 +2579,7 @@ dependencies = [
  "serde",
  "serde_json",
  "uuid",
+ "web-sys",
  "winit",
 ]
 
