@@ -16,6 +16,9 @@ use crate::inventory::Inventory;
 use crate::models::{Deployment, Expedition, LogEntry, Mission, ResourceYield};
 use crate::world_map::WorldMap;
 
+#[cfg(target_arch = "wasm32")]
+use web_sys::{window, Storage};
+
 // ---------------------------------------------------------------------------
 // Error type
 // ---------------------------------------------------------------------------
@@ -24,6 +27,8 @@ use crate::world_map::WorldMap;
 pub enum PersistenceError {
     Io(std::io::Error),
     Json(serde_json::Error),
+    #[cfg(target_arch = "wasm32")]
+    Js(String),
 }
 
 impl std::fmt::Display for PersistenceError {
@@ -31,6 +36,8 @@ impl std::fmt::Display for PersistenceError {
         match self {
             PersistenceError::Io(e)   => write!(f, "I/O error: {e}"),
             PersistenceError::Json(e) => write!(f, "JSON error: {e}"),
+            #[cfg(target_arch = "wasm32")]
+            PersistenceError::Js(s)   => write!(f, "JS error: {s}"),
         }
     }
 }
@@ -481,6 +488,7 @@ pub fn save_path() -> PathBuf {
 ///
 /// - If `save.json` does not exist → return a fresh `GameState` with seed missions.
 /// - If the file exists but is corrupt → surface the error (do NOT silently overwrite).
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
     if !path.exists() {
         return Ok(GameState::new_with_seed_missions());
@@ -490,7 +498,7 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
     // v3 → v4 migration: rename culture_expr → culture_alleles on each slime
     let raw = migrate_v3_to_v4(&raw);
     let mut state: GameState = serde_json::from_str(&raw)?;
-        
+
     // Migration from v10:
     if state.version < 11 {
         // Note: serde(default) handles hat_inventory automatically.
@@ -512,7 +520,7 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
             orphans.push(dep.mission_id);
         }
     }
-    
+
     for id in orphans {
         state.missions.push(Mission {
             id,
@@ -531,6 +539,76 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
     }
 
     // Sprint G.2 Migration: Ensure Center Node (0) is unlocked in all saves.
+    if state.version < SAVE_VERSION {
+        if state.unlocked_nodes.is_empty() {
+            state.unlocked_nodes.insert(0);
+        }
+        state.version = SAVE_VERSION;
+    }
+
+    Ok(state)
+}
+
+/// Load GameState from localStorage (WASM).
+///
+/// - If `operator_save` key does not exist → return a fresh `GameState` with seed missions.
+/// - If the data exists but is corrupt → surface the error (do NOT silently overwrite).
+#[cfg(target_arch = "wasm32")]
+pub fn load(_path: &Path) -> Result<GameState, PersistenceError> {
+    let storage = window()
+        .and_then(|w| w.local_storage().ok())
+        .ok_or_else(|| PersistenceError::Js("Failed to access localStorage".to_string()))?;
+
+    let key = "operator_save";
+    let raw = match storage.get_item(key) {
+        Ok(Some(data)) => data,
+        Ok(None) => return Ok(GameState::new_with_seed_missions()),
+        Err(e) => return Err(PersistenceError::Js(format!("Failed to read from localStorage: {:?}", e))),
+    };
+
+    // v3 → v4 migration: rename culture_expr → culture_alleles on each slime
+    let raw = migrate_v3_to_v4(&raw);
+    let mut state: GameState = serde_json::from_str(&raw)
+        .map_err(|e| PersistenceError::Js(format!("JSON parse error: {}", e)))?;
+
+    // Migration from v10:
+    if state.version < 11 {
+        state.version = 11;
+    }
+
+    // Sprint G.2 Migration: Ensure Center Node (0) is unlocked in all saves.
+    if state.version < SAVE_VERSION {
+        if state.unlocked_nodes.is_empty() {
+            state.unlocked_nodes.insert(0);
+        }
+        state.version = SAVE_VERSION;
+    }
+
+    // Task A.2: Orphan Recovery. If an active deployment references a missing mission, reconstruct it.
+    let mut orphans = Vec::new();
+    for dep in &state.deployments {
+        if !dep.resolved && !state.missions.iter().any(|m| m.id == dep.mission_id) {
+            orphans.push(dep.mission_id);
+        }
+    }
+
+    for id in orphans {
+        state.missions.push(Mission {
+            id,
+            name: format!("[ORPHANED] Unknown Contract #{}", &id.to_string()[..5]),
+            description: "CRITICAL PERSISTENCE ERROR: Original mission data was truncated. Performance history unavailable.".to_string(),
+            tier: crate::models::MissionTier::Standard,
+            targets: vec![crate::models::mission::Target::new("Unknown", 10, 5, 5, 5)],
+            min_roster_level: 1,
+            difficulty: 0.5,
+            reward: ResourceYield::scrap(100),
+            duration_secs: 60,
+            affinity: None,
+            node_id: None,
+            is_scout: false,
+        });
+    }
+
     if state.version < SAVE_VERSION {
         if state.unlocked_nodes.is_empty() {
             state.unlocked_nodes.insert(0);
@@ -583,11 +661,31 @@ fn migrate_v3_to_v4(raw: &str) -> String {
 ///
 /// This prevents a partially-written file from corrupting progress if the
 /// process is killed between writes.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn save(state: &GameState, path: &Path) -> Result<(), PersistenceError> {
     let tmp_path = path.with_extension("json.tmp");
     let serialised = serde_json::to_string_pretty(state)?;
     fs::write(&tmp_path, serialised)?;
     fs::rename(&tmp_path, path)?;
+    Ok(())
+}
+
+/// Save GameState to localStorage (WASM).
+///
+/// Writes the serialized state to the `operator_save` key in localStorage.
+#[cfg(target_arch = "wasm32")]
+pub fn save(state: &GameState, _path: &Path) -> Result<(), PersistenceError> {
+    let storage = window()
+        .and_then(|w| w.local_storage().ok())
+        .ok_or_else(|| PersistenceError::Js("Failed to access localStorage".to_string()))?;
+
+    let key = "operator_save";
+    let serialised = serde_json::to_string_pretty(state)
+        .map_err(|e| PersistenceError::Js(format!("JSON serialization error: {}", e)))?;
+
+    storage.set_item(key, &serialised)
+        .map_err(|e| PersistenceError::Js(format!("Failed to write to localStorage: {:?}", e)))?;
+
     Ok(())
 }
 
