@@ -5,7 +5,7 @@ authors = ["Operator Team"]
 edition = "2021"
 
 [workspace]
-members = ["operator-cli"]
+members = ["operator-cli", "operator-desktop"]
 
 [lib]
 name = "operator"

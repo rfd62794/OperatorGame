@@ -1,0 +1,9 @@
+[package]
+name = "operator-desktop"
+version = "0.1.10"
+authors = ["Operator Team"]
+edition = "2021"
+
+[dependencies]
+operator = { path = "../" }
+eframe = "0.27.2"
