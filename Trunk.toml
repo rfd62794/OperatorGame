@@ -5,6 +5,7 @@ target = "index.html"
 dist   = "dist"
 # Set to "/" for local dev; override with CDN path for production deploys.
 public_url = "/"
+release = true
 
 # [[hooks]]
 # stage = "pre_build"
