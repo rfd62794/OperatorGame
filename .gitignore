@@ -50,3 +50,5 @@ logs/
 baselines/
 
 /dist/
+.publish.env
+*.zip
