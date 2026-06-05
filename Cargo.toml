@@ -3,6 +3,7 @@ name = "operator"
 version = "0.1.10"
 authors = ["Operator Team"]
 edition = "2021"
+autobins = false
 
 [workspace]
 members = ["operator-cli"]
@@ -14,11 +15,6 @@ crate-type = ["rlib", "cdylib"]
 [[bin]]
 name = "operatorgame"
 path = "src/main.rs"
-required-features = ["native"]
-
-[features]
-default = ["native"]
-native = []
 
 # ---------------------------------------------------------------------------
 # Shared dependencies — available on all platforms

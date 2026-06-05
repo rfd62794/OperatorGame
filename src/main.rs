@@ -1,3 +1,5 @@
+#![cfg(not(target_arch = "wasm32"))]
+
 use operator::{persistence::load, ui::OperatorApp};
 use eframe::egui;
 use std::path::PathBuf;
