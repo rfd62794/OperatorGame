@@ -3,8 +3,8 @@
 target = "index.html"
 # Output directory for the built web bundle.
 dist   = "dist"
-# Set to "/" for local dev; override with CDN path for production deploys.
-public_url = "/"
+# Use relative paths for itch.io CDN compatibility
+public_url = "./"
 release = true
 
 # [[hooks]]
