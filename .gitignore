@@ -52,3 +52,4 @@ baselines/
 /dist/
 .publish.env
 *.zip
+test-zip/
