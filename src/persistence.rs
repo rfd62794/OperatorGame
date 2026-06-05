@@ -17,7 +17,7 @@ use crate::models::{Deployment, Expedition, LogEntry, Mission, ResourceYield};
 use crate::world_map::WorldMap;
 
 #[cfg(target_arch = "wasm32")]
-use web_sys::{window, Storage};
+use web_sys::window;
 
 // ---------------------------------------------------------------------------
 // Error type
@@ -556,7 +556,7 @@ pub fn load(path: &Path) -> Result<GameState, PersistenceError> {
 #[cfg(target_arch = "wasm32")]
 pub fn load(_path: &Path) -> Result<GameState, PersistenceError> {
     let storage = window()
-        .and_then(|w| w.local_storage().ok())
+        .and_then(|w| w.local_storage().ok().flatten())
         .ok_or_else(|| PersistenceError::Js("Failed to access localStorage".to_string()))?;
 
     let key = "operator_save";
@@ -676,7 +676,7 @@ pub fn save(state: &GameState, path: &Path) -> Result<(), PersistenceError> {
 #[cfg(target_arch = "wasm32")]
 pub fn save(state: &GameState, _path: &Path) -> Result<(), PersistenceError> {
     let storage = window()
-        .and_then(|w| w.local_storage().ok())
+        .and_then(|w| w.local_storage().ok().flatten())
         .ok_or_else(|| PersistenceError::Js("Failed to access localStorage".to_string()))?;
 
     let key = "operator_save";

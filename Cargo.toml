@@ -14,6 +14,11 @@ crate-type = ["rlib", "cdylib"]
 [[bin]]
 name = "operatorgame"
 path = "src/main.rs"
+required-features = ["native"]
+
+[features]
+default = ["native"]
+native = []
 
 # ---------------------------------------------------------------------------
 # Shared dependencies — available on all platforms
